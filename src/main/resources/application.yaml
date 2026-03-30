@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: how-about-us-backend
+
+  jpa:
+    open-in-view: false

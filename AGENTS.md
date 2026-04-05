@@ -15,6 +15,7 @@
 
 - 이번 작업이 기능, API, DB 중 어디에 영향을 주는지 먼저 식별한다.
 - 필요한 문서만 골라 읽는다. 기능은 `docs/ai/features.md`, API는 `docs/ai/api-spec.md`, DB는 `docs/ai/erd.md`를 우선 확인한다.
+- 구조적 선택, 정책 확정, 대안 비교 결과가 중요한 작업이면 `docs/ai/decisions/README.md`도 확인한다.
 - 문서와 코드, 테스트, 사용자 최신 요청 사이에 불일치가 있으면 추정으로 진행하지 말고 먼저 보고한다.
 - 구현 전에 작업 후 어떤 문서를 함께 갱신해야 하는지 미리 정한다.
 
@@ -96,12 +97,14 @@ src/main/resources/
 | 기능 명세서 | `docs/ai/features.md` | 구현할 기능 파악 또는 미결 사항 확인 시 |
 | API 명세서 | `docs/ai/api-spec.md` | 엔드포인트 설계 또는 STOMP 브로드캐스트 확인 시 |
 | ERD 명세서 | `docs/ai/erd.md` | 테이블 구조, 컬럼, 관계 파악 시 |
+| 결정 기록 가이드 | `docs/ai/decisions/README.md` | 중요한 설계 선택의 배경, 결정, 영향 범위를 확인하거나 새 결정 기록을 남길 때 |
 
 ## Doc Update Rules
 
 - 기능 요구사항이나 정책을 변경했으면 `docs/ai/features.md`를 함께 갱신한다.
 - REST API, WebSocket/STOMP 이벤트, 요청/응답 스펙을 변경했으면 `docs/ai/api-spec.md`를 함께 갱신한다.
 - 테이블, 컬럼, 관계, 제약조건을 변경했으면 `docs/ai/erd.md`를 함께 갱신한다.
+- 중요한 설계 선택이나 구조적 결정이 확정되었으면 `docs/ai/decisions/`에 결정 기록을 남긴다.
 
 ## Before You Finish
 

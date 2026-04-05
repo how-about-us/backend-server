@@ -41,7 +41,7 @@
 
 | 메서드 | 경로 | 설명 | 인증 |
 |--------|------|------|------|
-| `GET` | `/oauth2/authorization/google` | 구글 OAuth 로그인 시작 | 불필요 |
+| `GET` | `/api/auth/oauth2/google` | 구글 OAuth 로그인 시작 | 불필요 |
 | `POST` | `/api/auth/refresh` | Access Token 재발급 | Refresh Token |
 | `POST` | `/api/auth/logout` | 로그아웃 (토큰 무효화) | 필요 |
 | `GET` | `/api/auth/me` | 내 정보 조회 | 필요 |
@@ -57,8 +57,10 @@
 | `GET` | `/api/rooms/{roomId}` | 방 상세 조회 | 멤버 |
 | `PATCH` | `/api/rooms/{roomId}` | 방 수정 | ADMIN |
 | `DELETE` | `/api/rooms/{roomId}` | 방 삭제 | ADMIN |
-| `POST` | `/api/rooms/{roomId}/invite-code` | 초대 코드 재발급 | ADMIN |
-| `POST` | `/api/rooms/join` | 초대 코드로 방 입장 | 로그인 |
+| `PATCH` | `/api/rooms/{roomId}/invite-code` | 초대 코드 재발급 | ADMIN |
+| `POST` | `/api/rooms/{roomId}/join-requests` | 초대 코드로 입장 요청 | 로그인 |
+| `POST` | `/api/rooms/{roomId}/join-requests/{userId}/accept` | 입장 요청 수락 | ADMIN |
+| `DELETE` | `/api/rooms/{roomId}/join-requests/{userId}` | 입장 요청 거절 | ADMIN |
 
 ---
 
@@ -69,8 +71,7 @@
 | `GET` | `/api/rooms/{roomId}/members` | 방 멤버 목록 조회 (역할 + 접속 상태) | 멤버 |
 | `DELETE` | `/api/rooms/{roomId}/members/{userId}` | 멤버 강퇴 | ADMIN |
 | `DELETE` | `/api/rooms/{roomId}/members/me` | 방 나가기 | 멤버 |
-
-> 현재 접속 중인 유저 목록은 멤버 목록 조회 응답에 `isOnline` 필드로 포함하거나 별도 엔드포인트로 분리 가능 (미결).
+| `GET` | `/api/rooms/{roomId}/members/connected` | 현재 접속 유저 조회 | 멤버 |
 
 ---
 
@@ -150,10 +151,9 @@
 
 ```
 WS 연결:  /ws
-구독:     /topic/rooms/{roomId}        — 방 전체 브로드캐스트
-          /topic/rooms/{roomId}/schedule — 일정 변경 브로드캐스트
+구독:     /topic/rooms/{roomId}        — 방 전체 브로드캐스트 (채팅·일정·멤버 이벤트 통합)
           /queue/user/{userId}          — 개인 알림 (미결)
-발행:     /app/rooms/{roomId}/chat     — 클라이언트 → 서버 메시지 전송
+발행:     /app/rooms/{roomId}/messages — 클라이언트 → 서버 메시지 전송
 ```
 
 ### 서버 → 클라이언트 브로드캐스트 예상 목록
@@ -163,8 +163,8 @@ WS 연결:  /ws
 | 채팅 메시지 수신 | `/topic/rooms/{roomId}` | 메시지 전송 시 | `MessageResponse` |
 | 시스템 메시지 | `/topic/rooms/{roomId}` | 멤버 입장/퇴장/강퇴 | `MessageResponse` (SYSTEM) |
 | 장소 카드 수신 | `/topic/rooms/{roomId}` | PLACE_SHARE 메시지 전송 시 | `MessageResponse` (PLACE_SHARE) |
-| 일정 순서 변경 | `/topic/rooms/{roomId}/schedule` | `PATCH /items/order` 호출 시 | `ScheduleItemOrderResponse` |
-| 이동 정보 갱신 완료 | `/topic/rooms/{roomId}/schedule` | Routes API 비동기 계산 완료 시 | `TravelInfoResponse` |
+| 일정 순서 변경 | `/topic/rooms/{roomId}` | `PATCH /items/order` 호출 시 | `ScheduleItemOrderResponse` |
+| 이동 정보 갱신 완료 | `/topic/rooms/{roomId}` | Routes API 비동기 계산 완료 시 | `TravelInfoResponse` |
 | AI 응답 수신 | `/topic/rooms/{roomId}` | AI 응답 생성 완료 시 | `MessageResponse` (AI_RESPONSE) |
 | 멤버 접속 상태 변경 | `/topic/rooms/{roomId}` | WebSocket 연결/해제 시 | `MemberStatusResponse` |
 
@@ -176,8 +176,8 @@ WS 연결:  /ws
 
 | 목적지 (destination) | 설명 | payload 타입 |
 |----------------------|------|-------------|
-| `/app/rooms/{roomId}/chat` | 텍스트 채팅 전송 | `ChatMessageRequest` |
-| `/app/rooms/{roomId}/chat` | 장소 카드 공유 (`message_type: PLACE_SHARE`) | `PlaceShareRequest` |
+| `/app/rooms/{roomId}/messages` | 텍스트 채팅 전송 | `ChatMessageRequest` |
+| `/app/rooms/{roomId}/messages` | 장소 카드 공유 (`message_type: PLACE_SHARE`) | `PlaceShareRequest` |
 
 ---
 
@@ -186,7 +186,5 @@ WS 연결:  /ws
 | # | 항목 | 현황 |
 |---|------|------|
 | 1 | AI 응답 저장 방식 | `messages.message_type` vs `ai_responses` 별도 테이블 |
-| 2 | STOMP 구독 토픽 구조 확정 | 일정/채팅/멤버 이벤트 토픽 분리 여부 |
-| 3 | 개인 알림 채널 (`/queue/user/{userId}`) 필요 여부 | 강퇴 알림 등 개인 대상 메시지 처리 방식 |
-| 4 | 멤버 접속 상태 조회 방식 | 멤버 목록 API에 포함 vs 별도 엔드포인트 |
-| 5 | 일정 변경 브로드캐스트 범위 | 순서 변경만 vs 추가/삭제도 포함 |
+| 2 | 개인 알림 채널 (`/queue/user/{userId}`) 필요 여부 | 강퇴 알림 등 개인 대상 메시지 처리 방식 |
+| 3 | 일정 변경 브로드캐스트 범위 | 순서 변경만 vs 추가/삭제도 포함 |

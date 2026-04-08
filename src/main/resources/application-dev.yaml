@@ -11,3 +11,6 @@ spring:
       file:
         - compose.yaml
         - compose.dev.yaml
+
+  mongodb:
+    uri: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@localhost:27017/${MONGO_DB}?authSource=admin

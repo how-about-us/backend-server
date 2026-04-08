@@ -8,3 +8,9 @@ services:
   redis:
     ports:
       - '6379:6379'
+
+  mongodb:
+    env_file:
+      - .env.dev
+    ports:
+      - '27017:27017'

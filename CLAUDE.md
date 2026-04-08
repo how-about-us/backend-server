@@ -20,5 +20,6 @@ Claude 전용 메모 문서.
 | REST API / WebSocket / STOMP 설계 | `api-designer` |
 | 테스트 작성 (단위/통합/슬라이스) | `test-writer` |
 | 버그/장애 원인 분석 | `debugger` |
+| Notion spec 동기화 (_index.md → Notion) | `notion-sync` |
 
 Skills는 `.claude/skills/` 디렉토리에 위치한다. 새 skill 추가 시 `_TEMPLATE/SKILL.md`를 참고한다.

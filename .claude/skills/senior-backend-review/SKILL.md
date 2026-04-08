@@ -136,7 +136,7 @@ WHERE ST_DWithin(
 | 성능 | MeetingService:25 | findAll() 풀스캔 | 🔴 상 | ST_DWithin + GIST 인덱스 |
 | 트랜잭션 | MeetingService:40 | @Transactional 누락 | 🔴 상 | @Transactional 추가 |
 | 캐시 | MeetingService:52 | TTL 미설정 | 🟡 중 | set(key, value, 10, MINUTES) |
-```
+```  
 
 심각도: 🔴 상(즉시 수정) / 🟡 중(다음 스프린트) / 🟢 하(리팩토링 시)
 

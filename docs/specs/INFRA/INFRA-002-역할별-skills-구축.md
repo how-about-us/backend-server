@@ -1,7 +1,7 @@
 # INFRA-002: 역할별 Skills 구축
 
 ## 메타
-- 상태: 대기
+- 상태: 진행중
 - 담당: backend/박주영
 - 우선순위: P2
 - Notion ID: TBD
@@ -19,21 +19,21 @@ CLAUDE.md에 단일 페르소나를 박아두는 대신, **역할별로 `.claude
 
 ### 1. Skill 분류 체계 정의
 
-- [ ] **역할(Role) 카테고리 확정**
-  - [ ] `senior-backend-review` — 코드 리뷰 (✅ 이미 존재)
-  - [ ] `backend-implementer` — 기능 구현 (Spring Boot / JPA 기본 원칙 반영)
-  - [ ] `db-schema-designer` — ERD / 마이그레이션 / PostGIS 설계
-  - [ ] `api-designer` — REST / WebSocket / STOMP 엔드포인트 설계
-  - [ ] `test-writer` — 단위/통합 테스트 작성 원칙
-  - [ ] `debugger` — 장애/버그 원인 분석
-- [ ] **Skill 네이밍 규칙 정의** (kebab-case, 역할 중심)
-- [ ] **Skill 활성화 시점 정의** (언제 어떤 skill을 트리거할지 — description 필드 작성 기준)
+- [x] **역할(Role) 카테고리 확정**
+  - [x] `senior-backend-review` — 코드 리뷰 (✅ 이미 존재)
+  - [x] `backend-implementer` — 기능 구현 (Spring Boot / JPA 기본 원칙 반영)
+  - [x] `db-schema-designer` — ERD / 마이그레이션 / PostGIS 설계
+  - [x] `api-designer` — REST / WebSocket / STOMP 엔드포인트 설계
+  - [x] `test-writer` — 단위/통합 테스트 작성 원칙
+  - [x] `debugger` — 장애/버그 원인 분석
+- [x] **Skill 네이밍 규칙 정의** (kebab-case, 역할 중심)
+- [x] **Skill 활성화 시점 정의** (언제 어떤 skill을 트리거할지 — description 필드 작성 기준)
 
 ### 2. 공통 Skill 템플릿 작성
 
-- [ ] `.claude/skills/_TEMPLATE/SKILL.md` 템플릿 생성
-  - [ ] frontmatter: `name`, `description`, `allowed-tools` 등
-  - [ ] 섹션: 역할 / 원칙 / 체크리스트 / 하지 말 것 / 참고 문서
+- [x] `.claude/skills/_TEMPLATE/SKILL.md` 템플릿 생성
+  - [x] frontmatter: `name`, `description`, `allowed-tools` 등
+  - [x] 섹션: 역할 / 원칙 / 체크리스트 / 하지 말 것 / 참고 문서
 - [ ] 기존 `senior-backend-review/SKILL.md`를 템플릿에 맞게 정렬
 
 ### 3. 역할별 Skill 작성
@@ -45,37 +45,37 @@ CLAUDE.md에 단일 페르소나를 박아두는 대신, **역할별로 `.claude
 - **금지 사항** (이유 포함)
 - **참고할 프로젝트 문서** (`docs/ai/api-spec.md` 등)
 
-- [ ] **`backend-implementer`**
-  - [ ] N+1 쿼리 경계, fetch 전략 원칙
-  - [ ] `open-in-view=false` 전제 하에 트랜잭션 경계 설계
-  - [ ] DTO ↔ Entity 분리 원칙
-  - [ ] Lombok 사용 규칙
-- [ ] **`db-schema-designer`**
-  - [ ] PostGIS 공간 타입 사용 규칙 (`hibernate-spatial`)
-  - [ ] 마이그레이션 파일 네이밍 / 작성 원칙
-  - [ ] 인덱스 설계 체크리스트
-  - [ ] `docs/ai/erd.md` 동기화 의무
-- [ ] **`api-designer`**
-  - [ ] REST 응답 포맷 통일 규칙
-  - [ ] HTTP 상태 코드 사용 원칙
-  - [ ] WebSocket/STOMP 엔드포인트 설계 규칙 (Security 설정 포함)
-  - [ ] rate limiting 고려 사항
-  - [ ] `docs/ai/api-spec.md` 동기화 의무
-- [ ] **`test-writer`**
-  - [ ] 단위 테스트 vs 통합 테스트 구분 기준
-  - [ ] `@SpringBootTest` 남용 금지 + 이유
-  - [ ] Testcontainers 사용 시점
-- [ ] **`debugger`**
-  - [ ] 로그 확인 → 가설 수립 → 최소 재현 순서 강제
-  - [ ] 추측 기반 수정 금지
+- [x] **`backend-implementer`**
+  - [x] N+1 쿼리 경계, fetch 전략 원칙
+  - [x] `open-in-view=false` 전제 하에 트랜잭션 경계 설계
+  - [x] DTO ↔ Entity 분리 원칙
+  - [x] Lombok 사용 규칙
+- [x] **`db-schema-designer`**
+  - [x] PostGIS 공간 타입 사용 규칙 (`hibernate-spatial`)
+  - [x] 마이그레이션 파일 네이밍 / 작성 원칙
+  - [x] 인덱스 설계 체크리스트
+  - [x] `docs/ai/erd.md` 동기화 의무
+- [x] **`api-designer`**
+  - [x] REST 응답 포맷 통일 규칙
+  - [x] HTTP 상태 코드 사용 원칙
+  - [x] WebSocket/STOMP 엔드포인트 설계 규칙 (Security 설정 포함)
+  - [x] rate limiting 고려 사항
+  - [x] `docs/ai/api-spec.md` 동기화 의무
+- [x] **`test-writer`**
+  - [x] 단위 테스트 vs 통합 테스트 구분 기준
+  - [x] `@SpringBootTest` 남용 금지 + 이유
+  - [x] Testcontainers 사용 시점
+- [x] **`debugger`**
+  - [x] 로그 확인 → 가설 수립 → 최소 재현 순서 강제
+  - [x] 추측 기반 수정 금지
 
 ### 4. CLAUDE.md 연동
 
-- [ ] **CLAUDE.md에서 페르소나 직접 정의 제거**
-- [ ] **"언제 어떤 skill을 쓸지" 힌트만 남기기**
+- [x] **CLAUDE.md에서 페르소나 직접 정의 제거**
+- [x] **"언제 어떤 skill을 쓸지" 힌트만 남기기**
   - 예: "코드 리뷰 시 `senior-backend-review` skill 사용"
   - 예: "신규 API 설계 시 `api-designer` skill 사용"
-- [ ] Skills 우선 원칙 명시 (CLAUDE.md의 일반 규칙보다 skill의 도메인 규칙이 우선)
+- [x] Skills 우선 원칙 명시 (CLAUDE.md의 일반 규칙보다 skill의 도메인 규칙이 우선)
 
 ### 5. 검증
 

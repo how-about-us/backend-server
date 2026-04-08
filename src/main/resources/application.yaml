@@ -4,3 +4,9 @@ spring:
 
   jpa:
     open-in-view: false
+
+google:
+  maps:
+    api-key: ${GOOGLE_MAPS_API_KEY:}
+    places-base-url: https://places.googleapis.com
+    routes-base-url: https://routes.googleapis.com

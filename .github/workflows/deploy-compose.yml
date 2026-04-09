@@ -1,0 +1,83 @@
+#file: noinspection SpellCheckingInspection
+name: Deploy API Server With Docker Compose
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DEPLOY_PATH: /opt/how-about-us-backend
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Derive image metadata
+        id: meta
+        shell: bash
+        run: |
+          image_repo="${GITHUB_REPOSITORY,,}"
+          image_tag="${GITHUB_SHA}"
+          echo "image=${image_repo}:${image_tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
+      - name: Build and push image
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          ./gradlew jib \
+            -Djib.to.image="${{ steps.meta.outputs.image }}" \
+            -Djib.to.auth.username="$DOCKERHUB_USERNAME" \
+            -Djib.to.auth.password="$DOCKERHUB_TOKEN"
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Prepare deployment files
+        env:
+          ENV_PROD: ${{ secrets.ENV_PROD }}
+        run: |
+          mkdir -p "$DEPLOY_PATH/infra/caddy"
+          cp compose.app.prod.yaml "$DEPLOY_PATH/compose.app.prod.yaml"
+          cp infra/caddy/Caddyfile "$DEPLOY_PATH/infra/caddy/Caddyfile"
+          printf '%s' "$ENV_PROD" > "$DEPLOY_PATH/.env.prod"
+          chmod 600 "$DEPLOY_PATH/.env.prod"
+
+      - name: Deploy app service
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          APP_IMAGE: ${{ needs.build.outputs.image }}
+        run: |
+          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          cd "$DEPLOY_PATH"
+          export APP_IMAGE
+          docker compose --env-file .env.prod -f compose.app.prod.yaml pull app
+          docker compose --env-file .env.prod -f compose.app.prod.yaml up -d
+          docker compose --env-file .env.prod -f compose.app.prod.yaml ps

@@ -29,8 +29,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      image: ${{ steps.image.outputs.image }}
 
     steps:
       - name: Check out source
@@ -49,11 +47,6 @@ jobs:
       - name: Run tests
         run: ./gradlew test
 
-      - name: Set app image reference
-        id: image
-        run: |
-          echo "image=$APP_IMAGE_REPOSITORY:$GITHUB_SHA" >> "$GITHUB_OUTPUT"
-
       - name: Build and push image
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -69,7 +62,7 @@ jobs:
     needs: build
     runs-on: self-hosted
     env:
-      APP_IMAGE: ${{ needs.build.outputs.image }}
+      APP_IMAGE: ${{ env.APP_IMAGE_REPOSITORY }}:${{ github.sha }}
 
     steps:
       - name: Check out source
@@ -87,6 +80,12 @@ jobs:
           printf '%s\n' "$ENV_PROD" > "$DEPLOY_PATH/.env.prod"
           printf 'APP_IMAGE=%s\n' "$APP_IMAGE" >> "$DEPLOY_PATH/.env.prod"
           chmod 600 "$DEPLOY_PATH/.env.prod"
+
+      - name: Validate compose image configuration
+        run: |
+          test -n "$APP_IMAGE"
+          grep '^APP_IMAGE=' "$DEPLOY_PATH/.env.prod"
+          docker compose --env-file "$DEPLOY_PATH/.env.prod" -f "$DEPLOY_PATH/compose.app.prod.yaml" config >/dev/null
 
       - name: Detect caddy-related changes
         id: changed

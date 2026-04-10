@@ -62,7 +62,7 @@ jobs:
     needs: build
     runs-on: self-hosted
     env:
-      APP_IMAGE: ${{ env.APP_IMAGE_REPOSITORY }}:${{ github.sha }}
+      APP_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/how-about-us-backend:${{ github.sha }}
 
     steps:
       - name: Check out source

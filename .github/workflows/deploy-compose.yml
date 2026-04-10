@@ -49,7 +49,7 @@ jobs:
         shell: bash
         run: |
           image_tag="${GITHUB_SHA}"
-          echo "image=minbros/how-about-us-backend:${image_tag}" >> "$GITHUB_OUTPUT"
+          echo "image=${{ secrets.DOCKERHUB_USERNAME }}/how-about-us-backend:${image_tag}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push image
         env:
@@ -64,6 +64,8 @@ jobs:
   deploy:
     needs: build
     runs-on: self-hosted
+    env:
+      APP_IMAGE: ${{ needs.build.outputs.image }}
 
     steps:
       - name: Check out source
@@ -98,14 +100,8 @@ jobs:
           echo "needs_caddy_restart=$needs_caddy_restart" >> "$GITHUB_OUTPUT"
 
       - name: Deploy app service
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          APP_IMAGE: ${{ needs.build.outputs.image }}
         run: |
-          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
           cd "$DEPLOY_PATH"
-          export APP_IMAGE
           docker compose --env-file .env.prod -f compose.app.prod.yaml pull app
           docker compose --env-file .env.prod -f compose.app.prod.yaml up -d app
           docker compose --env-file .env.prod -f compose.app.prod.yaml ps

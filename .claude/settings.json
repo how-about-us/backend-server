@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=\"${CLAUDE_TOOL_INPUT_FILE_PATH:-}\"; [[ \"$f\" == *.md ]] && echo \"[checking-md-conflicts] MD 파일 변경됨: $f — checking-md-conflicts 스킬로 충돌/중복을 점검하세요.\""
+            "command": "jq -c 'if (.tool_input.file_path // \"\" | endswith(\".md\")) then {hookSpecificOutput: {hookEventName: \"PostToolUse\", additionalContext: (\"MD 파일이 수정됨: \" + (.tool_input.file_path // \"\") + \". checking-md-conflicts 스킬을 실행하여 충돌/중복을 점검하세요.\")}} else empty end'"
           }
         ]
       }

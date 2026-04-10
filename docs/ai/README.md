@@ -31,9 +31,7 @@
 
 ## Update Rules
 
-- 기능 요구사항이나 정책을 변경했으면 `features.md`를 갱신한다.
-- 테이블, 컬럼, 관계, 제약조건을 변경했으면 `erd.md`를 갱신한다.
-- 중요한 설계 선택이 확정되었으면 `decisions/`에 결정 기록을 남긴다.
+갱신 규칙은 `AGENTS.md`의 **Doc Update Rules** 섹션을 따른다.
 
 ## Writing Guidance
 

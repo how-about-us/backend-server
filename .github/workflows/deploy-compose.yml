@@ -6,6 +6,13 @@ on:
     branches:
       - main
       - feature/ci-cd
+    paths:
+      - src/**
+      - build.gradle
+      - settings.gradle
+      - gradlew
+      - gradlew.bat
+      - gradle/**
   workflow_dispatch:
 
 permissions:
@@ -26,15 +33,16 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Derive image metadata
-        id: meta
-        shell: bash
-        run: |
-          image_repo="${GITHUB_REPOSITORY,,}"
-          echo "image=${image_repo}:prod" >> "$GITHUB_OUTPUT"
-
       - name: Make Gradle executable
         run: chmod +x ./gradlew
+
+      - name: Make Version Tag
+        id: version
+        shell: bash
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "tag=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "Image tag: $SHORT_SHA"
 
       - name: Build and push image
         env:
@@ -42,6 +50,7 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           ./gradlew jib \
-            -Djib.to.image="${{ steps.meta.outputs.image }}" \
+            -Djib.to.image="minbros/how-about-us-backend" \
+            -Djib.to.tags=prod,${{ steps.version.outputs.tag }} \
             -Djib.to.auth.username="$DOCKERHUB_USERNAME" \
             -Djib.to.auth.password="$DOCKERHUB_TOKEN"

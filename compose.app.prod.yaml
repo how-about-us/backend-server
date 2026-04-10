@@ -2,7 +2,7 @@ name: how-about-us-app
 
 services:
   app:
-    image: ${APP_IMAGE}
+    image: minbros/how-about-us-backend:latest
     env_file:
       - .env.prod
     environment:

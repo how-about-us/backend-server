@@ -8,7 +8,7 @@ on:
       - feature/ci-cd
     paths:
       - .github/workflows/deploy-compose.yml
-      - compose.yaml
+      - compose.app.prod.yaml
       - infra/caddy/**
       - src/**
       - build.gradle
@@ -23,6 +23,7 @@ permissions:
 
 env:
   DEPLOY_PATH: /opt/how-about-us-backend
+  APP_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/how-about-us-backend
 
 jobs:
   build:
@@ -44,20 +45,14 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x ./gradlew
 
-      - name: Derive image metadata
-        id: meta
-        shell: bash
-        run: |
-          image_tag="${GITHUB_SHA}"
-          echo "image=${{ secrets.DOCKERHUB_USERNAME }}/how-about-us-backend:${image_tag}" >> "$GITHUB_OUTPUT"
-
       - name: Build and push image
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           ./gradlew jib \
-            -Djib.to.image="${{ steps.meta.outputs.image }}" \
+            -Djib.to.image="$APP_IMAGE" \
+            -Djib.to.tags="$GITHUB_SHA" \
             -Djib.to.auth.username="$DOCKERHUB_USERNAME" \
             -Djib.to.auth.password="$DOCKERHUB_TOKEN"
 
@@ -66,7 +61,6 @@ jobs:
     runs-on: self-hosted
     env:
       APP_IMAGE: ${{ needs.build.outputs.image }}
-      APP_NAME: "how-about-us-app-app-1"
 
     steps:
       - name: Check out source
@@ -79,7 +73,7 @@ jobs:
           ENV_PROD: ${{ secrets.ENV_PROD }}
         run: |
           mkdir -p "$DEPLOY_PATH/infra/caddy"
-          cp compose.app.prod.yaml "$DEPLOY_PATH/compose.yaml"
+          cp compose.app.prod.yaml "$DEPLOY_PATH/compose.app.prod.yaml"
           cp infra/caddy/Caddyfile "$DEPLOY_PATH/infra/caddy/Caddyfile"
           printf '%s' "$ENV_PROD" > "$DEPLOY_PATH/.env.prod"
           chmod 600 "$DEPLOY_PATH/.env.prod"
@@ -103,18 +97,18 @@ jobs:
       - name: Deploy app service
         run: |
           cd "$DEPLOY_PATH"
-          docker compose --env-file .env.prod -f compose.yaml pull app
-          docker compose --env-file .env.prod -f compose.yaml up -d app
-          docker compose --env-file .env.prod -f compose.yaml ps
+          docker compose --env-file .env.prod -f compose.app.prod.yaml pull app
+          docker compose --env-file .env.prod -f compose.app.prod.yaml up -d app
+          docker compose --env-file .env.prod -f compose.app.prod.yaml ps
 
       - name: Wait for app healthcheck
         run: |
           cd "$DEPLOY_PATH"
-          app_container_id="$(docker compose --env-file .env.prod -f compose.yaml ps -q app)"
+          app_container_id="$(docker compose --env-file .env.prod -f compose.app.prod.yaml ps -q app)"
 
           if [ -z "$app_container_id" ]; then
             echo "App container was not created."
-            docker compose --env-file .env.prod -f compose.yaml ps
+            docker compose --env-file .env.prod -f compose.app.prod.yaml ps
             exit 1
           fi
 
@@ -130,13 +124,13 @@ jobs:
           done
 
           echo "App failed to become healthy."
-          docker compose --env-file .env.prod -f compose.yaml ps
-          docker compose --env-file .env.prod -f compose.yaml logs app --tail=200
+          docker compose --env-file .env.prod -f compose.app.prod.yaml ps
+          docker compose --env-file .env.prod -f compose.app.prod.yaml logs app --tail=200
           exit 1
 
       - name: Reload caddy when its config changes
         if: steps.changed.outputs.needs_caddy_restart == 'true'
         run: |
           cd "$DEPLOY_PATH"
-          docker compose --env-file .env.prod -f compose.yaml up -d caddy
-          docker compose --env-file .env.prod -f compose.yaml ps
+          docker compose --env-file .env.prod -f compose.app.prod.yaml up -d caddy
+          docker compose --env-file .env.prod -f compose.app.prod.yaml ps

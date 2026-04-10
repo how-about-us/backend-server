@@ -23,14 +23,14 @@ permissions:
 
 env:
   DEPLOY_PATH: /opt/how-about-us-backend
-  APP_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/how-about-us-backend
+  APP_IMAGE_REPOSITORY: ${{ secrets.DOCKERHUB_USERNAME }}/how-about-us-backend
   APP_WAIT_TIMEOUT_SECONDS: 180
 
 jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      image: ${{ steps.meta.outputs.image }}
+      image: ${{ steps.image.outputs.image }}
 
     steps:
       - name: Check out source
@@ -46,13 +46,21 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x ./gradlew
 
+      - name: Run tests
+        run: ./gradlew test
+
+      - name: Set app image reference
+        id: image
+        run: |
+          echo "image=$APP_IMAGE_REPOSITORY:$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+
       - name: Build and push image
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           ./gradlew jib \
-            -Djib.to.image="$APP_IMAGE" \
+            -Djib.to.image="$APP_IMAGE_REPOSITORY" \
             -Djib.to.tags="$GITHUB_SHA" \
             -Djib.to.auth.username="$DOCKERHUB_USERNAME" \
             -Djib.to.auth.password="$DOCKERHUB_TOKEN"
@@ -67,7 +75,7 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v5
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Prepare deployment files
         env:
@@ -76,7 +84,8 @@ jobs:
           mkdir -p "$DEPLOY_PATH/infra/caddy"
           cp compose.app.prod.yaml "$DEPLOY_PATH/compose.app.prod.yaml"
           cp infra/caddy/Caddyfile "$DEPLOY_PATH/infra/caddy/Caddyfile"
-          printf '%s' "$ENV_PROD" > "$DEPLOY_PATH/.env.prod"
+          printf '%s\n' "$ENV_PROD" > "$DEPLOY_PATH/.env.prod"
+          printf 'APP_IMAGE=%s\n' "$APP_IMAGE" >> "$DEPLOY_PATH/.env.prod"
           chmod 600 "$DEPLOY_PATH/.env.prod"
 
       - name: Detect caddy-related changes

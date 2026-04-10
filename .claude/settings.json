@@ -23,6 +23,15 @@
             "command": "./gradlew compileJava"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"${CLAUDE_TOOL_INPUT_FILE_PATH:-}\"; [[ \"$f\" == *.md ]] && echo \"[checking-md-conflicts] MD 파일 변경됨: $f — checking-md-conflicts 스킬로 충돌/중복을 점검하세요.\""
+          }
+        ]
       }
     ]
   },

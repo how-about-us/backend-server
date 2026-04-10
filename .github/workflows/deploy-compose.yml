@@ -24,6 +24,7 @@ permissions:
 env:
   DEPLOY_PATH: /opt/how-about-us-backend
   APP_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/how-about-us-backend
+  APP_WAIT_TIMEOUT_SECONDS: 180
 
 jobs:
   build:
@@ -98,35 +99,15 @@ jobs:
         run: |
           cd "$DEPLOY_PATH"
           docker compose --env-file .env.prod -f compose.app.prod.yaml pull app
-          docker compose --env-file .env.prod -f compose.app.prod.yaml up -d app
+          docker compose --env-file .env.prod -f compose.app.prod.yaml up -d --wait --wait-timeout "$APP_WAIT_TIMEOUT_SECONDS" app
           docker compose --env-file .env.prod -f compose.app.prod.yaml ps
 
-      - name: Wait for app healthcheck
+      - name: Print app logs on deploy failure
+        if: failure()
         run: |
           cd "$DEPLOY_PATH"
-          app_container_id="$(docker compose --env-file .env.prod -f compose.app.prod.yaml ps -q app)"
-
-          if [ -z "$app_container_id" ]; then
-            echo "App container was not created."
-            docker compose --env-file .env.prod -f compose.app.prod.yaml ps
-            exit 1
-          fi
-
-          for attempt in $(seq 1 30); do
-            health_status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$app_container_id")"
-            echo "Attempt $attempt: app health is $health_status"
-
-            if [ "$health_status" = "healthy" ]; then
-              exit 0
-            fi
-
-            sleep 2
-          done
-
-          echo "App failed to become healthy."
           docker compose --env-file .env.prod -f compose.app.prod.yaml ps
           docker compose --env-file .env.prod -f compose.app.prod.yaml logs app --tail=200
-          exit 1
 
       - name: Reload caddy when its config changes
         if: steps.changed.outputs.needs_caddy_restart == 'true'

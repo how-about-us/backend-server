@@ -32,10 +32,10 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -48,7 +48,8 @@ jobs:
         id: meta
         shell: bash
         run: |
-          echo "tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          image_tag="${GITHUB_SHA}"
+          echo "image=minbros/how-about-us-backend:${image_tag}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push image
         env:
@@ -56,8 +57,7 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           ./gradlew jib \
-            -Djib.to.image="${{ secrets.DOCKERHUB_USERNAME }}/how-about-us-backend" \
-            -Djib.to.tags=${{ steps.meta.outputs.tag }} \
+            -Djib.to.image="${{ steps.meta.outputs.image }}" \
             -Djib.to.auth.username="$DOCKERHUB_USERNAME" \
             -Djib.to.auth.password="$DOCKERHUB_TOKEN"
 
@@ -68,7 +68,7 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 2
 

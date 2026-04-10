@@ -48,9 +48,7 @@ jobs:
         id: meta
         shell: bash
         run: |
-          image_repo="${GITHUB_REPOSITORY,,}"
-          image_tag="${GITHUB_SHA}"
-          echo "image=${image_repo}:${image_tag}" >> "$GITHUB_OUTPUT"
+          echo "tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push image
         env:
@@ -58,7 +56,8 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           ./gradlew jib \
-            -Djib.to.image="${{ steps.meta.outputs.image }}" \
+            -Djib.to.image="${{ secrets.DOCKERHUB_USERNAME }}/how-about-us-backend" \
+            -Djib.to.tags=${{ steps.meta.outputs.tag }} \
             -Djib.to.auth.username="$DOCKERHUB_USERNAME" \
             -Djib.to.auth.password="$DOCKERHUB_TOKEN"
 

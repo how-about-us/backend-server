@@ -98,6 +98,7 @@ src/main/resources/
 | API 명세서 | `docs/ai/api-spec.md` | 엔드포인트 설계 또는 STOMP 브로드캐스트 확인 시 |
 | ERD 명세서 | `docs/ai/erd.md` | 테이블 구조, 컬럼, 관계 파악 시 |
 | 결정 기록 가이드 | `docs/ai/decisions/README.md` | 중요한 설계 선택의 배경, 결정, 영향 범위를 확인하거나 새 결정 기록을 남길 때 |
+| 협업 규칙 | `CONTRIBUTING.md` | 브랜치 전략, 커밋 컨벤션, PR 규칙, 코드 규칙 확인 시 |
 
 ## Doc Update Rules
 
@@ -105,6 +106,12 @@ src/main/resources/
 - REST API, WebSocket/STOMP 이벤트, 요청/응답 스펙을 변경했으면 `docs/ai/api-spec.md`를 함께 갱신한다.
 - 테이블, 컬럼, 관계, 제약조건을 변경했으면 `docs/ai/erd.md`를 함께 갱신한다.
 - 중요한 설계 선택이나 구조적 결정이 확정되었으면 `docs/ai/decisions/`에 결정 기록을 남긴다.
+
+## Agent Boundaries
+
+- **자율 가능**: 파일 읽기/수정, 로컬 빌드·테스트 실행, 커밋
+- **확인 필요**: push, PR 생성, 의존성 추가, DB 스키마 변경
+- **금지**: `main` 직접 push, prod 환경 설정 변경
 
 ## Before You Finish
 

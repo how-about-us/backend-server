@@ -2,16 +2,20 @@ name: how-about-us-app
 
 services:
   app:
-    image: minbros/how-about-us-backend:prod
+    image: ${APP_IMAGE}
     env_file:
       - .env.prod
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SERVER_FORWARD_HEADERS_STRATEGY: framework
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
     expose:
       - '8080'
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/actuator/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -21,8 +25,6 @@ services:
 
   caddy:
     image: caddy:2.8-alpine
-    env_file:
-      - .env.prod
     environment:
       APP_DOMAIN: ${APP_DOMAIN}
     ports:
@@ -33,25 +35,8 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
-      - app
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  watchtower:
-    image: containrrr/watchtower:1.7.1
-    environment:
-      DOCKER_API_VERSION: "1.40"
-    command:
-      - --label-enable
-      - --interval
-      - "30"
-      - --cleanup
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      app:
+        condition: service_healthy
     restart: unless-stopped
     logging:
       driver: "json-file"

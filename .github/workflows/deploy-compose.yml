@@ -1,5 +1,5 @@
 #file: noinspection SpellCheckingInspection
-name: Publish API Image
+name: Deploy API Server With Docker Compose
 
 on:
   push:
@@ -8,6 +8,8 @@ on:
       - feature/ci-cd
     paths:
       - .github/workflows/deploy-compose.yml
+      - compose.app.prod.yaml
+      - infra/caddy/**
       - src/**
       - build.gradle
       - settings.gradle
@@ -19,9 +21,14 @@ on:
 permissions:
   contents: read
 
+env:
+  DEPLOY_PATH: /opt/how-about-us-backend
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
 
     steps:
       - name: Check out source
@@ -37,13 +44,13 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x ./gradlew
 
-      - name: Make Version Tag
-        id: version
+      - name: Derive image metadata
+        id: meta
         shell: bash
         run: |
-          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-          echo "tag=$SHORT_SHA" >> $GITHUB_OUTPUT
-          echo "Image tag: $SHORT_SHA"
+          image_repo="${GITHUB_REPOSITORY,,}"
+          image_tag="${GITHUB_SHA}"
+          echo "image=${image_repo}:${image_tag}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push image
         env:
@@ -51,7 +58,90 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           ./gradlew jib \
-            -Djib.to.image="minbros/how-about-us-backend" \
-            -Djib.to.tags=prod,${{ steps.version.outputs.tag }} \
+            -Djib.to.image="${{ steps.meta.outputs.image }}" \
             -Djib.to.auth.username="$DOCKERHUB_USERNAME" \
             -Djib.to.auth.password="$DOCKERHUB_TOKEN"
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Prepare deployment files
+        env:
+          ENV_PROD: ${{ secrets.ENV_PROD }}
+        run: |
+          mkdir -p "$DEPLOY_PATH/infra/caddy"
+          cp compose.app.prod.yaml "$DEPLOY_PATH/compose.app.prod.yaml"
+          cp infra/caddy/Caddyfile "$DEPLOY_PATH/infra/caddy/Caddyfile"
+          printf '%s' "$ENV_PROD" > "$DEPLOY_PATH/.env.prod"
+          chmod 600 "$DEPLOY_PATH/.env.prod"
+
+      - name: Detect caddy-related changes
+        id: changed
+        shell: bash
+        run: |
+          needs_caddy_restart=false
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            needs_caddy_restart=true
+          elif [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ]; then
+            if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -Eq '^(compose\.app\.prod\.yaml|infra/caddy/Caddyfile)$'; then
+              needs_caddy_restart=true
+            fi
+          fi
+
+          echo "needs_caddy_restart=$needs_caddy_restart" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy app service
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          APP_IMAGE: ${{ needs.build.outputs.image }}
+        run: |
+          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          cd "$DEPLOY_PATH"
+          export APP_IMAGE
+          docker compose --env-file .env.prod -f compose.app.prod.yaml pull app
+          docker compose --env-file .env.prod -f compose.app.prod.yaml up -d app
+          docker compose --env-file .env.prod -f compose.app.prod.yaml ps
+
+      - name: Wait for app healthcheck
+        run: |
+          cd "$DEPLOY_PATH"
+          app_container_id="$(docker compose --env-file .env.prod -f compose.app.prod.yaml ps -q app)"
+
+          if [ -z "$app_container_id" ]; then
+            echo "App container was not created."
+            docker compose --env-file .env.prod -f compose.app.prod.yaml ps
+            exit 1
+          fi
+
+          for attempt in $(seq 1 30); do
+            health_status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$app_container_id")"
+            echo "Attempt $attempt: app health is $health_status"
+
+            if [ "$health_status" = "healthy" ]; then
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          echo "App failed to become healthy."
+          docker compose --env-file .env.prod -f compose.app.prod.yaml ps
+          docker compose --env-file .env.prod -f compose.app.prod.yaml logs app --tail=200
+          exit 1
+
+      - name: Reload caddy when its config changes
+        if: steps.changed.outputs.needs_caddy_restart == 'true'
+        run: |
+          cd "$DEPLOY_PATH"
+          docker compose --env-file .env.prod -f compose.app.prod.yaml up -d caddy
+          docker compose --env-file .env.prod -f compose.app.prod.yaml ps

@@ -24,7 +24,7 @@
 - **Framework**: Spring Boot 4.0.5, Java 21
 - **Database**: PostgreSQL 17 + PostGIS 3.5
 - **Cache**: Redis 8
-- **Auth**: Spring Security + OAuth2 Client
+- **Auth**: Spring Security
 - **Realtime**: WebSocket + STOMP
 - **Build**: Gradle
 - **기타**: Lombok, Spring Data JPA, `hibernate-spatial`

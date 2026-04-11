@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:5432/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:${DB_HOST}}
+      port: 6379
+
+  mongodb:
+    uri: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST:${DB_HOST}}:27017/${MONGO_DB}?authSource=admin
+
+  docker:
+    compose:
+      enabled: false

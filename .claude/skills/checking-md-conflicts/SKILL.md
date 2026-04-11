@@ -22,10 +22,10 @@ Find all file path references in MD files and confirm each exists:
 
 ```bash
 # 참조된 경로 목록 추출
-grep -rn '`docs/ai/[^`]*\.md`\|`[A-Z][A-Z_]*.md`' **/*.md docs/**/*.md
+rg -n '`docs/ai/[^`]*\.md`|`[A-Z][A-Z_]*\.md`' -g '*.md'
 ```
 
-각 경로를 Glob으로 실제 존재 여부 확인. 존재하지 않으면 → 해당 참조 제거 또는 수정.
+각 경로를 실제 파일 목록 기준으로 존재 여부 확인. 존재하지 않으면 → 해당 참조 제거 또는 수정.
 
 ### 2. Duplicate Update Rules
 
@@ -82,5 +82,5 @@ grep -rn '`docs/ai/[^`]*\.md`\|`[A-Z][A-Z_]*.md`' **/*.md docs/**/*.md
 ## Common Mistakes
 
 - 수정된 파일만 확인하고 연관 파일은 건너뜀
-- 파일 존재 여부를 기억에 의존해 확인 (반드시 Glob 사용)
+- 파일 존재 여부를 기억에 의존해 확인 (반드시 실제 파일 목록으로 검증)
 - 이슈 발견 시 보고만 하고 후속 조치(수정 여부 확인 또는 즉시 수정)를 생략함

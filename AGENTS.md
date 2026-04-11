@@ -14,7 +14,7 @@
 ## Before You Start
 
 - 이번 작업이 기능, API, DB 중 어디에 영향을 주는지 먼저 식별한다.
-- 필요한 문서만 골라 읽는다. 기능은 `docs/ai/features.md`, API는 `docs/ai/api-spec.md`, DB는 `docs/ai/erd.md`를 우선 확인한다.
+- 필요한 문서만 골라 읽는다. 기능은 `docs/ai/features.md`, DB는 `docs/ai/erd.md`를 우선 확인한다.
 - 구조적 선택, 정책 확정, 대안 비교 결과가 중요한 작업이면 `docs/ai/decisions/README.md`도 확인한다.
 - 문서와 코드, 테스트, 사용자 최신 요청 사이에 불일치가 있으면 추정으로 진행하지 말고 먼저 보고한다.
 - 구현 전에 작업 후 어떤 문서를 함께 갱신해야 하는지 미리 정한다.
@@ -87,24 +87,28 @@ src/main/resources/
 - 상세 설명 문서는 `docs/ai/` 아래에 분리하는 것을 권장한다.
 - 이 파일에서는 긴 내용을 직접 복붙하지 말고, 필요한 문서 경로와 읽는 조건만 적는다.
 - `@path/to/file.md` 문법은 사용할 수 있어도 즉시 파일을 불러와 컨텍스트를 크게 사용할 수 있으니, 작은 핵심 문서에만 제한적으로 사용한다.
-- 큰 문서나 참고성 문서는 `docs/ai/architecture.md` 같은 일반 경로 표기로 남기는 편이 안전하다.
-- 문서와 코드, 테스트, 사용자 최신 요청 사이에 불일치가 있으면 추정으로 진행하지 말고 먼저 보고한다.
+- 큰 문서나 참고성 문서는 `docs/ai/erd.md` 같은 일반 경로 표기로 남기는 편이 안전하다.
 
 ## Project Docs
 
 | 문서 | 경로 | 읽는 시점 |
 |------|------|-----------|
 | 기능 명세서 | `docs/ai/features.md` | 구현할 기능 파악 또는 미결 사항 확인 시 |
-| API 명세서 | `docs/ai/api-spec.md` | 엔드포인트 설계 또는 STOMP 브로드캐스트 확인 시 |
 | ERD 명세서 | `docs/ai/erd.md` | 테이블 구조, 컬럼, 관계 파악 시 |
 | 결정 기록 가이드 | `docs/ai/decisions/README.md` | 중요한 설계 선택의 배경, 결정, 영향 범위를 확인하거나 새 결정 기록을 남길 때 |
+| 협업 규칙 | `CONTRIBUTING.md` | 브랜치 전략, 커밋 컨벤션, PR 규칙, 코드 규칙 확인 시 |
 
 ## Doc Update Rules
 
 - 기능 요구사항이나 정책을 변경했으면 `docs/ai/features.md`를 함께 갱신한다.
-- REST API, WebSocket/STOMP 이벤트, 요청/응답 스펙을 변경했으면 `docs/ai/api-spec.md`를 함께 갱신한다.
 - 테이블, 컬럼, 관계, 제약조건을 변경했으면 `docs/ai/erd.md`를 함께 갱신한다.
 - 중요한 설계 선택이나 구조적 결정이 확정되었으면 `docs/ai/decisions/`에 결정 기록을 남긴다.
+
+## Agent Boundaries
+
+- **자율 가능**: 파일 읽기/수정, 로컬 빌드·테스트 실행, 커밋
+- **확인 필요**: push, PR 생성, 의존성 추가, DB 스키마 변경
+- **금지**: `main` 직접 push, prod 환경 설정 변경
 
 ## Before You Finish
 

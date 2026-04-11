@@ -22,5 +22,4 @@
 ## Related Docs
 
 - `docs/ai/features.md`
-- `docs/ai/api-spec.md`
 - `docs/ai/erd.md`

@@ -6,6 +6,7 @@ import com.howaboutus.backend.places.service.PlaceSearchService;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -51,6 +52,7 @@ class PlaceControllerTest {
     }
 
     @Test
+    @DisplayName("빈 query로 검색하면 400을 반환한다")
     void returnsBadRequestWhenQueryIsBlank() throws Exception {
         mockMvc.perform(searchRequest("   "))
                 .andExpect(status().isBadRequest())
@@ -61,6 +63,7 @@ class PlaceControllerTest {
     }
 
     @Test
+    @DisplayName("query 파라미터가 없으면 400을 반환한다")
     void returnsBadRequestWhenQueryParameterIsMissing() throws Exception {
         mockMvc.perform(get(SEARCH_PATH))
                 .andExpect(status().isBadRequest())
@@ -69,12 +72,14 @@ class PlaceControllerTest {
     }
 
     @Test
+    @DisplayName("장소 검색 외 경로는 인증이 필요하다")
     void requiresAuthenticationForNonPlaceRoutes() throws Exception {
         mockMvc.perform(get("/private"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
+    @DisplayName("유효한 query로 검색하면 결과를 반환한다")
     void returnsSearchResultsWhenQueryIsValid() throws Exception {
         given(placeSearchService.search(VALID_QUERY))
                 .willReturn(List.of(placeSearchResult));

@@ -10,13 +10,23 @@ import org.springframework.web.server.ResponseStatusException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<ApiErrorResponse> handleCustomException(CustomException exception) {
+        ErrorCode errorCode = exception.getErrorCode();
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(new ApiErrorResponse(errorCode.getCode(), errorCode.getMessage()));
+    }
+
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiErrorResponse> handleResponseStatusException(ResponseStatusException exception) {
         HttpStatus status = HttpStatus.resolve(exception.getStatusCode().value());
         if (status == null) {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
         }
-        String message = exception.getReason() != null ? exception.getReason() : status.getReasonPhrase();
+        String message = status.getReasonPhrase();
+        if (exception.getReason() != null) {
+            message = exception.getReason();
+        }
         return ResponseEntity.status(status)
                 .body(new ApiErrorResponse(status.name(), message));
     }
@@ -24,10 +34,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ApiErrorResponse> handleMissingServletRequestParameterException(
             MissingServletRequestParameterException exception) {
+        String message = "missing required request parameter";
         String parameterName = exception.getParameterName();
-        String message = parameterName == null || parameterName.isBlank()
-                ? "missing required request parameter"
-                : "missing required request parameter: " + parameterName;
+        if (parameterName != null && !parameterName.isBlank()) {
+            message = "missing required request parameter: " + parameterName;
+        }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiErrorResponse(HttpStatus.BAD_REQUEST.name(), message));
     }

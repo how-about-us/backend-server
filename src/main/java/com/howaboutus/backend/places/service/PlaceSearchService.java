@@ -2,8 +2,12 @@ package com.howaboutus.backend.places.service;
 
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 import java.util.List;
+import org.springframework.stereotype.Service;
 
-public interface PlaceSearchService {
+@Service
+public class PlaceSearchService {
 
-    List<PlaceSearchResult> search(String query);
+    public List<PlaceSearchResult> search(String query) {
+        return List.of();
+    }
 }

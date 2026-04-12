@@ -66,7 +66,8 @@ docker compose -f compose.yaml -f compose.dev.yaml down
 
 ```text
 src/main/java/com/howaboutus/backend/
-└── (도메인별 패키지 구성)
+├── common/                ← 설정, 공통 예외 처리, 외부 연동 등 비도메인 공통 기능
+└── <domain>/              ← 주요 기능 도메인별 패키지
 
 src/main/resources/
 ├── application.yaml

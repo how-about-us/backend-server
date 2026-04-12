@@ -42,12 +42,23 @@
 
 ## Code Convention
 
+- Lombok을 적극적으로 활용한다.
+- 일반적인 생성자 주입은 `@RequiredArgsConstructor`를 우선 사용한다.
+- 구현체가 하나인 경우에는 인터페이스를 만들지 않고 클래스로 직접 정의한다.
+- 삼항 연산자는 사용하지 않는다.
+- 코드 depth는 2 이하를 원칙으로 하고, 이를 넘길 경우 `guard clause`나 메서드 추출로 우선 단순화한다.
+- 코드에서는 FQCN을 직접 쓰지 않고 import를 사용한다.
+
 ### 패키지 구조
 
-도메인별로 패키지를 나누고, 각 도메인 안에 MVC + Service 구조를 유지한다.
+주요 기능은 도메인별 패키지로 나누고, 설정, 외부 API 연동, 공통 예외 처리처럼 특정 도메인에 속하지 않는 요소는 `common` 아래에 둔다.
 
 ```
 com.howaboutus.backend.
+├── common/
+│   ├── config/       ← Security, Jackson, Redis 등 공통 설정
+│   ├── error/        ← 공통 예외, 에러 응답, 예외 핸들러
+│   └── integration/  ← Google 등 외부 API 연동
 └── <domain>/
     ├── controller/   ← Controller, Request/Response DTO
     ├── service/      ← Service, 비즈니스 로직
@@ -58,10 +69,14 @@ com.howaboutus.backend.
 ### 예외 처리
 
 - 비즈니스 예외는 커스텀 예외 클래스로 정의하고 `GlobalExceptionHandler`에서 처리한다.
+- 별도의 상태 코드와 에러 메시지가 필요한 경우 `CustomException` 클래스를 정의하고, 에러 스펙은 enum으로 관리한다.
 - 임의로 `try-catch`를 추가하지 않는다. 처리 방식이 불명확하면 먼저 보고한다.
 
 ### 테스트
 
 - 비즈니스 로직(서비스 레이어)은 단위 테스트를 작성한다.
-- API 엔드포인트는 통합 테스트(`@SpringBootTest`)로 검증한다.
+- API 엔드포인트는 기본적으로 통합 테스트(`@SpringBootTest`)로 검증한다.
+- 단순한 컨트롤러 레이어 검증은 `@WebMvcTest`를 사용할 수 있다.
+- `@WebMvcTest`에서는 모킹된 응답 전체를 세세하게 검증하기보다 상태 코드와 핵심 필드 중심으로 간결하게 검증한다.
+- 테스트 코드의 중복은 공통 필드, `@BeforeEach`, 헬퍼 메서드 등을 활용해 줄인다.
 - 테스트 없이 PR을 올리지 않는다. 테스트가 어려운 경우 사유를 PR에 명시한다.

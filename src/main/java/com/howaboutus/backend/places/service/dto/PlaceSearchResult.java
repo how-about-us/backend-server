@@ -1,5 +1,7 @@
 package com.howaboutus.backend.places.service.dto;
 
+import java.io.Serializable;
+
 public record PlaceSearchResult(
         Long placeId,
         String googlePlaceId,
@@ -9,7 +11,7 @@ public record PlaceSearchResult(
         String primaryType,
         Double rating,
         String photoName
-) {
-    public record Location(Double lat, Double lng) {
+) implements Serializable {
+    public record Location(Double lat, Double lng) implements Serializable {
     }
 }

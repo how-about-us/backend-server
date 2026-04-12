@@ -17,6 +17,12 @@ public class GlobalExceptionHandler {
                 .body(new ApiErrorResponse(errorCode.getCode(), errorCode.getMessage()));
     }
 
+    @ExceptionHandler(ExternalApiException.class)
+    public ResponseEntity<ApiErrorResponse> handleExternalApiException(ExternalApiException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(new ApiErrorResponse("EXTERNAL_API_ERROR", exception.getMessage()));
+    }
+
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiErrorResponse> handleResponseStatusException(ResponseStatusException exception) {
         HttpStatus status = HttpStatus.resolve(exception.getStatusCode().value());
@@ -36,7 +42,7 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException exception) {
         String message = "missing required request parameter";
         String parameterName = exception.getParameterName();
-        if (parameterName != null && !parameterName.isBlank()) {
+        if (!parameterName.isBlank()) {
             message = "missing required request parameter: " + parameterName;
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

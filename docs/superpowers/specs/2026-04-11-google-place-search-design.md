@@ -98,7 +98,7 @@ Redis에는 검색 결과만 저장한다.
 
 - 키 예시: `places:search:<normalized-query>`
 - 값: API 응답 DTO 리스트
-- TTL: 초기값 `5분`
+- TTL: 초기값 `10분`
 
 이번 단계에서는 장소별 상세 캐시를 따로 두지 않는다. 필요해지면 `Place Details` 도입 시점에 별도 키 전략을 설계한다.
 

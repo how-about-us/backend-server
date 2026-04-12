@@ -37,6 +37,7 @@
 
 - PR 제목은 커밋 컨벤션과 동일한 형식(`feat: ...`)을 따른다.
 - `main`으로 직접 merge 전 최소 1명의 리뷰가 필요하다.
+- PR 본문은 `.github/pull_request_template.md` 형식을 그대로 따른다.
 - PR 본문에 변경 이유와 테스트 방법을 간략히 적는다.
 - 리뷰 전 로컬에서 `./gradlew build`가 통과해야 한다.
 

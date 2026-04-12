@@ -44,7 +44,7 @@ class PlaceControllerTest {
         mockMvc.perform(get("/places/search"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
-                .andExpect(jsonPath("$.message").value("query must not be blank"));
+                .andExpect(jsonPath("$.message").value("missing required request parameter: query"));
     }
 
     @Test

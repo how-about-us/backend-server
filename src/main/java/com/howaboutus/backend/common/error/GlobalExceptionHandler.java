@@ -24,7 +24,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ApiErrorResponse> handleMissingServletRequestParameterException(
             MissingServletRequestParameterException exception) {
+        String parameterName = exception.getParameterName();
+        String message = parameterName == null || parameterName.isBlank()
+                ? "missing required request parameter"
+                : "missing required request parameter: " + parameterName;
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiErrorResponse(HttpStatus.BAD_REQUEST.name(), "query must not be blank"));
+                .body(new ApiErrorResponse(HttpStatus.BAD_REQUEST.name(), message));
     }
 }

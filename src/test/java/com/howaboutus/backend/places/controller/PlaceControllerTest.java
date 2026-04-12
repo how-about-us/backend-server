@@ -3,6 +3,7 @@ package com.howaboutus.backend.places.controller;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
 import com.howaboutus.backend.config.SecurityConfig;
 import com.howaboutus.backend.places.service.PlaceSearchService;
+import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -31,9 +33,18 @@ class PlaceControllerTest {
     void returnsBadRequestWhenQueryIsBlank() throws Exception {
         mockMvc.perform(get("/places/search").param("query", "   "))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.message").value("query must not be blank"));
 
         verifyNoInteractions(placeSearchService);
+    }
+
+    @Test
+    void returnsBadRequestWhenQueryParameterIsMissing() throws Exception {
+        mockMvc.perform(get("/places/search"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("query must not be blank"));
     }
 
     @Test
@@ -45,12 +56,12 @@ class PlaceControllerTest {
     @Test
     void returnsSearchResultsWhenQueryIsValid() throws Exception {
         given(placeSearchService.search("seoul cafe"))
-                .willReturn(List.of(new PlaceSearchResponse(
+                .willReturn(List.of(new PlaceSearchResult(
                         1L,
                         "ChIJ123",
                         "Cafe Layered",
                         "서울 종로구 ...",
-                        new PlaceSearchResponse.Location(37.57, 126.98),
+                        new PlaceSearchResult.Location(37.57, 126.98),
                         "cafe",
                         4.5,
                         "places/ChIJ123/photos/abc"
@@ -67,5 +78,7 @@ class PlaceControllerTest {
                 .andExpect(jsonPath("$[0].primaryType").value("cafe"))
                 .andExpect(jsonPath("$[0].rating").value(4.5))
                 .andExpect(jsonPath("$[0].photoName").value("places/ChIJ123/photos/abc"));
+
+        then(placeSearchService).should().search("seoul cafe");
     }
 }

@@ -23,6 +23,8 @@ public class PlaceController {
         if (!StringUtils.hasText(query)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "query must not be blank");
         }
-        return placeSearchService.search(query);
+        return placeSearchService.search(query).stream()
+                .map(PlaceSearchResponse::from)
+                .toList();
     }
 }

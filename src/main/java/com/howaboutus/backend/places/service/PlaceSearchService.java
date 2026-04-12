@@ -1,9 +1,9 @@
 package com.howaboutus.backend.places.service;
 
-import com.howaboutus.backend.places.controller.PlaceSearchResponse;
+import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 import java.util.List;
 
 public interface PlaceSearchService {
 
-    List<PlaceSearchResponse> search(String query);
+    List<PlaceSearchResult> search(String query);
 }

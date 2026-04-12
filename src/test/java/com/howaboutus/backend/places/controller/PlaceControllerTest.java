@@ -2,6 +2,7 @@ package com.howaboutus.backend.places.controller;
 
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
 import com.howaboutus.backend.config.SecurityConfig;
+import com.howaboutus.backend.places.service.PlaceSearchService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -30,6 +32,14 @@ class PlaceControllerTest {
         mockMvc.perform(get("/places/search").param("query", "   "))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("query must not be blank"));
+
+        verifyNoInteractions(placeSearchService);
+    }
+
+    @Test
+    void requiresAuthenticationForNonPlaceRoutes() throws Exception {
+        mockMvc.perform(get("/private"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

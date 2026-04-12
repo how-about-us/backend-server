@@ -1,6 +1,7 @@
 package com.howaboutus.backend.places.controller;
 
 import com.howaboutus.backend.common.config.SecurityConfig;
+import com.howaboutus.backend.common.error.ExternalApiException;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
 import com.howaboutus.backend.places.service.PlaceSearchService;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
@@ -83,6 +84,30 @@ class PlaceControllerTest {
                 .andExpect(jsonPath("$[0].name").value("Cafe Layered"));
 
         then(placeSearchService).should().search(VALID_QUERY);
+    }
+
+    @Test
+    @DisplayName("외부 API 오류 발생 시 502를 반환한다")
+    void returnsBadGatewayWhenExternalApiErrorOccurs() throws Exception {
+        given(placeSearchService.search(VALID_QUERY))
+                .willThrow(new ExternalApiException(new RuntimeException("connection timeout")));
+
+        mockMvc.perform(searchRequest(VALID_QUERY))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.code").value("EXTERNAL_API_ERROR"))
+                .andExpect(jsonPath("$.message").value("외부 API 호출 중 오류가 발생했습니다"));
+    }
+
+    @Test
+    @DisplayName("처리되지 않은 예외 발생 시 500을 반환한다")
+    void returnsInternalServerErrorForUnhandledException() throws Exception {
+        given(placeSearchService.search(VALID_QUERY))
+                .willThrow(new RuntimeException("예상치 못한 오류"));
+
+        mockMvc.perform(searchRequest(VALID_QUERY))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"))
+                .andExpect(jsonPath("$.message").value("서버 내부 오류가 발생했습니다"));
     }
 
     private static MockHttpServletRequestBuilder searchRequest(String query) {

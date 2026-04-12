@@ -7,11 +7,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "places")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Place {
 
     @Id
@@ -29,18 +34,7 @@ public class Place {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    protected Place() {
-    }
-
     public Place(String googlePlaceId) {
         this.googlePlaceId = googlePlaceId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getGooglePlaceId() {
-        return googlePlaceId;
     }
 }

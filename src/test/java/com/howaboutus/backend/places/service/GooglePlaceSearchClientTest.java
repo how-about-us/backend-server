@@ -4,6 +4,7 @@ import com.howaboutus.backend.common.config.GooglePlacesProperties;
 import com.howaboutus.backend.places.service.dto.GoogleTextSearchResponse;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -18,13 +19,12 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class GooglePlaceSearchClientTest {
 
-    private RestClient.Builder builder;
     private MockRestServiceServer server;
     private GooglePlaceSearchClient client;
 
     @BeforeEach
     void setUp() {
-        builder = RestClient.builder();
+        RestClient.Builder builder = RestClient.builder();
         server = MockRestServiceServer.bindTo(builder).build();
         client = new GooglePlaceSearchClient(
                 builder.build(),
@@ -37,6 +37,7 @@ class GooglePlaceSearchClientTest {
     }
 
     @Test
+    @DisplayName("Google Places 텍스트 검색 엔드포인트로 올바른 헤더와 함께 요청을 전송한다")
     void searchesPlacesUsingTextSearchEndpoint() {
         server.expect(requestTo("https://places.googleapis.com/v1/places:searchText"))
                 .andExpect(method(HttpMethod.POST))

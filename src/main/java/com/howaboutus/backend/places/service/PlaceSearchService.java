@@ -17,7 +17,7 @@ public class PlaceSearchService {
 
     public List<PlaceSearchResult> search(String query) {
         List<PlaceSearchResult> cached = cacheService.get(query);
-        if (cached != null) {
+        if (!cached.isEmpty()) {
             return cached;
         }
 
@@ -28,20 +28,38 @@ public class PlaceSearchService {
         Map<String, Long> placeIds = placeReferenceService.ensurePlaceIds(googlePlaceIds);
 
         List<PlaceSearchResult> results = places.stream()
-                .map(place -> new PlaceSearchResult(
-                        placeIds.get(place.id()),
-                        place.id(),
-                        place.displayName() == null ? null : place.displayName().text(),
-                        place.formattedAddress(),
-                        place.location() == null ? null
-                                : new PlaceSearchResult.Location(place.location().latitude(), place.location().longitude()),
-                        place.primaryType(),
-                        place.rating(),
-                        place.photos() == null || place.photos().isEmpty() ? null : place.photos().getFirst().name()
-                ))
+                .map(place -> toResult(place, placeIds))
                 .toList();
 
         cacheService.put(query, results);
         return results;
+    }
+
+    private PlaceSearchResult toResult(GoogleTextSearchResponse.PlaceItem place, Map<String, Long> placeIds) {
+        String name = null;
+        if (place.displayName() != null) {
+            name = place.displayName().text();
+        }
+
+        PlaceSearchResult.Location location = null;
+        if (place.location() != null) {
+            location = new PlaceSearchResult.Location(place.location().latitude(), place.location().longitude());
+        }
+
+        String photoName = null;
+        if (place.photos() != null && !place.photos().isEmpty()) {
+            photoName = place.photos().getFirst().name();
+        }
+
+        return new PlaceSearchResult(
+                placeIds.get(place.id()),
+                place.id(),
+                name,
+                place.formattedAddress(),
+                location,
+                place.primaryType(),
+                place.rating(),
+                photoName
+        );
     }
 }

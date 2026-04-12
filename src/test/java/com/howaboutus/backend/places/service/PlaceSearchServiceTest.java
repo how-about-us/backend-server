@@ -5,6 +5,7 @@ import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -28,6 +29,7 @@ class PlaceSearchServiceTest {
     }
 
     @Test
+    @DisplayName("캐시에 결과가 있으면 Google API를 호출하지 않고 캐시 값을 반환한다")
     void returnsCachedResultsBeforeCallingGoogle() {
         List<PlaceSearchResult> cached = List.of(new PlaceSearchResult(
                 1L,
@@ -48,8 +50,9 @@ class PlaceSearchServiceTest {
     }
 
     @Test
+    @DisplayName("캐시 미스 시 Google API를 호출하고 내부 ID를 저장한 뒤 결과를 캐시에 저장한다")
     void fetchesFromGooglePersistsInternalIdsAndCachesMisses() {
-        given(cacheService.get("seoul cafe")).willReturn(null);
+        given(cacheService.get("seoul cafe")).willReturn(List.of());
         given(googleClient.search("seoul cafe")).willReturn(List.of(
                 new GoogleTextSearchResponse.PlaceItem(
                         "ChIJ1",

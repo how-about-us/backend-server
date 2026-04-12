@@ -32,7 +32,7 @@ public class GooglePlaceSearchClient {
             }
             return response.places();
         } catch (RestClientException exception) {
-            throw new ExternalApiException("Google Places API 호출에 실패했습니다");
+            throw new ExternalApiException(exception);
         }
     }
 }

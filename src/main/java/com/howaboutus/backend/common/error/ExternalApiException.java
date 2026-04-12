@@ -1,8 +1,9 @@
 package com.howaboutus.backend.common.error;
 
-public class ExternalApiException extends RuntimeException {
+public class ExternalApiException extends CustomException {
 
-    public ExternalApiException(String message) {
-        super(message);
+    public ExternalApiException(Throwable cause) {
+        super(ErrorCode.EXTERNAL_API_ERROR);
+        initCause(cause);
     }
 }

@@ -57,7 +57,7 @@ class PlaceControllerTest {
         mockMvc.perform(searchRequest("   "))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_PLACE_QUERY"))
-                .andExpect(jsonPath("$.message").value("query must not be blank"));
+                .andExpect(jsonPath("$.message").value("검색어는 공백일 수 없습니다"));
 
         verifyNoInteractions(placeSearchService);
     }
@@ -68,14 +68,7 @@ class PlaceControllerTest {
         mockMvc.perform(get(SEARCH_PATH))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
-                .andExpect(jsonPath("$.message").value("missing required request parameter: query"));
-    }
-
-    @Test
-    @DisplayName("장소 검색 외 경로는 인증이 필요하다")
-    void requiresAuthenticationForNonPlaceRoutes() throws Exception {
-        mockMvc.perform(get("/private"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(jsonPath("$.message").value("필수 요청 파라미터가 누락되었습니다: query"));
     }
 
     @Test

@@ -296,7 +296,7 @@ git commit -m "feat: 장소 검색 엔드포인트 골격 추가"
 package com.howaboutus.backend.places.repository;
 
 import com.howaboutus.backend.places.service.PlaceReferenceService;
-import com.howaboutus.backend.support.AbstractPostgresContainerTest;
+import com.howaboutus.backend.support.BaseIntegrationTest;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -1093,7 +1093,7 @@ git commit -m "feat: 장소 검색 캐시와 서비스 구현"
 ```java
 package com.howaboutus.backend;
 
-import com.howaboutus.backend.support.AbstractPostgresContainerTest;
+import com.howaboutus.backend.support.BaseIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -1227,4 +1227,3 @@ git commit -m "feat: 구글 장소 검색 기능 마무리"
 - 응답 타입은 모든 task에서 `PlaceSearchResponse`
 - 영속 참조 서비스는 모든 task에서 `PlaceReferenceService.ensurePlaceIds`
 - 외부 호출 DTO는 `GoogleTextSearchResponse.PlaceItem`
-

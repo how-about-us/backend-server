@@ -8,9 +8,9 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum ErrorCode {
 
-    INVALID_PLACE_QUERY(HttpStatus.BAD_REQUEST, "INVALID_PLACE_QUERY", "query must not be blank");
+    // 400 BAD REQUEST
+    INVALID_PLACE_QUERY(HttpStatus.BAD_REQUEST, "검색어는 공백일 수 없습니다");
 
     private final HttpStatus status;
-    private final String code;
     private final String message;
 }

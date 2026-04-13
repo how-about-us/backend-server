@@ -14,3 +14,8 @@ google:
     api-key: ${GOOGLE_PLACES_API_KEY}
     base-url: https://places.googleapis.com
     field-mask: places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.rating,places.photos
+
+  oauth:
+    client-id: ${GOOGLE_OAUTH_CLIENT_ID}
+    client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET}
+    token-uri: https://oauth2.googleapis.com/token

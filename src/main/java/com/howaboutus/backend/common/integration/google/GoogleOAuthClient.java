@@ -1,4 +1,4 @@
-package com.howaboutus.backend.auth.service;
+package com.howaboutus.backend.common.integration.google;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;

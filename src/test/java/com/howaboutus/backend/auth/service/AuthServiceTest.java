@@ -8,6 +8,8 @@ import com.howaboutus.backend.auth.entity.User;
 import com.howaboutus.backend.auth.repository.UserRepository;
 import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
 import java.util.Optional;
+
+import com.howaboutus.backend.common.integration.google.GoogleOAuthClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package com.howaboutus.backend.auth.service;
+package com.howaboutus.backend.common.integration.google;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -8,9 +8,10 @@ import static org.mockito.Mockito.mock;
 
 import com.howaboutus.backend.auth.service.dto.GoogleTokenResponse;
 import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
-import com.howaboutus.backend.common.config.GoogleOAuthProperties;
+import com.howaboutus.backend.common.config.properties.GoogleOAuthProperties;
 import com.howaboutus.backend.common.error.CustomException;
 import java.util.Base64;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

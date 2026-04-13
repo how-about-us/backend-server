@@ -6,7 +6,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
 @Configuration
-public class GooglePlacesClientConfig {
+public class GoogleClientConfig {
+
+    @Bean
+    RestClient googleOAuthRestClient() {
+        return RestClient.builder()
+                .build();
+    }
 
     @Bean
     RestClient googlePlacesRestClient(GooglePlacesProperties properties) {

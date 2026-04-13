@@ -478,7 +478,7 @@ class GoogleOAuthClientTest {
 
 - [ ] **Step 2: 테스트 실행 — 컴파일 실패 확인**
 
-Run: `./gradlew test --tests 'com.howaboutus.backend.auth.service.GoogleOAuthClientTest'`
+Run: `./gradlew test --tests 'com.howaboutus.backend.common.integration.google.GoogleOAuthClientTest'`
 Expected: 컴파일 실패
 
 - [ ] **Step 3: application.yaml에 Google OAuth, JWT, CORS 설정 추가**
@@ -655,7 +655,7 @@ public class GoogleOAuthClient {
 
 - [ ] **Step 9: 테스트 실행 — 통과 확인**
 
-Run: `./gradlew test --tests 'com.howaboutus.backend.auth.service.GoogleOAuthClientTest'`
+Run: `./gradlew test --tests 'com.howaboutus.backend.common.integration.google.GoogleOAuthClientTest'`
 Expected: 2 tests PASSED
 
 - [ ] **Step 10: 커밋**

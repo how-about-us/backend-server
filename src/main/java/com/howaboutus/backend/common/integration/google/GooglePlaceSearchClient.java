@@ -1,6 +1,6 @@
 package com.howaboutus.backend.common.integration.google;
 
-import com.howaboutus.backend.common.config.GooglePlacesProperties;
+import com.howaboutus.backend.common.config.properties.GooglePlacesProperties;
 import com.howaboutus.backend.common.error.ExternalApiException;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchRequest;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;

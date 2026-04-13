@@ -1,4 +1,4 @@
-package com.howaboutus.backend.auth.service.dto;
+package com.howaboutus.backend.common.integration.google.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

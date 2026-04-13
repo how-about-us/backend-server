@@ -1,6 +1,8 @@
 package com.howaboutus.backend.common.config;
 
 import java.util.List;
+
+import com.howaboutus.backend.common.config.properties.CorsProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +17,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @RequiredArgsConstructor
-@EnableConfigurationProperties(CorsProperties.class)
+@EnableConfigurationProperties(CorsProperties.class)    // 테스트 시 정상 동작을 위해 추가
 public class SecurityConfig {
 
     private final CorsProperties corsProperties;

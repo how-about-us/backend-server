@@ -6,7 +6,7 @@
 
 ## 테스트
 - [ ] `./gradlew build`
-- [ ] `./gradlew test`
+- [ ] `/review-code-against-docs` 스킬로 검증
 - [ ] 그 외 수동 검증:
   - 
 

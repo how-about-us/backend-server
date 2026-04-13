@@ -2,9 +2,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-  docker:
-    compose:
-      enabled: false
 
 jwt:
   secret: test-secret-key-for-testing-purpose-only-must-be-32chars

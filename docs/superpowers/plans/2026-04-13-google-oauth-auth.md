@@ -394,7 +394,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
-import com.howaboutus.backend.auth.service.dto.GoogleTokenResponse;
+import com.howaboutus.backend.common.integration.google.dto.GoogleTokenResponse;
 import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
 import com.howaboutus.backend.common.config.GoogleOAuthProperties;
 import com.howaboutus.backend.common.error.CustomException;
@@ -478,7 +478,7 @@ class GoogleOAuthClientTest {
 
 - [ ] **Step 2: 테스트 실행 — 컴파일 실패 확인**
 
-Run: `./gradlew test --tests 'com.howaboutus.backend.auth.service.GoogleOAuthClientTest'`
+Run: `./gradlew test --tests 'com.howaboutus.backend.common.integration.google.GoogleOAuthClientTest'`
 Expected: 컴파일 실패
 
 - [ ] **Step 3: application.yaml에 Google OAuth, JWT, CORS 설정 추가**
@@ -589,7 +589,7 @@ package com.howaboutus.backend.auth.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.howaboutus.backend.auth.service.dto.GoogleTokenResponse;
+import com.howaboutus.backend.common.integration.google.dto.GoogleTokenResponse;
 import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
 import com.howaboutus.backend.common.config.GoogleOAuthProperties;
 import com.howaboutus.backend.common.error.CustomException;
@@ -655,7 +655,7 @@ public class GoogleOAuthClient {
 
 - [ ] **Step 9: 테스트 실행 — 통과 확인**
 
-Run: `./gradlew test --tests 'com.howaboutus.backend.auth.service.GoogleOAuthClientTest'`
+Run: `./gradlew test --tests 'com.howaboutus.backend.common.integration.google.GoogleOAuthClientTest'`
 Expected: 2 tests PASSED
 
 - [ ] **Step 10: 커밋**

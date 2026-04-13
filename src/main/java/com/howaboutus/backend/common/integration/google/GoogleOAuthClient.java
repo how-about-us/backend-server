@@ -1,10 +1,10 @@
-package com.howaboutus.backend.auth.service;
+package com.howaboutus.backend.common.integration.google;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
-import com.howaboutus.backend.auth.service.dto.GoogleTokenResponse;
+import com.howaboutus.backend.common.integration.google.dto.GoogleTokenResponse;
 import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
-import com.howaboutus.backend.common.config.GoogleOAuthProperties;
+import com.howaboutus.backend.common.config.properties.GoogleOAuthProperties;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import java.net.URLEncoder;
@@ -22,7 +22,7 @@ public class GoogleOAuthClient {
 
     private final RestClient googleOAuthRestClient;
     private final GoogleOAuthProperties properties;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     public GoogleUserInfo login(String authorizationCode) {
         GoogleTokenResponse tokenResponse = exchangeCode(authorizationCode);
@@ -53,11 +53,15 @@ public class GoogleOAuthClient {
             String payload = idToken.split("\\.")[1];
             byte[] decoded = Base64.getUrlDecoder().decode(payload);
             JsonNode claims = objectMapper.readTree(decoded);
+            String profileImageUrl = null;
+            if (claims.has("picture")) {
+                profileImageUrl = claims.get("picture").asString();
+            }
             return new GoogleUserInfo(
                     claims.get("sub").asString(),
                     claims.get("email").asString(),
                     claims.get("name").asString(),
-                    claims.has("picture") ? claims.get("picture").asString() : null
+                    profileImageUrl
             );
         } catch (Exception e) {
             throw new CustomException(ErrorCode.GOOGLE_AUTH_FAILED);

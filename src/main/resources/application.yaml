@@ -14,3 +14,9 @@ google:
     api-key: ${GOOGLE_PLACES_API_KEY}
     base-url: https://places.googleapis.com
     field-mask: places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.rating,places.photos
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    disable-swagger-default-url: true

@@ -11,6 +11,7 @@ import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
 import com.howaboutus.backend.common.config.properties.GoogleOAuthProperties;
 import com.howaboutus.backend.common.error.CustomException;
 import java.util.Base64;
+import tools.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,7 +38,7 @@ class GoogleOAuthClientTest {
                 "http://localhost:3000/callback",
                 "https://oauth2.googleapis.com/token"
         );
-        googleOAuthClient = new GoogleOAuthClient(restClient, properties);
+        googleOAuthClient = new GoogleOAuthClient(restClient, properties, new ObjectMapper());
     }
 
     @Test

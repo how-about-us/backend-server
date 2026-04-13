@@ -53,11 +53,15 @@ public class GoogleOAuthClient {
             String payload = idToken.split("\\.")[1];
             byte[] decoded = Base64.getUrlDecoder().decode(payload);
             JsonNode claims = objectMapper.readTree(decoded);
+            String profileImageUrl = null;
+            if (claims.has("picture")) {
+                profileImageUrl = claims.get("picture").asString();
+            }
             return new GoogleUserInfo(
                     claims.get("sub").asString(),
                     claims.get("email").asString(),
                     claims.get("name").asString(),
-                    claims.has("picture") ? claims.get("picture").asString() : null
+                    profileImageUrl
             );
         } catch (Exception e) {
             throw new CustomException(ErrorCode.GOOGLE_AUTH_FAILED);

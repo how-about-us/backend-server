@@ -6,7 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
-import com.howaboutus.backend.auth.service.dto.GoogleTokenResponse;
+import com.howaboutus.backend.common.integration.google.dto.GoogleTokenResponse;
 import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
 import com.howaboutus.backend.common.config.properties.GoogleOAuthProperties;
 import com.howaboutus.backend.common.error.CustomException;

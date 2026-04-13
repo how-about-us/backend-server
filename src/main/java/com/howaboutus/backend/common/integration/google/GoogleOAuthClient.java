@@ -2,7 +2,7 @@ package com.howaboutus.backend.common.integration.google;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
-import com.howaboutus.backend.auth.service.dto.GoogleTokenResponse;
+import com.howaboutus.backend.common.integration.google.dto.GoogleTokenResponse;
 import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
 import com.howaboutus.backend.common.config.properties.GoogleOAuthProperties;
 import com.howaboutus.backend.common.error.CustomException;
@@ -22,7 +22,7 @@ public class GoogleOAuthClient {
 
     private final RestClient googleOAuthRestClient;
     private final GoogleOAuthProperties properties;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     public GoogleUserInfo login(String authorizationCode) {
         GoogleTokenResponse tokenResponse = exchangeCode(authorizationCode);

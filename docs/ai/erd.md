@@ -189,6 +189,7 @@ Google Place ID를 내부 FK와 연결하기 위한 영속 참조 테이블. 검
 | `room:{roomId}:metadata` | 방 메타데이터 캐시 (DB 스냅샷) | Sliding TTL |
 | `room:{roomId}:connected_users` | 현재 접속 중인 유저 목록 (ephemeral) | 세션 종료 시 제거 |
 | `places:search:{normalizedQuery}` | 장소 검색 결과 캐시 | 10분 |
+| `refresh:{userId}` | Refresh Token 저장 (예정) | TTL 7~14일 |
 
 ---
 

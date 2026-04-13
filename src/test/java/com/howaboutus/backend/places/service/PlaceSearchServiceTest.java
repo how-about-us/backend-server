@@ -1,18 +1,19 @@
 package com.howaboutus.backend.places.service;
 
-import com.howaboutus.backend.common.config.CacheConfig;
+import com.howaboutus.backend.common.config.CachePolicy;
 import com.howaboutus.backend.common.integration.google.GooglePlaceSearchClient;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 import com.howaboutus.backend.support.BaseIntegrationTest;
-import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -35,28 +36,29 @@ class PlaceSearchServiceTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
-        cacheManager.getCache(CacheConfig.PLACE_SEARCH_CACHE).clear();
+        cacheManager.getCache(CachePolicy.Keys.PLACES_SEARCH).clear();
     }
 
     @Test
     @DisplayName("같은 검색어로 두 번 조회하면 두 번째 조회는 캐시에서 반환한다")
     void returnsCachedResultsOnSecondLookup() {
-        given(googleClient.search("seoul cafe")).willReturn(List.of(placeItem("ChIJ1")));
+        String query = "seoul cafe";
+        given(googleClient.search(query)).willReturn(List.of(placeItem()));
         given(placeReferenceService.ensurePlaceIds(List.of("ChIJ1")))
                 .willReturn(Map.of("ChIJ1", 11L));
 
-        List<PlaceSearchResult> first = placeSearchService.search("seoul cafe");
-        List<PlaceSearchResult> second = placeSearchService.search("seoul cafe");
+        List<PlaceSearchResult> first = placeSearchService.search(query);
+        List<PlaceSearchResult> second = placeSearchService.search(query);
 
         assertThat(second).isEqualTo(first);
-        then(googleClient).should(times(1)).search("seoul cafe");
+        then(googleClient).should(times(1)).search(query);
         then(placeReferenceService).should(times(1)).ensurePlaceIds(List.of("ChIJ1"));
     }
 
     @Test
     @DisplayName("검색어 정규화 결과가 같으면 같은 캐시 키를 사용한다")
     void usesNormalizedCacheKey() {
-        given(googleClient.search("  SeOul   cafe  ")).willReturn(List.of(placeItem("ChIJ1")));
+        given(googleClient.search("  SeOul   cafe  ")).willReturn(List.of(placeItem()));
         given(placeReferenceService.ensurePlaceIds(List.of("ChIJ1")))
                 .willReturn(Map.of("ChIJ1", 11L));
 
@@ -83,15 +85,15 @@ class PlaceSearchServiceTest extends BaseIntegrationTest {
         then(placeReferenceService).should(times(1)).ensurePlaceIds(List.of());
     }
 
-    private static GoogleTextSearchResponse.PlaceItem placeItem(String googlePlaceId) {
+    private static GoogleTextSearchResponse.PlaceItem placeItem() {
         return new GoogleTextSearchResponse.PlaceItem(
-                googlePlaceId,
+                "ChIJ1",
                 new GoogleTextSearchResponse.DisplayName("Cafe Layered", "ko"),
                 "서울 종로구 ...",
                 new GoogleTextSearchResponse.Location(37.57, 126.98),
                 "cafe",
                 4.5,
-                List.of(new GoogleTextSearchResponse.Photo("places/" + googlePlaceId + "/photos/1"))
+                List.of(new GoogleTextSearchResponse.Photo("places/" + "ChIJ1" + "/photos/1"))
         );
     }
 }

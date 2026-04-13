@@ -22,10 +22,6 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) {
-        // TODO(human): CORS 설정을 연결하고, 경로별 접근 제어를 구성해주세요.
-        // - cors(): corsConfigurationSource()를 사용하도록 연결
-        // - /auth/** 와 /places/**, /actuator/** 는 인증 없이 허용
-        // - 그 외 요청은 인증 필요
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)

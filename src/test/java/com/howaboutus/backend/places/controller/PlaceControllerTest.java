@@ -3,7 +3,9 @@ package com.howaboutus.backend.places.controller;
 import com.howaboutus.backend.common.config.SecurityConfig;
 import com.howaboutus.backend.common.error.ExternalApiException;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
+import com.howaboutus.backend.places.service.PlaceDetailService;
 import com.howaboutus.backend.places.service.PlaceSearchService;
+import com.howaboutus.backend.places.service.dto.PlaceDetailResult;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 import java.util.List;
 import org.hamcrest.Matchers;
@@ -37,7 +39,11 @@ class PlaceControllerTest {
     @MockitoBean
     private PlaceSearchService placeSearchService;
 
+    @MockitoBean
+    private PlaceDetailService placeDetailService;
+
     private PlaceSearchResult placeSearchResult;
+    private PlaceDetailResult placeDetailResult;
 
     @BeforeEach
     void setUp() {
@@ -49,6 +55,19 @@ class PlaceControllerTest {
                 "cafe",
                 4.5,
                 "places/ChIJ123/photos/abc"
+        );
+        placeDetailResult = new PlaceDetailResult(
+                "ChIJ123",
+                "Cafe Layered",
+                "서울 종로구 ...",
+                new PlaceDetailResult.Location(37.57, 126.98),
+                "cafe",
+                4.5,
+                "02-123-4567",
+                "https://layered.example",
+                "https://maps.google.com/?cid=123",
+                List.of("월요일: 09:00~18:00"),
+                List.of("places/ChIJ123/photos/a", "places/ChIJ123/photos/b")
         );
     }
 
@@ -130,6 +149,33 @@ class PlaceControllerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"))
                 .andExpect(jsonPath("$.message").value("서버 내부 오류가 발생했습니다"));
+    }
+
+    @Test
+    @DisplayName("유효한 googlePlaceId로 장소 상세 조회 시 결과를 반환한다")
+    void returnsPlaceDetailWhenGooglePlaceIdIsValid() throws Exception {
+        given(placeDetailService.getDetail("ChIJ123"))
+                .willReturn(placeDetailResult);
+
+        mockMvc.perform(get("/places/{googlePlaceId}", "ChIJ123"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.googlePlaceId").value("ChIJ123"))
+                .andExpect(jsonPath("$.phoneNumber").value("02-123-4567"))
+                .andExpect(jsonPath("$.photoNames[0]").value("places/ChIJ123/photos/a"));
+
+        then(placeDetailService).should().getDetail("ChIJ123");
+    }
+
+    @Test
+    @DisplayName("장소 상세 조회 중 외부 API 오류 발생 시 502를 반환한다")
+    void returnsBadGatewayWhenPlaceDetailLookupFails() throws Exception {
+        given(placeDetailService.getDetail("ChIJ123"))
+                .willThrow(new ExternalApiException(new RuntimeException("connection timeout")));
+
+        mockMvc.perform(get("/places/{googlePlaceId}", "ChIJ123"))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.code").value("EXTERNAL_API_ERROR"))
+                .andExpect(jsonPath("$.message").value("외부 API 호출 중 오류가 발생했습니다"));
     }
 
     private static MockHttpServletRequestBuilder searchRequest(String query) {

@@ -15,11 +15,13 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public enum CachePolicy {
 
-    ;
+    PLACE_DETAIL(Keys.PLACE_DETAIL, Duration.ofHours(3));
 
     public static final class Keys {
         private Keys() {
         }
+
+        public static final String PLACE_DETAIL = "place:detail";
     }
 
     private final String key;

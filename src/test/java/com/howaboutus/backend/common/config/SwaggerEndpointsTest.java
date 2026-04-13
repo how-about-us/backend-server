@@ -1,6 +1,7 @@
 package com.howaboutus.backend.common.config;
 
 import com.howaboutus.backend.places.controller.PlaceController;
+import com.howaboutus.backend.places.service.PlaceDetailService;
 import com.howaboutus.backend.places.service.PlaceSearchService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,9 @@ class SwaggerEndpointsTest {
 
     @MockitoBean
     private PlaceSearchService placeSearchService;
+
+    @MockitoBean
+    private PlaceDetailService placeDetailService;
 
     @Test
     @DisplayName("OpenAPI 문서를 조회할 수 있다")

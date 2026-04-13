@@ -42,7 +42,6 @@ class PlaceControllerTest {
     @BeforeEach
     void setUp() {
         placeSearchResult = new PlaceSearchResult(
-                1L,
                 "ChIJ123",
                 "Cafe Layered",
                 "서울 종로구 ...",
@@ -91,7 +90,6 @@ class PlaceControllerTest {
     @DisplayName("검색 결과에 좌표가 없으면 location을 null로 반환한다")
     void returnsNullLocationWhenSearchResultDoesNotContainCoordinates() throws Exception {
         PlaceSearchResult resultWithoutLocation = new PlaceSearchResult(
-                1L,
                 "ChIJ123",
                 "Cafe Layered",
                 "서울 종로구 ...",

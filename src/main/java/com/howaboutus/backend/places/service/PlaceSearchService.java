@@ -1,36 +1,31 @@
 package com.howaboutus.backend.places.service;
 
-import com.howaboutus.backend.common.config.CacheConfig;
+import com.howaboutus.backend.common.config.CachePolicy;
 import com.howaboutus.backend.common.integration.google.GooglePlaceSearchClient;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
-import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class PlaceSearchService {
 
     private final GooglePlaceSearchClient googlePlaceSearchClient;
-    private final PlaceReferenceService placeReferenceService;
 
-    @Cacheable(cacheNames = CacheConfig.PLACE_SEARCH_CACHE, keyGenerator = "placeSearchKeyGenerator")
+    @Cacheable(cacheNames = CachePolicy.Keys.PLACES_SEARCH, keyGenerator = "placeSearchKeyGenerator")
     public List<PlaceSearchResult> search(String query) {
         List<GoogleTextSearchResponse.PlaceItem> places = googlePlaceSearchClient.search(query);
-        List<String> googlePlaceIds = places.stream()
-                .map(GoogleTextSearchResponse.PlaceItem::id)
-                .toList();
-        Map<String, Long> placeIds = placeReferenceService.ensurePlaceIds(googlePlaceIds);
 
         return places.stream()
-                .map(place -> toResult(place, placeIds))
+                .map(this::toResult)
                 .toList();
     }
 
-    private PlaceSearchResult toResult(GoogleTextSearchResponse.PlaceItem place, Map<String, Long> placeIds) {
+    private PlaceSearchResult toResult(GoogleTextSearchResponse.PlaceItem place) {
         String name = null;
         if (place.displayName() != null) {
             name = place.displayName().text();
@@ -47,7 +42,6 @@ public class PlaceSearchService {
         }
 
         return new PlaceSearchResult(
-                placeIds.get(place.id()),
                 place.id(),
                 name,
                 place.formattedAddress(),

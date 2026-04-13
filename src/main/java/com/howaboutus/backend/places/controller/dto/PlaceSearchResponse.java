@@ -3,7 +3,6 @@ package com.howaboutus.backend.places.controller.dto;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 
 public record PlaceSearchResponse(
-        Long placeId,
         String googlePlaceId,
         String name,
         String formattedAddress,
@@ -22,7 +21,6 @@ public record PlaceSearchResponse(
         }
 
         return new PlaceSearchResponse(
-                result.placeId(),
                 result.googlePlaceId(),
                 result.name(),
                 result.formattedAddress(),

@@ -1,7 +1,6 @@
 package com.howaboutus.backend.places.service.dto;
 
 public record PlaceSearchResult(
-        Long placeId,
         String googlePlaceId,
         String name,
         String formattedAddress,

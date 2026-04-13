@@ -1,6 +1,6 @@
 package com.howaboutus.backend.common.integration.google;
 
-import com.howaboutus.backend.common.config.GooglePlacesProperties;
+import com.howaboutus.backend.common.config.properties.GooglePlacesProperties;
 import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDetailResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

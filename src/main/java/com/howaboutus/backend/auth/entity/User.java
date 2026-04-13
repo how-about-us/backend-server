@@ -24,7 +24,7 @@ public class User extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false, length = 50)
@@ -36,7 +36,7 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false, length = 20)
     private String provider;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String providerId;
 
     private User(String providerId, String email, String nickname, String profileImageUrl, String provider) {

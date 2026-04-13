@@ -25,6 +25,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) {
         return http
+                .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
@@ -36,7 +37,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**")
                         .permitAll()
                         // 일단 임시로 인증 열어 놓음
-                        .requestMatchers("/**").permitAll())
+                        .anyRequest().permitAll())
                 //cors 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .build();

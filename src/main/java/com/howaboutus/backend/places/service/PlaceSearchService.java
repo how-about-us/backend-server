@@ -15,9 +15,8 @@ public class PlaceSearchService {
     private final GooglePlaceSearchClient googlePlaceSearchClient;
 
     public List<PlaceSearchResult> search(String query) {
-        List<GoogleTextSearchResponse.PlaceItem> places = googlePlaceSearchClient.search(query);
-
-        return places.stream()
+        return googlePlaceSearchClient.search(query)
+                .stream()
                 .map(this::toResult)
                 .toList();
     }

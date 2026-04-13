@@ -1,5 +1,6 @@
 package com.howaboutus.backend.common.error;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,13 @@ public class GlobalExceptionHandler {
         String message = "필수 요청 파라미터가 누락되었습니다: " + e.getParameterName();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiErrorResponse.of(HttpStatus.BAD_REQUEST, message));
+    }
+
+    // 검증 값의 종류가 늘게 되면 에러 코드와 메시지를 수정할 필요가 있음
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleConstraintViolationException() {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(ErrorCode.INVALID_PLACE_QUERY));
     }
 
     @ExceptionHandler(Exception.class)

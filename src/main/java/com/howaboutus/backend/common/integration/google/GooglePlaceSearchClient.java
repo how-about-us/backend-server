@@ -23,7 +23,7 @@ public class GooglePlaceSearchClient {
                     .uri("/v1/places:searchText")
                     .header("X-Goog-Api-Key", properties.apiKey())
                     .header("X-Goog-FieldMask", properties.fieldMask())
-                    .body(new GoogleTextSearchRequest(query))
+                    .body(GoogleTextSearchRequest.withKorean(query))    // 우선은 한국어 응답으로 전달함
                     .retrieve()
                     .body(GoogleTextSearchResponse.class);
 

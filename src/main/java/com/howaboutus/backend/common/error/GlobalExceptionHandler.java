@@ -28,8 +28,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiErrorResponse> handleResponseStatusException(ResponseStatusException e) {
         HttpStatus status = HttpStatus.resolve(e.getStatusCode().value());
-        if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
-        String message = e.getReason() != null ? e.getReason() : "알 수 없는 오류가 발생했습니다";
+        if (status == null) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        String message;
+        if (e.getReason() != null) {
+            message = e.getReason();
+        } else {
+            message = "알 수 없는 오류가 발생했습니다";
+        }
         return ResponseEntity.status(status)
                 .body(ApiErrorResponse.of(status, message));
     }

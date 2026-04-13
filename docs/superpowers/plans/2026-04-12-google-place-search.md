@@ -333,7 +333,7 @@ class PlaceReferenceServiceTest extends AbstractPostgresContainerTest {
 Run:
 
 ```bash
-./gradlew test --tests 'com.howaboutus.backend.places.repository.PlaceReferenceServiceTest'
+./gradlew test --tests 'com.howaboutus.backend.places.service.PlaceReferenceServiceTest'
 ```
 
 Expected:
@@ -520,7 +520,7 @@ public abstract class AbstractPostgresContainerTest {
 Run:
 
 ```bash
-./gradlew test --tests 'com.howaboutus.backend.places.repository.PlaceReferenceServiceTest'
+./gradlew test --tests 'com.howaboutus.backend.places.service.PlaceReferenceServiceTest'
 ```
 
 Expected:

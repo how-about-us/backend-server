@@ -1,6 +1,6 @@
-package com.howaboutus.backend.places.repository;
+package com.howaboutus.backend.places.service;
 
-import com.howaboutus.backend.places.service.PlaceReferenceService;
+import com.howaboutus.backend.places.repository.PlaceRepository;
 import com.howaboutus.backend.support.BaseIntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -1,88 +1,97 @@
 package com.howaboutus.backend.places.service;
 
+import com.howaboutus.backend.common.config.CacheConfig;
 import com.howaboutus.backend.common.integration.google.GooglePlaceSearchClient;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
+import com.howaboutus.backend.support.BaseIntegrationTest;
 import java.util.List;
 import java.util.Map;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
 
-class PlaceSearchServiceTest {
+class PlaceSearchServiceTest extends BaseIntegrationTest {
 
-    private PlaceSearchCacheService cacheService;
+    @MockitoBean
     private GooglePlaceSearchClient googleClient;
+
+    @MockitoBean
     private PlaceReferenceService placeReferenceService;
+
+    @Autowired
     private PlaceSearchService placeSearchService;
 
-    @BeforeEach
-    void setUp() {
-        cacheService = Mockito.mock(PlaceSearchCacheService.class);
-        googleClient = Mockito.mock(GooglePlaceSearchClient.class);
-        placeReferenceService = Mockito.mock(PlaceReferenceService.class);
-        placeSearchService = new PlaceSearchService(cacheService, googleClient, placeReferenceService);
+    @Autowired
+    private CacheManager cacheManager;
+
+    @AfterEach
+    void tearDown() {
+        cacheManager.getCache(CacheConfig.PLACE_SEARCH_CACHE).clear();
     }
 
     @Test
-    @DisplayName("캐시에 결과가 있으면 Google API를 호출하지 않고 캐시 값을 반환한다")
-    void returnsCachedResultsBeforeCallingGoogle() {
-        List<PlaceSearchResult> cached = List.of(new PlaceSearchResult(
-                1L,
-                "ChIJ1",
-                "Cafe Layered",
-                "서울 종로구 ...",
-                new PlaceSearchResult.Location(37.57, 126.98),
-                "cafe",
-                4.5,
-                "places/ChIJ1/photos/1"
-        ));
-        given(cacheService.get("seoul cafe")).willReturn(PlaceSearchCacheService.CacheLookup.hit(cached));
-
-        List<PlaceSearchResult> result = placeSearchService.search("seoul cafe");
-
-        assertThat(result).isEqualTo(cached);
-        then(googleClient).shouldHaveNoInteractions();
-    }
-
-    @Test
-    @DisplayName("캐시 미스 시 Google API를 호출하고 내부 ID를 저장한 뒤 결과를 캐시에 저장한다")
-    void fetchesFromGooglePersistsInternalIdsAndCachesMisses() {
-        given(cacheService.get("seoul cafe")).willReturn(PlaceSearchCacheService.CacheLookup.miss());
-        given(googleClient.search("seoul cafe")).willReturn(List.of(
-                new GoogleTextSearchResponse.PlaceItem(
-                        "ChIJ1",
-                        new GoogleTextSearchResponse.DisplayName("Cafe Layered", "ko"),
-                        "서울 종로구 ...",
-                        new GoogleTextSearchResponse.Location(37.57, 126.98),
-                        "cafe",
-                        4.5,
-                        List.of(new GoogleTextSearchResponse.Photo("places/ChIJ1/photos/1"))
-                )
-        ));
+    @DisplayName("같은 검색어로 두 번 조회하면 두 번째 조회는 캐시에서 반환한다")
+    void returnsCachedResultsOnSecondLookup() {
+        given(googleClient.search("seoul cafe")).willReturn(List.of(placeItem("ChIJ1")));
         given(placeReferenceService.ensurePlaceIds(List.of("ChIJ1")))
                 .willReturn(Map.of("ChIJ1", 11L));
 
-        List<PlaceSearchResult> result = placeSearchService.search("seoul cafe");
+        List<PlaceSearchResult> first = placeSearchService.search("seoul cafe");
+        List<PlaceSearchResult> second = placeSearchService.search("seoul cafe");
 
-        assertThat(result.getFirst().placeId()).isEqualTo(11L);
-        then(cacheService).should().put("seoul cafe", result);
+        assertThat(second).isEqualTo(first);
+        then(googleClient).should(times(1)).search("seoul cafe");
+        then(placeReferenceService).should(times(1)).ensurePlaceIds(List.of("ChIJ1"));
     }
 
     @Test
-    @DisplayName("빈 결과가 캐시에 있으면 Google API를 다시 호출하지 않는다")
-    void doesNotCallGoogleWhenEmptyResultsAreCached() {
-        given(cacheService.get("seoul cafe")).willReturn(PlaceSearchCacheService.CacheLookup.hit(List.of()));
+    @DisplayName("검색어 정규화 결과가 같으면 같은 캐시 키를 사용한다")
+    void usesNormalizedCacheKey() {
+        given(googleClient.search("  SeOul   cafe  ")).willReturn(List.of(placeItem("ChIJ1")));
+        given(placeReferenceService.ensurePlaceIds(List.of("ChIJ1")))
+                .willReturn(Map.of("ChIJ1", 11L));
 
-        List<PlaceSearchResult> result = placeSearchService.search("seoul cafe");
+        List<PlaceSearchResult> first = placeSearchService.search("  SeOul   cafe  ");
+        List<PlaceSearchResult> second = placeSearchService.search("seoul cafe");
 
-        assertThat(result).isEmpty();
-        then(googleClient).shouldHaveNoInteractions();
-        then(placeReferenceService).shouldHaveNoInteractions();
+        assertThat(second).isEqualTo(first);
+        then(googleClient).should(times(1)).search("  SeOul   cafe  ");
+        then(placeReferenceService).should(times(1)).ensurePlaceIds(List.of("ChIJ1"));
+    }
+
+    @Test
+    @DisplayName("빈 결과도 캐시되어 같은 검색어 재조회 시 Google API를 다시 호출하지 않는다")
+    void cachesEmptyResults() {
+        given(googleClient.search("seoul cafe")).willReturn(List.of());
+        given(placeReferenceService.ensurePlaceIds(List.of())).willReturn(Map.of());
+
+        List<PlaceSearchResult> first = placeSearchService.search("seoul cafe");
+        List<PlaceSearchResult> second = placeSearchService.search("seoul cafe");
+
+        assertThat(first).isEmpty();
+        assertThat(second).isEmpty();
+        then(googleClient).should(times(1)).search("seoul cafe");
+        then(placeReferenceService).should(times(1)).ensurePlaceIds(List.of());
+    }
+
+    private static GoogleTextSearchResponse.PlaceItem placeItem(String googlePlaceId) {
+        return new GoogleTextSearchResponse.PlaceItem(
+                googlePlaceId,
+                new GoogleTextSearchResponse.DisplayName("Cafe Layered", "ko"),
+                "서울 종로구 ...",
+                new GoogleTextSearchResponse.Location(37.57, 126.98),
+                "cafe",
+                4.5,
+                List.of(new GoogleTextSearchResponse.Photo("places/" + googlePlaceId + "/photos/1"))
+        );
     }
 }

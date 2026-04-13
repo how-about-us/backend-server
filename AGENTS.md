@@ -66,7 +66,7 @@ docker compose -f compose.yaml -f compose.dev.yaml down
 
 ```text
 src/main/java/com/howaboutus/backend/
-├── common/                ← 설정, 공통 예외 처리, 외부 연동 등 비도메인 공통 기능
+├── common/                ← 설정, 공통 엔티티(Base 클래스), 공통 예외 처리, 외부 연동 등 비도메인 공통 기능
 └── <domain>/              ← 주요 기능 도메인별 패키지
 
 src/main/resources/
@@ -77,6 +77,7 @@ src/main/resources/
 
 ## Gotchas
 
+- Spring Boot 4.0은 Jackson 3.x를 사용한다. Jackson 패키지는 `com.fasterxml.jackson`이 아닌 `tools.jackson`이다. (예: `tools.jackson.databind.ObjectMapper`)
 - PostgreSQL 이미지는 `postgis/postgis:17-3.5`를 사용한다.
 - 공간 데이터 엔티티에는 `hibernate-spatial` 타입을 사용한다.
 - dev 환경의 PostgreSQL 포트는 `5433`이다.
@@ -113,6 +114,7 @@ src/main/resources/
 
 ## Before You Finish
 
+- PR 생성 전 `/review-code-against-docs` 스킬로 변경 코드가 문서 스펙과 일치하는지 검증한다.
 - 코드 변경 내용이 관련 문서에 반영되었는지 확인한다.
 - 새로 생긴 미결 사항은 관련 문서에 `미결` 또는 결정 기록으로 남긴다.
 - 확정되지 않은 내용은 `예상안`, `초안`, `미결`처럼 상태가 드러나게 표시한다.

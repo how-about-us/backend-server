@@ -3,9 +3,22 @@ spring:
     hibernate:
       ddl-auto: create-drop
 
+jwt:
+  secret: test-secret-key-for-testing-purpose-only-must-be-32chars
+  access-token-expiration: 3600000
+
+cors:
+  allowed-origins: http://localhost:3000
+
 google:
   places:
-    api-key: test-key
+    api-key: test-places-api-key
     base-url: https://places.googleapis.com
     search-field-mask: places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.rating,places.photos
     detail-field-mask: id,displayName,formattedAddress,location,primaryType,rating,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours.weekdayDescriptions,photos.name
+
+  oauth:
+    client-id: test-client-id
+    client-secret: test-client-secret
+    redirect-uri: http://localhost:8080/auth/callback
+    token-uri: https://oauth2.googleapis.com/token

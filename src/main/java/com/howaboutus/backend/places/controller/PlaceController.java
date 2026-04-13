@@ -2,6 +2,7 @@ package com.howaboutus.backend.places.controller;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.places.controller.dto.PlaceSearchResponse;
 import com.howaboutus.backend.places.service.PlaceSearchService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

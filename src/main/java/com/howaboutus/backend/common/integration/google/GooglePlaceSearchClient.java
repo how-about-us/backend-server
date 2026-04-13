@@ -1,9 +1,9 @@
-package com.howaboutus.backend.places.service;
+package com.howaboutus.backend.common.integration.google;
 
 import com.howaboutus.backend.common.config.GooglePlacesProperties;
 import com.howaboutus.backend.common.error.ExternalApiException;
-import com.howaboutus.backend.places.service.dto.GoogleTextSearchRequest;
-import com.howaboutus.backend.places.service.dto.GoogleTextSearchResponse;
+import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchRequest;
+import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

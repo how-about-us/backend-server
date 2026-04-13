@@ -1,6 +1,7 @@
 package com.howaboutus.backend.places.service;
 
-import com.howaboutus.backend.places.service.dto.GoogleTextSearchResponse;
+import com.howaboutus.backend.common.integration.google.GooglePlaceSearchClient;
+import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 import java.util.List;
 import java.util.Map;

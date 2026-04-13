@@ -870,7 +870,7 @@ git commit -m "feat: 구글 장소 검색 클라이언트 추가"
 package com.howaboutus.backend.places.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.howaboutus.backend.places.controller.PlaceSearchResponse;
+import com.howaboutus.backend.places.dto.PlaceSearchResponse;
 import com.howaboutus.backend.places.service.dto.GoogleTextSearchResponse;
 import java.util.List;
 import java.util.Map;
@@ -960,7 +960,7 @@ package com.howaboutus.backend.places.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.howaboutus.backend.places.controller.PlaceSearchResponse;
+import com.howaboutus.backend.places.dto.PlaceSearchResponse;
 import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -1009,7 +1009,7 @@ public class PlaceSearchCacheService {
 // src/main/java/com/howaboutus/backend/places/service/PlaceSearchService.java
 package com.howaboutus.backend.places.service;
 
-import com.howaboutus.backend.places.controller.PlaceSearchResponse;
+import com.howaboutus.backend.places.dto.PlaceSearchResponse;
 import com.howaboutus.backend.places.service.dto.GoogleTextSearchResponse;
 import java.util.List;
 import java.util.Map;

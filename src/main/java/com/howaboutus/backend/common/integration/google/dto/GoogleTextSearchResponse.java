@@ -1,4 +1,4 @@
-package com.howaboutus.backend.places.service.dto;
+package com.howaboutus.backend.common.integration.google.dto;
 
 import java.util.List;
 

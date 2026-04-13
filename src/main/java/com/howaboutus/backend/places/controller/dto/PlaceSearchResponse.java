@@ -1,4 +1,4 @@
-package com.howaboutus.backend.places.controller;
+package com.howaboutus.backend.places.controller.dto;
 
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 

@@ -24,13 +24,14 @@ class GooglePlaceSearchClientTest {
 
     @BeforeEach
     void setUp() {
-        RestClient.Builder builder = RestClient.builder();
+        RestClient.Builder builder = RestClient.builder()
+                .baseUrl("https://places.googleapis.com");
         server = MockRestServiceServer.bindTo(builder).build();
         client = new GooglePlaceSearchClient(
                 builder.build(),
                 new GooglePlacesProperties(
                         "test-key",
-                        "https://places.googleapis.com",
+                        "https://places.googleapis.com/",
                         "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.rating,places.photos"
                 )
         );

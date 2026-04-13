@@ -16,12 +16,17 @@ public record PlaceSearchResponse(
     }
 
     public static PlaceSearchResponse from(PlaceSearchResult result) {
+        Location location = null;
+        if (result.location() != null) {
+            location = new Location(result.location().lat(), result.location().lng());
+        }
+
         return new PlaceSearchResponse(
                 result.placeId(),
                 result.googlePlaceId(),
                 result.name(),
                 result.formattedAddress(),
-                new Location(result.location().lat(), result.location().lng()),
+                location,
                 result.primaryType(),
                 result.rating(),
                 result.photoName()

@@ -6,6 +6,7 @@ import com.howaboutus.backend.common.error.GlobalExceptionHandler;
 import com.howaboutus.backend.places.service.PlaceSearchService;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 import java.util.List;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -82,6 +83,29 @@ class PlaceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].googlePlaceId").value("ChIJ123"))
                 .andExpect(jsonPath("$[0].name").value("Cafe Layered"));
+
+        then(placeSearchService).should().search(VALID_QUERY);
+    }
+
+    @Test
+    @DisplayName("검색 결과에 좌표가 없으면 location을 null로 반환한다")
+    void returnsNullLocationWhenSearchResultDoesNotContainCoordinates() throws Exception {
+        PlaceSearchResult resultWithoutLocation = new PlaceSearchResult(
+                1L,
+                "ChIJ123",
+                "Cafe Layered",
+                "서울 종로구 ...",
+                null,
+                "cafe",
+                4.5,
+                "places/ChIJ123/photos/abc"
+        );
+        given(placeSearchService.search(VALID_QUERY))
+                .willReturn(List.of(resultWithoutLocation));
+
+        mockMvc.perform(searchRequest(VALID_QUERY))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].location").value(Matchers.nullValue()));
 
         then(placeSearchService).should().search(VALID_QUERY);
     }

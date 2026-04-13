@@ -17,9 +17,9 @@ public class PlaceSearchService {
     private final PlaceReferenceService placeReferenceService;
 
     public List<PlaceSearchResult> search(String query) {
-        List<PlaceSearchResult> cached = cacheService.get(query);
-        if (!cached.isEmpty()) {
-            return cached;
+        PlaceSearchCacheService.CacheLookup cacheLookup = cacheService.get(query);
+        if (cacheLookup.hit()) {
+            return cacheLookup.results();
         }
 
         List<GoogleTextSearchResponse.PlaceItem> places = googlePlaceSearchClient.search(query);

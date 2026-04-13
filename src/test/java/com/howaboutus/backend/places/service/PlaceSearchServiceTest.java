@@ -42,7 +42,7 @@ class PlaceSearchServiceTest {
                 4.5,
                 "places/ChIJ1/photos/1"
         ));
-        given(cacheService.get("seoul cafe")).willReturn(cached);
+        given(cacheService.get("seoul cafe")).willReturn(PlaceSearchCacheService.CacheLookup.hit(cached));
 
         List<PlaceSearchResult> result = placeSearchService.search("seoul cafe");
 
@@ -53,7 +53,7 @@ class PlaceSearchServiceTest {
     @Test
     @DisplayName("캐시 미스 시 Google API를 호출하고 내부 ID를 저장한 뒤 결과를 캐시에 저장한다")
     void fetchesFromGooglePersistsInternalIdsAndCachesMisses() {
-        given(cacheService.get("seoul cafe")).willReturn(List.of());
+        given(cacheService.get("seoul cafe")).willReturn(PlaceSearchCacheService.CacheLookup.miss());
         given(googleClient.search("seoul cafe")).willReturn(List.of(
                 new GoogleTextSearchResponse.PlaceItem(
                         "ChIJ1",
@@ -72,5 +72,17 @@ class PlaceSearchServiceTest {
 
         assertThat(result.getFirst().placeId()).isEqualTo(11L);
         then(cacheService).should().put("seoul cafe", result);
+    }
+
+    @Test
+    @DisplayName("빈 결과가 캐시에 있으면 Google API를 다시 호출하지 않는다")
+    void doesNotCallGoogleWhenEmptyResultsAreCached() {
+        given(cacheService.get("seoul cafe")).willReturn(PlaceSearchCacheService.CacheLookup.hit(List.of()));
+
+        List<PlaceSearchResult> result = placeSearchService.search("seoul cafe");
+
+        assertThat(result).isEmpty();
+        then(googleClient).shouldHaveNoInteractions();
+        then(placeReferenceService).shouldHaveNoInteractions();
     }
 }

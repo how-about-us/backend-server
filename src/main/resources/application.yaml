@@ -18,4 +18,13 @@ google:
   oauth:
     client-id: ${GOOGLE_OAUTH_CLIENT_ID}
     client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET}
+    redirect-uri: ${GOOGLE_REDIRECT_URI}
     token-uri: https://oauth2.googleapis.com/token
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: 3600000
+
+cors:
+  allowed-origins:
+    - ${CORS_ALLOWED_ORIGIN:http://localhost:3000}

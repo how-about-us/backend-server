@@ -30,14 +30,16 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**")
+                        .permitAll()
+                        // 일단 임시로 인증 열어 놓음
+                        .anyRequest().permitAll())
                 //cors 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                .authorizeHttpRequests(auth -> auth
-                //개발의 편의성을 위해, 임시로 열어놓음.나중에 주석풀기.
-                // .requestMatchers("/auth/oauth2/google","/auth/token/refresh").permitAll()
-                // .anyRequest().authenticated()
-                    .anyRequest().permitAll())
                 .build();
     }
 

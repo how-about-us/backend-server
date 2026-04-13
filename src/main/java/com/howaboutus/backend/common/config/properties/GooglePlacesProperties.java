@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record GooglePlacesProperties(
         String apiKey,
         String baseUrl,
-        String fieldMask
+        String searchFieldMask,
+        String detailFieldMask
 ) {
 }

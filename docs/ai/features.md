@@ -60,12 +60,12 @@
 
 ## 4. 장소 (Places)
 
-> `places` 테이블은 `google_place_id`만 영속 저장하는 참조 테이블이다. 검색 결과 payload는 Redis에 10분 TTL로 캐시한다.
+> `places` 테이블 없이 `google_place_id`를 직접 사용한다. 검색은 캐시하지 않고, 장소 상세 조회 payload는 Redis에 3시간 TTL로 캐시한다.
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[x]` | 장소 검색 | Google Places API (New)로 장소 검색, `google_place_id`를 `places`에 upsert하고 검색 결과는 Redis에 10분 TTL 캐시 | places, Redis |
-| `[ ]` | 장소 상세 조회 | 장소명, 주소, 평점, 사진 등 | places |
+| `[x]` | 장소 검색 | Google Places API (New)로 장소 검색 | - |
+| `[x]` | 장소 상세 조회 | 장소명, 주소, 평점, 전화번호, 웹사이트, 영업시간, 사진 목록 등, 상세 조회 결과는 Redis에 3시간 TTL 캐시 | Redis |
 
 ---
 
@@ -73,7 +73,7 @@
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[ ]` | 보관함에 장소 추가 | 검색된 장소를 방의 후보지로 등록 | bookmarks, places |
+| `[ ]` | 보관함에 장소 추가 | 검색된 장소를 방의 후보지로 등록 | bookmarks |
 | `[ ]` | 보관함 목록 조회 | 방의 후보지 목록 (카테고리 필터) | bookmarks |
 | `[ ]` | 보관함 항목 삭제 | 후보지에서 제거 | bookmarks |
 | `[ ]` | 보관함 메모 수정 | 항목별 메모 편집 | bookmarks |
@@ -98,7 +98,7 @@
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[ ]` | 일정에 장소 추가 | 특정 일자에 장소 추가 (보관함 또는 검색에서 바로) | schedule_items, places |
+| `[ ]` | 일정에 장소 추가 | 특정 일자에 장소 추가 (보관함 또는 검색에서 바로) | schedule_items |
 | `[ ]` | 일정 항목 목록 조회 | 특정 일자의 장소 목록 (order_index 순) | schedule_items |
 | `[ ]` | 일정 항목 삭제 | 일자에서 장소 제거 | schedule_items |
 | `[ ]` | 일정 순서 변경 (D&D) | order_index 재정렬 → WebSocket 브로드캐스트 | schedule_items |
@@ -116,7 +116,7 @@
 | `[ ]` | 메시지 전송 (WS) | 실시간 텍스트 채팅 | messages |
 | `[ ]` | 메시지 목록 조회 | 방 채팅 히스토리 (페이지네이션) | messages |
 | `[ ]` | 재접속 시 미수신 메시지 동기화 | 마지막 수신 message.id 이후 메시지 조회 | messages |
-| `[ ]` | 장소 카드 메시지 전송 | place 정보를 채팅에 공유 (message_type: PLACE_SHARE) | messages, places |
+| `[ ]` | 장소 카드 메시지 전송 | place 정보를 채팅에 공유 (message_type: PLACE_SHARE) | messages |
 | `[ ]` | 시스템 메시지 | 멤버 입퇴장 등 시스템 이벤트 알림 (message_type: SYSTEM) | messages |
 
 ---

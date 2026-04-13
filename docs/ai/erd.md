@@ -89,20 +89,7 @@ Google OAuth 기반 사용자 정보
 
 ---
 
-## 5. places (장소)
-
-Google Place ID를 내부 FK와 연결하기 위한 영속 참조 테이블. 검색 결과 payload는 Redis에 10분 TTL로 캐시하고, `places`에는 최소 식별자만 저장한다.
-
-| 컬럼 | 타입 | 제약조건 | 설명 |
-|------|------|----------|------|
-| id | BIGINT | PK, AUTO_INCREMENT | |
-| google_place_id | VARCHAR(300) | UNIQUE, NOT NULL | Google Place ID |
-| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
-| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
-
----
-
-## 6. bookmarks (장소 보관함 / 후보지)
+## 5. bookmarks (장소 보관함 / 후보지)
 
 방 내 공유 후보지 목록. 팀원이 후보로 등록한 장소.
 
@@ -110,20 +97,20 @@ Google Place ID를 내부 FK와 연결하기 위한 영속 참조 테이블. 검
 |------|------|----------|------|
 | id | BIGINT | PK, AUTO_INCREMENT | |
 | room_id | UUID | FK → rooms.id, NOT NULL | |
-| place_id | BIGINT | FK → places.id, NOT NULL | |
+| google_place_id | VARCHAR(300) | NOT NULL | Google Place ID |
 | added_by | BIGINT | FK → users.id, NOT NULL | 등록한 사용자 |
 | memo | TEXT | NULLABLE | 메모 |
 | category | VARCHAR(30) | NOT NULL, DEFAULT 'ALL' | |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
 
-**제약:** UNIQUE(room_id, place_id)
+**제약:** UNIQUE(room_id, google_place_id)
 
-**인덱스:** (room_id)
+**인덱스:** (room_id), (google_place_id)
 
 ---
 
-## 7. schedules (일자별 일정)
+## 6. schedules (일자별 일정)
 
 여행 일정의 일자 단위 그룹
 
@@ -140,7 +127,7 @@ Google Place ID를 내부 FK와 연결하기 위한 영속 참조 테이블. 검
 
 ---
 
-## 8. schedule_items (일정 항목)
+## 7. schedule_items (일정 항목)
 
 일자별 방문 장소 및 시간 배치. Drag and Drop 정렬 지원.
 
@@ -148,7 +135,7 @@ Google Place ID를 내부 FK와 연결하기 위한 영속 참조 테이블. 검
 |------|------|----------|------|
 | id | BIGINT | PK, AUTO_INCREMENT | |
 | schedule_id | BIGINT | FK → schedules.id, NOT NULL | |
-| place_id | BIGINT | FK → places.id, NOT NULL | |
+| google_place_id | VARCHAR(300) | NOT NULL | Google Place ID |
 | start_time | TIME | NULLABLE | 시작 시각 (예: 09:00) |
 | duration_minutes | INT | NULLABLE | 체류 시간(분) |
 | order_index | INT | NOT NULL | 정렬 순서 (D&D용) |
@@ -159,7 +146,7 @@ Google Place ID를 내부 FK와 연결하기 위한 영속 참조 테이블. 검
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
 
-**인덱스:** (schedule_id, order_index)
+**인덱스:** (schedule_id, order_index), (google_place_id)
 
 > **이동 정보 갱신 흐름:** 장소 추가/삭제/순서 변경 시 HTTP 요청으로 order_index를 DB에 반영한 뒤, 변경 사항을 WebSocket으로 브로드캐스트합니다. 이후 @Async로 Routes API(Compute Routes)를 호출하여 영향받는 구간의 distance_meters, duration_seconds를 갱신하고, 결과를 다시 WebSocket으로 브로드캐스트합니다. 마지막 장소는 다음 장소가 없으므로 이동 정보가 NULL입니다.
 
@@ -176,8 +163,6 @@ Google Place ID를 내부 FK와 연결하기 위한 영속 참조 테이블. 검
 | rooms ↔ messages | 1:N | 한 방에 여러 메시지 |
 | rooms ↔ bookmarks | 1:N | 한 방에 여러 후보지 |
 | rooms ↔ schedules | 1:N | 한 방에 여러 일자 |
-| places ↔ bookmarks | 1:N | 한 장소가 여러 방에서 후보 등록 가능 |
-| places ↔ schedule_items | 1:N | 한 장소가 여러 일정에 포함 가능 |
 | schedules ↔ schedule_items | 1:N | 한 일자에 여러 방문 장소 |
 
 ---
@@ -188,7 +173,7 @@ Google Place ID를 내부 FK와 연결하기 위한 영속 참조 테이블. 검
 |---------|------|-----|
 | `room:{roomId}:metadata` | 방 메타데이터 캐시 (DB 스냅샷) | Sliding TTL |
 | `room:{roomId}:connected_users` | 현재 접속 중인 유저 목록 (ephemeral) | 세션 종료 시 제거 |
-| `places:search:{normalizedQuery}` | 장소 검색 결과 캐시 | 10분 |
+| `place:detail:{googlePlaceId}` | 장소 상세 조회 결과 캐시 | 3시간 |
 | `refresh:{userId}` | Refresh Token 저장 (예정) | TTL 7~14일 |
 
 ---
@@ -196,10 +181,10 @@ Google Place ID를 내부 FK와 연결하기 위한 영속 참조 테이블. 검
 ## 설계 포인트
 
 1. **초대 코드 고정 방식:** 방 생성 시 invite_code가 1개 자동 발급. 링크 유출 시 방장이 코드를 재발급. 별도 room_invitations 테이블 없이 단순하게 유지.
-2. **places 테이블 분리:** Google Place ID 기준 중복 없이 관리하는 최소 참조 테이블이다. 여러 방에서 같은 장소를 재사용할 수 있다.
+2. **google_place_id 직접 참조:** places 중간 테이블 없이 bookmarks·schedule_items에서 google_place_id(VARCHAR)를 직접 저장한다. 단순 검색 결과를 DB에 eager insert할 필요가 없고, 북마크/일정 추가 시점에만 장소 식별자가 기록된다. 각 테이블의 google_place_id 컬럼에 인덱스를 부여해 조회 성능을 확보한다.
 3. **message.id auto-increment:** WebSocket 재접속 시 마지막 수신 ID 기반 미수신 메시지 조회 패턴에 최적화.
 4. **room.id UUID:** 초대 URL에 노출되므로 추측 불가능한 UUID 사용.
-5. **장소 검색 캐시:** Google Places Text Search 응답은 Redis에 10분 TTL로 저장해 동일 질의 재호출 비용을 줄인다.
+5. **장소 상세 캐시:** 자유도가 높은 검색어는 캐시 히트율이 낮을 수 있으므로 검색 결과는 캐시하지 않는다. 대신 Google Place 상세 조회 응답은 `google_place_id` 기준으로 Redis에 3시간 TTL로 저장한다.
 6. **schedule_items.order_index:** D&D UI를 위한 정렬 인덱스. 재정렬 시 해당 컬럼만 업데이트.
 7. **이동 정보 비동기 갱신:** travel_mode, distance_meters, duration_seconds는 "현재 장소 → 다음 장소" 구간 이동 정보 저장. 마지막 장소의 이동 정보는 NULL.
 8. **Soft Delete 미적용 (초안):** 방 삭제 시 CASCADE 또는 별도 정책은 추후 논의.

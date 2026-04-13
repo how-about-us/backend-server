@@ -1,5 +1,7 @@
 package com.howaboutus.backend.common.error;
 
+import org.springframework.http.HttpStatus;
+
 public record ApiErrorResponse(String code, String message) {
 
     /**
@@ -7,7 +9,11 @@ public record ApiErrorResponse(String code, String message) {
      *
      * @author Minhyung Kim
      */
-    public static ApiErrorResponse of(String code, String message) {
-        return new ApiErrorResponse(code, message);
+    public static ApiErrorResponse of(ErrorCode errorCode) {
+        return new ApiErrorResponse(errorCode.name(), errorCode.getMessage());
+    }
+
+    public static ApiErrorResponse of(HttpStatus status, String message) {
+        return new ApiErrorResponse(status.name(), message);
     }
 }

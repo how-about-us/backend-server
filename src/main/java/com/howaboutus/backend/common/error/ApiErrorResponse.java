@@ -1,13 +1,19 @@
 package com.howaboutus.backend.common.error;
 
-public record ApiErrorResponse(String code, String message) {
+import org.springframework.http.HttpStatus;
+
+public record ApiErrorResponse(HttpStatus status, String message) {
 
     /**
      * 생성자 대신 of 메서드를 이용해 주세요.
      *
      * @author Minhyung Kim
      */
-    public static ApiErrorResponse of(String code, String message) {
+    public static ApiErrorResponse of(ErrorCode errorCode) {
+        return new ApiErrorResponse(errorCode.getStatus(), errorCode.getMessage());
+    }
+
+    public static ApiErrorResponse of(HttpStatus code, String message) {
         return new ApiErrorResponse(code, message);
     }
 }

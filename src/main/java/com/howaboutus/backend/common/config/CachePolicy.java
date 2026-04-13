@@ -15,11 +15,9 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public enum CachePolicy {
 
-    PLACES_SEARCH(Keys.PLACES_SEARCH, Duration.ofMinutes(10));
+    ;
 
     public static final class Keys {
-        public static final String PLACES_SEARCH = "places:search";
-
         private Keys() {
         }
     }

@@ -53,15 +53,16 @@ public class CacheConfig implements CachingConfigurer {
     }
 
     @Bean
+    @Override
+    public CacheErrorHandler errorHandler() {
+        return new LoggingCacheErrorHandler(LogFactory.getLog(CacheConfig.class), true);
+    }
+
+    @Bean
     public KeyGenerator placeSearchKeyGenerator() {
         return (target, method, params) -> String.valueOf(params[0]).trim()
                 .replaceAll("\\s+", " ")
                 .toLowerCase(Locale.ROOT);
     }
 
-    @Bean
-    @Override
-    public CacheErrorHandler errorHandler() {
-        return new LoggingCacheErrorHandler(LogFactory.getLog(CacheConfig.class), true);
-    }
 }

@@ -1,16 +1,10 @@
 spring:
-  application:
-    name: how-about-us-backend
-
   jpa:
-    open-in-view: false
-
-  threads:
-    virtual:
-      enabled: true
+    hibernate:
+      ddl-auto: create-drop
 
 google:
   places:
-    api-key: ${GOOGLE_PLACES_API_KEY}
+    api-key: test-key
     base-url: https://places.googleapis.com
     field-mask: places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.rating,places.photos

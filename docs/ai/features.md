@@ -60,11 +60,11 @@
 
 ## 4. 장소 (Places)
 
-> `places` 테이블은 Google Places API 캐시 역할. 직접 CRUD는 최소화하고 검색 시 upsert.
+> `places` 테이블은 `google_place_id`만 영속 저장하는 참조 테이블이다. 검색 결과 payload는 Redis에 10분 TTL로 캐시한다.
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[ ]` | 장소 검색 | Google Maps API로 장소 검색, DB에 캐싱 | places |
+| `[x]` | 장소 검색 | Google Places API (New)로 장소 검색, `google_place_id`를 `places`에 upsert하고 검색 결과는 Redis에 10분 TTL 캐시 | places, Redis |
 | `[ ]` | 장소 상세 조회 | 장소명, 주소, 평점, 사진 등 | places |
 
 ---

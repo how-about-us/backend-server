@@ -21,12 +21,7 @@
           {
             "type": "command",
             "command": "./gradlew compileJava"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": "jq -c 'if (.tool_input.file_path // \"\" | endswith(\".md\")) then {hookSpecificOutput: {hookEventName: \"PostToolUse\", additionalContext: (\"MD 파일이 수정됨: \" + (.tool_input.file_path // \"\") + \". checking-md-conflicts 스킬을 실행하여 충돌/중복을 점검하세요.\")}} else empty end'"

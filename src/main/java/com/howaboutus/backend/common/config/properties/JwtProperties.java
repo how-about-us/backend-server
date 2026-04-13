@@ -1,4 +1,4 @@
-package com.howaboutus.backend.common.config;
+package com.howaboutus.backend.common.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

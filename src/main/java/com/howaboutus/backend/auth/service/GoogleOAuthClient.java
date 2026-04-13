@@ -4,7 +4,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.howaboutus.backend.auth.service.dto.GoogleTokenResponse;
 import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
-import com.howaboutus.backend.common.config.GoogleOAuthProperties;
+import com.howaboutus.backend.common.config.properties.GoogleOAuthProperties;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import java.net.URLEncoder;

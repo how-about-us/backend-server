@@ -10,6 +10,8 @@ import com.howaboutus.backend.common.integration.google.dto.GoogleTokenResponse;
 import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
 import com.howaboutus.backend.common.config.properties.GoogleOAuthProperties;
 import com.howaboutus.backend.common.error.CustomException;
+
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import tools.jackson.databind.ObjectMapper;
 
@@ -47,7 +49,7 @@ class GoogleOAuthClientTest {
         String payload = Base64.getUrlEncoder().withoutPadding().encodeToString(
                 """
                 {"sub":"google-123","email":"test@gmail.com","name":"테스트","picture":"https://example.com/photo.jpg"}
-                """.getBytes()
+                """.getBytes(StandardCharsets.UTF_8)
         );
         String fakeIdToken = "header." + payload + ".signature";
 

@@ -17,7 +17,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @RequiredArgsConstructor
-@EnableConfigurationProperties(CorsProperties.class)    // 테스트 시 정상 동작을 위해 추가
+@EnableConfigurationProperties(CorsProperties.class)    // 단위 테스트 시 정상 동작을 위해 추가
 public class SecurityConfig {
 
     private final CorsProperties corsProperties;

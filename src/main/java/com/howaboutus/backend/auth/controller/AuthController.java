@@ -22,10 +22,16 @@ public class AuthController {
     private final AuthService authService;
     private final JwtProperties jwtProperties;
 
+    //<흐름>
+    //1.프론트에서 구글로그인을 성공하고, authenticationCode를 requestBody에 담아서 넘김.
+    //2.authService에서 resourceServer(google)에게 code를 넘기고 userInfo를 받아옴.
+    //3. db에 유저 정보를 가져오고, 최초 가입이면, db에 유저정보 저장.
+    //4. jwt token을 userid를 기준으로 만들어서 반환.
+    //5. [TODO] RefreshToekn 추가 로직 만들기.
+    //6. token을 담아 쿠키를 만들고, set 설정해서 response
     @PostMapping("/google/login")
     public ResponseEntity<Void> googleLogin(@RequestBody GoogleLoginRequest request) {
         String accessToken = authService.googleLogin(request.code());
-        //구글로그인 시도시, 요청 헤더에, Authentication code를 받아와서, google에 로그인요청을 목척으로
         ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
                 .httpOnly(true)
                 .sameSite("Lax")

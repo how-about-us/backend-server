@@ -30,4 +30,5 @@ springdoc:
 
 jwt:
   secret: ${JWT_SECRET}
-  access-token-expiration: 3600000
+  #개발용, 36시간으로 설정, 나중에 0하나 빼기
+  access-token-expiration: 36000000

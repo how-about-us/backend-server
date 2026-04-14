@@ -44,7 +44,7 @@ public class GoogleOAuthClient {
                     .retrieve()
                     .body(GoogleTokenResponse.class);
         } catch (RestClientException e) {
-            throw new CustomException(ErrorCode.GOOGLE_AUTH_FAILED);
+            throw new CustomException(ErrorCode.GOOGLE_AUTH_FAILED,e);
         }
     }
 
@@ -64,7 +64,7 @@ public class GoogleOAuthClient {
                     profileImageUrl
             );
         } catch (Exception e) {
-            throw new CustomException(ErrorCode.GOOGLE_AUTH_FAILED);
+            throw new CustomException(ErrorCode.GOOGLE_AUTH_FAILED,e);
         }
     }
 }

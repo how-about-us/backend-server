@@ -15,6 +15,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiErrorResponse> handleCustomException(CustomException e) {
+        log.error("Custom exception: {}", e.getErrorCode(), e);
         ErrorCode errorCode = e.getErrorCode();
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiErrorResponse.of(errorCode));
@@ -22,7 +23,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ExternalApiException.class)
     public ResponseEntity<ApiErrorResponse> handleExternalApiException(ExternalApiException e) {
-        log.error("External API error", e);
         return handleCustomException(e);
     }
 

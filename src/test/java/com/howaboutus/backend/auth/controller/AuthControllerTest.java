@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.howaboutus.backend.auth.service.AuthService;
 import com.howaboutus.backend.common.config.SecurityConfig;
+import com.howaboutus.backend.common.config.properties.JwtProperties;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
@@ -28,6 +29,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private JwtProperties jwtProperties;
 
     @Test
     @DisplayName("Google 로그인 성공 시 200과 access_token 쿠키를 반환한다")

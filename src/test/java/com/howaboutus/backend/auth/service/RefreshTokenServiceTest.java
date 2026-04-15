@@ -120,4 +120,29 @@ class RefreshTokenServiceTest {
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
     }
+
+    @Test
+    @DisplayName("로그아웃 시 해당 Refresh Token만 Redis에서 삭제한다")
+    void deletesSingleToken() {
+        String uuid = "target-uuid";
+        String token = "1:" + uuid;
+        given(valueOperations.get("refresh:token:target-uuid")).willReturn("1");
+        given(redisTemplate.delete("refresh:token:target-uuid")).willReturn(true);
+
+        refreshTokenService.delete(token);
+
+        verify(redisTemplate).delete("refresh:token:target-uuid");
+        verify(setOperations).remove("refresh:user:1", uuid);
+    }
+
+    @Test
+    @DisplayName("로그아웃 시 이미 만료된 토큰이어도 예외 없이 처리한다")
+    void deleteIgnoresExpiredToken() {
+        String token = "1:expired-uuid";
+        given(valueOperations.get("refresh:token:expired-uuid")).willReturn(null);
+
+        refreshTokenService.delete(token);
+
+        // 예외 없이 정상 종료
+    }
 }

@@ -34,7 +34,10 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
-                                "/swagger-ui/**")
+                                "/swagger-ui/**",
+                                "/auth/google/login",
+                                "/auth/refresh",
+                                "/auth/logout")
                         .permitAll()
                         // 일단 임시로 인증 열어 놓음
                         .anyRequest().permitAll())

@@ -40,27 +40,17 @@ public class RefreshTokenService {
 
         String tokenKey = TOKEN_KEY_PREFIX + parts.uuid();
         String userId = redisTemplate.opsForValue().get(tokenKey);
-
+        //redis에서 조회했으나, uuid에 해당하는 userid==null 이면, 이미 사용된토큰 또는 위조된 토큰
         if (userId == null) {
             handleMissingToken(parts);
-            return null; // unreachable — handleMissingToken always throws
+            return null; // handleMissingToken이 항상 에러를 던져서 이 줄은 실행 안됨.
         }
-
+        //null이 아니라면, 기존의 RTK는 폐기하고, 새로운 토큰을 발급한다.
         redisTemplate.delete(tokenKey);
         String userKey = USER_KEY_PREFIX + userId;
         redisTemplate.opsForSet().remove(userKey, parts.uuid());
 
         return create(Long.valueOf(userId));
-    }
-
-    public Long resolveUserId(String token) {
-        TokenParts parts = parseToken(token);
-        String tokenKey = TOKEN_KEY_PREFIX + parts.uuid();
-        String userId = redisTemplate.opsForValue().get(tokenKey);
-        if (userId == null) {
-            throw new CustomException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
-        }
-        return Long.valueOf(userId);
     }
 
     public void delete(String token) {

@@ -22,3 +22,6 @@ google:
     client-secret: test-client-secret
     redirect-uri: http://localhost:8080/auth/callback
     token-uri: https://oauth2.googleapis.com/token
+
+refresh-token:
+  expiration: 3600000  # 테스트용 1시간

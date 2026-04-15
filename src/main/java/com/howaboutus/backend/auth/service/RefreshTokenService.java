@@ -54,19 +54,20 @@ public class RefreshTokenService {
     }
 
     public void delete(String token) {
-        int separatorIndex = token.indexOf(':');
-        if (separatorIndex == -1) {
+        TokenParts parts;
+        try {
+            parts = parseToken(token);
+        } catch (CustomException e) {
+            //로그아웃 할때 사용하므로, 에러가 나더라도, 클라이언트의 문제기에, throw error를 하지않고 조용히 처리.
             return;
         }
-        String userId = token.substring(0, separatorIndex);
-        String uuid = token.substring(separatorIndex + 1);
 
-        String tokenKey = TOKEN_KEY_PREFIX + uuid;
+        String tokenKey = TOKEN_KEY_PREFIX + parts.uuid();
         String storedUserId = redisTemplate.opsForValue().get(tokenKey);
 
         if (storedUserId != null) {
             redisTemplate.delete(tokenKey);
-            redisTemplate.opsForSet().remove(USER_KEY_PREFIX + storedUserId, uuid);
+            redisTemplate.opsForSet().remove(USER_KEY_PREFIX + storedUserId, parts.uuid());
         }
     }
 

@@ -80,7 +80,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("로그아웃 후 Refresh Token으로 재요청하면 401을 반환한다")
+    @DisplayName("로그아웃 후 Refresh Token 으로 재요청하면 401을 반환한다")
     void logoutInvalidatesRefreshToken() throws Exception {
         given(googleOAuthClient.login("auth-code-logout"))
                 .willReturn(new GoogleUserInfo("google-it-logout", "logout@gmail.com", "로그아웃", null));

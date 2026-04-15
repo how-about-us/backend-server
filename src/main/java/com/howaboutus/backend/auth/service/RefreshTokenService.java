@@ -54,13 +54,10 @@ public class RefreshTokenService {
     }
 
     public void delete(String token) {
-        TokenParts parts;
-        try {
-            parts = parseToken(token);
-        } catch (CustomException e) {
-            //로그아웃 할때 사용하므로, 에러가 나더라도, 클라이언트의 문제기에, throw error를 하지않고 조용히 처리.
+        if (!token.contains(":")) {
             return;
         }
+        TokenParts parts = parseToken(token);
 
         String tokenKey = TOKEN_KEY_PREFIX + parts.uuid();
         String storedUserId = redisTemplate.opsForValue().get(tokenKey);

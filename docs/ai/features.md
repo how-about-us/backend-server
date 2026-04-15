@@ -26,8 +26,8 @@
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
 | `[x]` | 구글 OAuth 로그인 | Google 계정으로 소셜 로그인 | users |
-| `[ ]` | 토큰 재발급 (Refresh) | Access Token 만료 시 갱신 | Redis |
-| `[ ]` | 로그아웃 | 토큰 무효화 | Redis |
+| `[x]` | 토큰 재발급 (Refresh) | Refresh Token Rotation: UUID 기반 HTTP-only 쿠키(path=/auth/refresh), Redis `refresh:token:{uuid}`→userId(TTL 14일) / `refresh:user:{userId}`→Set\<uuid\>. Replay Detection 으로 탈취 시 전체 무효화 | Redis |
+| `[x]` | 로그아웃 | 단일 기기 로그아웃: 요청한 토큰만 삭제 | Redis |
 | `[ ]` | 내 정보 조회 | 로그인된 사용자 프로필 조회 | users |
 
 ---

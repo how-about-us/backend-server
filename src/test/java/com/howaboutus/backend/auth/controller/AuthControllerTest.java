@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.howaboutus.backend.auth.service.AuthService;
+import com.howaboutus.backend.auth.service.dto.LoginResult;
 import com.howaboutus.backend.common.config.SecurityConfig;
 import com.howaboutus.backend.common.config.properties.JwtProperties;
 import com.howaboutus.backend.common.error.CustomException;
@@ -36,7 +37,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("Google 로그인 성공 시 200과 access_token 쿠키를 반환한다")
     void returnsAccessTokenCookieOnSuccess() throws Exception {
-        given(authService.googleLogin("valid-code")).willReturn("jwt-token");
+        given(authService.googleLogin("valid-code")).willReturn(new LoginResult("jwt-token", "1:refresh-uuid", 1L));
 
         mockMvc.perform(post("/auth/google/login")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -2,6 +2,7 @@ package com.howaboutus.backend.auth.controller;
 
 import com.howaboutus.backend.auth.controller.dto.GoogleLoginRequest;
 import com.howaboutus.backend.auth.service.AuthService;
+import com.howaboutus.backend.auth.service.dto.LoginResult;
 import java.time.Duration;
 
 import com.howaboutus.backend.common.config.properties.JwtProperties;
@@ -31,8 +32,8 @@ public class AuthController {
     //6. token을 담아 쿠키를 만들고, set 설정해서 response
     @PostMapping("/google/login")
     public ResponseEntity<Void> googleLogin(@RequestBody GoogleLoginRequest request) {
-        String accessToken = authService.googleLogin(request.code());
-        ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
+        LoginResult result = authService.googleLogin(request.code());
+        ResponseCookie cookie = ResponseCookie.from("access_token", result.accessToken())
                 .httpOnly(true)
                 .sameSite("Lax")
                 .path("/")

@@ -35,7 +35,7 @@ public class PlaceController {
             @RequestParam
             @NotBlank(message = "검색어는 공백일 수 없습니다")
             String query) {
-        return placeSearchService.search(query)
+        return placeSearchService.search(query, null, null, null)
                 .stream()
                 .map(PlaceSearchResponse::from)
                 .toList();

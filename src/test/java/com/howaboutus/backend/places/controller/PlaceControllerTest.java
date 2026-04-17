@@ -94,7 +94,7 @@ class PlaceControllerTest {
     @Test
     @DisplayName("유효한 query로 검색하면 결과를 반환한다")
     void returnsSearchResultsWhenQueryIsValid() throws Exception {
-        given(placeSearchService.search(VALID_QUERY))
+        given(placeSearchService.search(VALID_QUERY, null, null, null))
                 .willReturn(List.of(placeSearchResult));
 
         mockMvc.perform(searchRequest(VALID_QUERY))
@@ -102,7 +102,7 @@ class PlaceControllerTest {
                 .andExpect(jsonPath("$[0].googlePlaceId").value("ChIJ123"))
                 .andExpect(jsonPath("$[0].name").value("Cafe Layered"));
 
-        then(placeSearchService).should().search(VALID_QUERY);
+        then(placeSearchService).should().search(VALID_QUERY, null, null, null);
     }
 
     @Test
@@ -117,20 +117,20 @@ class PlaceControllerTest {
                 4.5,
                 "places/ChIJ123/photos/abc"
         );
-        given(placeSearchService.search(VALID_QUERY))
+        given(placeSearchService.search(VALID_QUERY, null, null, null))
                 .willReturn(List.of(resultWithoutLocation));
 
         mockMvc.perform(searchRequest(VALID_QUERY))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].location").value(Matchers.nullValue()));
 
-        then(placeSearchService).should().search(VALID_QUERY);
+        then(placeSearchService).should().search(VALID_QUERY, null, null, null);
     }
 
     @Test
     @DisplayName("외부 API 오류 발생 시 502를 반환한다")
     void returnsBadGatewayWhenExternalApiErrorOccurs() throws Exception {
-        given(placeSearchService.search(VALID_QUERY))
+        given(placeSearchService.search(VALID_QUERY, null, null, null))
                 .willThrow(new ExternalApiException(new RuntimeException("connection timeout")));
 
         mockMvc.perform(searchRequest(VALID_QUERY))
@@ -142,7 +142,7 @@ class PlaceControllerTest {
     @Test
     @DisplayName("처리되지 않은 예외 발생 시 500을 반환한다")
     void returnsInternalServerErrorForUnhandledException() throws Exception {
-        given(placeSearchService.search(VALID_QUERY))
+        given(placeSearchService.search(VALID_QUERY, null, null, null))
                 .willThrow(new RuntimeException("예상치 못한 오류"));
 
         mockMvc.perform(searchRequest(VALID_QUERY))

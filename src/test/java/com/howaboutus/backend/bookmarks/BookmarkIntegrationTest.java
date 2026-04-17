@@ -1,12 +1,13 @@
 package com.howaboutus.backend.bookmarks;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.hamcrest.Matchers.nullValue;
 
 import com.howaboutus.backend.bookmarks.entity.Bookmark;
 import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
@@ -45,7 +46,7 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("보관함 생성, 조회, 삭제를 실제 HTTP 엔드포인트로 검증한다")
     void createsListsAndDeletesBookmarkThroughHttpEndpoints() throws Exception {
-        Room room = roomRepository.save(Room.create(
+        Room targetRoom = roomRepository.save(Room.create(
                 "도쿄 여행",
                 "도쿄",
                 LocalDate.of(2026, 5, 1),
@@ -53,40 +54,68 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
                 "TOKYO2026",
                 1L
         ));
+        Room otherRoom = roomRepository.save(Room.create(
+                "오사카 여행",
+                "오사카",
+                LocalDate.of(2026, 6, 1),
+                LocalDate.of(2026, 6, 3),
+                "OSAKA2026",
+                2L
+        ));
 
-        mockMvc.perform(post("/rooms/{roomId}/bookmarks", room.getId())
+        bookmarkRepository.saveAndFlush(Bookmark.create(targetRoom, "place-old", "CAFE", null));
+        bookmarkRepository.saveAndFlush(Bookmark.create(targetRoom, "place-middle", "RESTAURANT", null));
+        bookmarkRepository.saveAndFlush(Bookmark.create(otherRoom, "place-foreign", "HOTEL", null));
+
+        mockMvc.perform(post("/rooms/{roomId}/bookmarks", targetRoom.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"googlePlaceId": "place-1", "category": "CAFE"}
+                                {"googlePlaceId": "place-new", "category": "CAFE"}
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.roomId").value(room.getId().toString()))
-                .andExpect(jsonPath("$.googlePlaceId").value("place-1"))
+                .andExpect(jsonPath("$.roomId").value(targetRoom.getId().toString()))
+                .andExpect(jsonPath("$.googlePlaceId").value("place-new"))
                 .andExpect(jsonPath("$.category").value("CAFE"))
                 .andExpect(jsonPath("$.addedBy").value(nullValue()));
 
-        Bookmark savedBookmark = bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(room.getId()).getFirst();
+        Bookmark savedBookmark = bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(targetRoom.getId()).getFirst();
         Long bookmarkId = savedBookmark.getId();
 
-        assertThat(bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(room.getId()))
-                .hasSize(1);
-        assertThat(savedBookmark.getRoom().getId()).isEqualTo(room.getId());
-        assertThat(savedBookmark.getGooglePlaceId()).isEqualTo("place-1");
+        assertThat(bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(targetRoom.getId()))
+                .hasSize(3);
+        assertThat(savedBookmark.getRoom().getId()).isEqualTo(targetRoom.getId());
+        assertThat(savedBookmark.getGooglePlaceId()).isEqualTo("place-new");
         assertThat(savedBookmark.getCategory()).isEqualTo("CAFE");
         assertThat(savedBookmark.getAddedBy()).isNull();
 
-        mockMvc.perform(get("/rooms/{roomId}/bookmarks", room.getId()))
+        mockMvc.perform(get("/rooms/{roomId}/bookmarks", targetRoom.getId()))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(3)))
                 .andExpect(jsonPath("$[0].bookmarkId").value(bookmarkId))
-                .andExpect(jsonPath("$[0].roomId").value(room.getId().toString()))
-                .andExpect(jsonPath("$[0].googlePlaceId").value("place-1"))
+                .andExpect(jsonPath("$[0].roomId").value(targetRoom.getId().toString()))
+                .andExpect(jsonPath("$[0].googlePlaceId").value("place-new"))
+                .andExpect(jsonPath("$[1].roomId").value(targetRoom.getId().toString()))
+                .andExpect(jsonPath("$[1].googlePlaceId").value("place-middle"))
+                .andExpect(jsonPath("$[2].roomId").value(targetRoom.getId().toString()))
+                .andExpect(jsonPath("$[2].googlePlaceId").value("place-old"))
+                .andExpect(jsonPath("$[*].googlePlaceId").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("place-foreign"))))
                 .andExpect(jsonPath("$[0].category").value("CAFE"))
                 .andExpect(jsonPath("$[0].addedBy").value(nullValue()));
 
-        mockMvc.perform(delete("/rooms/{roomId}/bookmarks/{bookmarkId}", room.getId(), bookmarkId))
+        mockMvc.perform(get("/rooms/{roomId}/bookmarks", otherRoom.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].roomId").value(otherRoom.getId().toString()))
+                .andExpect(jsonPath("$[0].googlePlaceId").value("place-foreign"))
+                .andExpect(jsonPath("$[0].category").value("HOTEL"))
+                .andExpect(jsonPath("$[0].addedBy").value(nullValue()));
+
+        mockMvc.perform(delete("/rooms/{roomId}/bookmarks/{bookmarkId}", targetRoom.getId(), bookmarkId))
                 .andExpect(status().isNoContent());
 
-        assertThat(bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(room.getId())).isEmpty();
+        assertThat(bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(targetRoom.getId()))
+                .extracting(Bookmark::getGooglePlaceId)
+                .containsExactly("place-middle", "place-old");
     }
 
     @Test

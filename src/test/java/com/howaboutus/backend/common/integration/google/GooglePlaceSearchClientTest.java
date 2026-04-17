@@ -1,28 +1,33 @@
 package com.howaboutus.backend.common.integration.google;
 
 import com.howaboutus.backend.common.config.properties.GooglePlacesProperties;
+import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchRequest;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.mock.http.client.MockClientHttpRequest;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.test.web.client.RequestMatcher;
 import org.springframework.web.client.RestClient;
+import tools.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 class GooglePlaceSearchClientTest {
 
     private MockRestServiceServer server;
     private GooglePlaceSearchClient client;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
@@ -78,10 +83,10 @@ class GooglePlaceSearchClientTest {
     void searchesWithLocationBiasWhenCoordinatesProvided() {
         server.expect(requestTo("https://places.googleapis.com/v1/places:searchText"))
                 .andExpect(method(HttpMethod.POST))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"locationBias\"")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("37.5")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("127.0")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("3000.0")))
+                .andExpect(hasRequestBody(
+                        GoogleTextSearchRequest.withKorean("seoul cafe", 37.5, 127.0, 3000.0),
+                        GoogleTextSearchRequest.class
+                ))
                 .andRespond(withSuccess("{\"places\": []}", MediaType.APPLICATION_JSON));
 
         List<GoogleTextSearchResponse.PlaceItem> result = client.search("seoul cafe", 37.5, 127.0, 3000.0);
@@ -90,4 +95,13 @@ class GooglePlaceSearchClientTest {
         server.verify();
     }
 
+    private <T> RequestMatcher hasRequestBody(T expectedBody, Class<T> bodyType) {
+        return request -> assertThat(readBody(request, bodyType)).isEqualTo(expectedBody);
+    }
+
+    private <T> T readBody(org.springframework.http.client.ClientHttpRequest request, Class<T> bodyType)
+            throws IOException {
+        String requestBody = ((MockClientHttpRequest) request).getBodyAsString();
+        return objectMapper.readValue(requestBody, bodyType);
+    }
 }

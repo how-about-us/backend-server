@@ -18,7 +18,10 @@ public class GooglePlaceDetailClient {
     public GooglePlaceDetailResponse getDetail(String googlePlaceId) {
         try {
             return googlePlacesRestClient.get()
-                    .uri("/v1/places/{placeId}", googlePlaceId)
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/v1/places/{placeId}")
+                            .queryParam("languageCode", "ko")
+                            .build(googlePlaceId))
                     .header("X-Goog-Api-Key", properties.apiKey())
                     .header("X-Goog-FieldMask", properties.detailFieldMask())
                     .retrieve()

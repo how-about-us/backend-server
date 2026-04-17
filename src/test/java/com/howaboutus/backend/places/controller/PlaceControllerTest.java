@@ -77,8 +77,66 @@ class PlaceControllerTest {
     void returnsBadRequestWhenQueryIsBlank() throws Exception {
         mockMvc.perform(searchRequest("   "))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("INVALID_PLACE_QUERY"))
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.message").value("검색어는 공백일 수 없습니다"));
+
+        verifyNoInteractions(placeSearchService);
+    }
+
+    @Test
+    @DisplayName("위도가 범위를 벗어나면 400을 반환한다")
+    void returnsBadRequestWhenLatitudeIsOutOfRange() throws Exception {
+        mockMvc.perform(get(SEARCH_PATH)
+                        .param("query", VALID_QUERY)
+                        .param("latitude", "200")
+                        .param("longitude", "127.0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("위도는 90 이하이어야 합니다"));
+
+        verifyNoInteractions(placeSearchService);
+    }
+
+    @Test
+    @DisplayName("경도가 범위를 벗어나면 400을 반환한다")
+    void returnsBadRequestWhenLongitudeIsOutOfRange() throws Exception {
+        mockMvc.perform(get(SEARCH_PATH)
+                        .param("query", VALID_QUERY)
+                        .param("latitude", "37.5")
+                        .param("longitude", "-200"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("경도는 -180 이상이어야 합니다"));
+
+        verifyNoInteractions(placeSearchService);
+    }
+
+    @Test
+    @DisplayName("반경이 음수이면 400을 반환한다")
+    void returnsBadRequestWhenRadiusIsNegative() throws Exception {
+        mockMvc.perform(get(SEARCH_PATH)
+                        .param("query", VALID_QUERY)
+                        .param("latitude", "37.5")
+                        .param("longitude", "127.0")
+                        .param("radius", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("반경은 0 이상이어야 합니다"));
+
+        verifyNoInteractions(placeSearchService);
+    }
+
+    @Test
+    @DisplayName("반경이 최대값(50000)을 초과하면 400을 반환한다")
+    void returnsBadRequestWhenRadiusExceedsMaximum() throws Exception {
+        mockMvc.perform(get(SEARCH_PATH)
+                        .param("query", VALID_QUERY)
+                        .param("latitude", "37.5")
+                        .param("longitude", "127.0")
+                        .param("radius", "999999"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("반경은 50000 이하이어야 합니다"));
 
         verifyNoInteractions(placeSearchService);
     }

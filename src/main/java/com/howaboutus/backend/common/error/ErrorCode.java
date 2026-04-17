@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     // 400 BAD REQUEST
-    INVALID_PLACE_QUERY(HttpStatus.BAD_REQUEST, "검색어는 공백일 수 없습니다"),
     INVALID_LOCATION_PARAMS(HttpStatus.BAD_REQUEST, "latitude와 longitude는 함께 제공해야 합니다"),
 
     // 401 UNAUTHORIZED

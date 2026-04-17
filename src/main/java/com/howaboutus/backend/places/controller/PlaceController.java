@@ -7,6 +7,8 @@ import com.howaboutus.backend.places.service.PlaceSearchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import com.howaboutus.backend.common.error.CustomException;
@@ -40,12 +42,18 @@ public class PlaceController {
             String query,
             @Parameter(description = "현재 위치 위도 (longitude와 함께 제공)", example = "37.5")
             @RequestParam(required = false)
+            @DecimalMin(value = "-90.0", message = "위도는 -90 이상이어야 합니다")
+            @DecimalMax(value = "90.0", message = "위도는 90 이하이어야 합니다")
             Double latitude,
             @Parameter(description = "현재 위치 경도 (latitude와 함께 제공)", example = "127.0")
             @RequestParam(required = false)
+            @DecimalMin(value = "-180.0", message = "경도는 -180 이상이어야 합니다")
+            @DecimalMax(value = "180.0", message = "경도는 180 이하이어야 합니다")
             Double longitude,
             @Parameter(description = "검색 반경(m), 기본값 5000", example = "3000")
             @RequestParam(required = false, defaultValue = "5000.0")
+            @DecimalMin(value = "0.0", message = "반경은 0 이상이어야 합니다")
+            @DecimalMax(value = "50000.0", message = "반경은 50000 이하이어야 합니다")
             Double radius) {
         if ((latitude == null) != (longitude == null)) {
             throw new CustomException(ErrorCode.INVALID_LOCATION_PARAMS);

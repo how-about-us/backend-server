@@ -8,7 +8,6 @@
 - [ ] `./gradlew build`
 - [ ] `/review-code-against-docs` 스킬로 검증
 - [ ] 그 외 수동 검증:
-  - 
 
 ## 체크리스트
 - [ ] PR 제목이 커밋 컨벤션 형식을 따른다.

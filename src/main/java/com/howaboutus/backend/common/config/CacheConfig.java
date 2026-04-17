@@ -20,6 +20,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -43,7 +44,8 @@ public class CacheConfig implements CachingConfigurer {
                                 .enableDefaultTyping(
                                         BasicPolymorphicTypeValidator.builder()
                                                 .allowIfSubType("com.howaboutus.backend")
-                                                .allowIfSubType("java.util")
+                                                .allowIfBaseType(Map.class)
+                                                .allowIfBaseType(Collection.class)
                                                 .build()
                                 )
                                 .build()

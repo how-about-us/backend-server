@@ -14,7 +14,7 @@ public class PlaceSearchService {
     private final GooglePlaceSearchClient googlePlaceSearchClient;
 
     public List<PlaceSearchResult> search(String query) {
-        return googlePlaceSearchClient.search(query)
+        return googlePlaceSearchClient.search(query, null, null, null)
                 .stream()
                 .map(PlaceSearchResult::from)
                 .toList();

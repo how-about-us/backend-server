@@ -99,7 +99,6 @@ Google OAuth 기반 사용자 정보
 | room_id | UUID | FK → rooms.id, NOT NULL | |
 | google_place_id | VARCHAR(300) | NOT NULL | Google Place ID |
 | added_by | BIGINT | FK → users.id, NOT NULL | 등록한 사용자 |
-| memo | TEXT | NULLABLE | 메모 |
 | category | VARCHAR(30) | NOT NULL, DEFAULT 'ALL' | |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |

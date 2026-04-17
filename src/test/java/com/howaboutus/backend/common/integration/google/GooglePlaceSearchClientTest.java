@@ -66,7 +66,7 @@ class GooglePlaceSearchClientTest {
                         }
                         """, MediaType.APPLICATION_JSON));
 
-        List<GoogleTextSearchResponse.PlaceItem> result = client.search("seoul cafe", null, null, null);
+        List<GoogleTextSearchResponse.PlaceItem> result = client.search("seoul cafe", 37.5, 127.0, 5000.0);
 
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().id()).isEqualTo("ChIJ123");
@@ -90,17 +90,4 @@ class GooglePlaceSearchClientTest {
         server.verify();
     }
 
-    @Test
-    @DisplayName("위치 정보가 없으면 locationBias가 포함되지 않은 요청 본문을 전송한다")
-    void searchesWithoutLocationBiasWhenCoordinatesAreNull() {
-        server.expect(requestTo("https://places.googleapis.com/v1/places:searchText"))
-                .andExpect(method(HttpMethod.POST))
-                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("locationBias"))))
-                .andRespond(withSuccess("{\"places\": []}", MediaType.APPLICATION_JSON));
-
-        List<GoogleTextSearchResponse.PlaceItem> result = client.search("seoul cafe", null, null, null);
-
-        assertThat(result).isEmpty();
-        server.verify();
-    }
 }

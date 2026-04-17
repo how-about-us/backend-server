@@ -30,25 +30,25 @@ class PlaceSearchServiceTest {
                 4.5,
                 List.of(new GoogleTextSearchResponse.Photo("places/ChIJ123/photos/abc"))
         );
-        given(googlePlaceSearchClient.search("seoul cafe", null, null, null))
+        given(googlePlaceSearchClient.search("seoul cafe", 37.5, 127.0, 5000.0))
                 .willReturn(List.of(placeItem));
 
-        List<PlaceSearchResult> results = placeSearchService.search("seoul cafe", null, null, null);
+        List<PlaceSearchResult> results = placeSearchService.search("seoul cafe", 37.5, 127.0, 5000.0);
 
         assertThat(results).containsExactly(PlaceSearchResult.from(placeItem));
-        then(googlePlaceSearchClient).should().search("seoul cafe", null, null, null);
+        then(googlePlaceSearchClient).should().search("seoul cafe", 37.5, 127.0, 5000.0);
     }
 
     @Test
     @DisplayName("Google 장소 응답이 비어 있으면 빈 목록을 반환한다")
     void returnsEmptyResultsWhenClientReturnsEmptyList() {
-        given(googlePlaceSearchClient.search("seoul cafe", null, null, null))
+        given(googlePlaceSearchClient.search("seoul cafe", 37.5, 127.0, 5000.0))
                 .willReturn(List.of());
 
-        List<PlaceSearchResult> results = placeSearchService.search("seoul cafe", null, null, null);
+        List<PlaceSearchResult> results = placeSearchService.search("seoul cafe", 37.5, 127.0, 5000.0);
 
         assertThat(results).isEmpty();
-        then(googlePlaceSearchClient).should().search("seoul cafe", null, null, null);
+        then(googlePlaceSearchClient).should().search("seoul cafe", 37.5, 127.0, 5000.0);
     }
 
     @Test

@@ -11,19 +11,9 @@ class GoogleTextSearchRequestTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    @DisplayName("withKorean으로 생성하면 locationBias가 JSON에서 제외된다")
-    void withKorean_excludesLocationBiasFromJson() throws Exception {
-        GoogleTextSearchRequest request = GoogleTextSearchRequest.withKorean("일본 맛집");
-
-        String json = objectMapper.writeValueAsString(request);
-
-        assertThat(json).doesNotContain("locationBias");
-    }
-
-    @Test
-    @DisplayName("withKoreanAndLocation으로 생성하면 locationBias.circle이 JSON에 포함된다")
-    void withKoreanAndLocation_includesLocationBiasInJson() throws Exception {
-        GoogleTextSearchRequest request = GoogleTextSearchRequest.withKoreanAndLocation("일본 맛집", 37.5, 127.0, 3000.0);
+    @DisplayName("withKorean으로 생성하면 locationBias.circle이 JSON에 포함된다")
+    void withKorean_includesLocationBiasInJson() throws Exception {
+        GoogleTextSearchRequest request = GoogleTextSearchRequest.withKorean("일본 맛집", 37.5, 127.0, 3000.0);
 
         String json = objectMapper.writeValueAsString(request);
 

@@ -11,8 +11,6 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
-import com.howaboutus.backend.common.error.CustomException;
-import com.howaboutus.backend.common.error.ErrorCode;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,7 +30,7 @@ public class PlaceController {
 
     @Operation(
             summary = "장소 검색",
-            description = "사용자 검색어를 기반으로 장소 후보 목록을 조회합니다. latitude/longitude를 제공하면 해당 좌표 근처 결과를 우선합니다."
+            description = "사용자 검색어와 현재 위치를 기반으로 주변 장소 후보 목록을 조회합니다."
     )
     @GetMapping("/places/search")
     public List<PlaceSearchResponse> search(
@@ -40,24 +38,21 @@ public class PlaceController {
             @RequestParam
             @NotBlank(message = "검색어는 공백일 수 없습니다")
             String query,
-            @Parameter(description = "현재 위치 위도 (longitude와 함께 제공)", example = "37.5")
-            @RequestParam(required = false)
+            @Parameter(description = "현재 위치 위도", example = "37.5")
+            @RequestParam
             @DecimalMin(value = "-90.0", message = "위도는 -90 이상이어야 합니다")
             @DecimalMax(value = "90.0", message = "위도는 90 이하이어야 합니다")
-            Double latitude,
-            @Parameter(description = "현재 위치 경도 (latitude와 함께 제공)", example = "127.0")
-            @RequestParam(required = false)
+            double latitude,
+            @Parameter(description = "현재 위치 경도", example = "127.0")
+            @RequestParam
             @DecimalMin(value = "-180.0", message = "경도는 -180 이상이어야 합니다")
             @DecimalMax(value = "180.0", message = "경도는 180 이하이어야 합니다")
-            Double longitude,
+            double longitude,
             @Parameter(description = "검색 반경(m), 기본값 5000", example = "3000")
             @RequestParam(required = false, defaultValue = "5000.0")
             @DecimalMin(value = "0.0", message = "반경은 0 이상이어야 합니다")
             @DecimalMax(value = "50000.0", message = "반경은 50000 이하이어야 합니다")
-            Double radius) {
-        if ((latitude == null) != (longitude == null)) {
-            throw new CustomException(ErrorCode.INVALID_LOCATION_PARAMS);
-        }
+            double radius) {
         return placeSearchService.search(query, latitude, longitude, radius)
                 .stream()
                 .map(PlaceSearchResponse::from)

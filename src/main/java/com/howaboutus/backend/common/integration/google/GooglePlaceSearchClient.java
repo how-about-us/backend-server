@@ -19,10 +19,8 @@ public class GooglePlaceSearchClient {
     private final GooglePlacesProperties properties;
 
     public List<GoogleTextSearchResponse.PlaceItem> search(
-            String query, Double latitude, Double longitude, Double radius) {
-        GoogleTextSearchRequest request = (latitude != null)
-                ? GoogleTextSearchRequest.withKoreanAndLocation(query, latitude, longitude, radius)
-                : GoogleTextSearchRequest.withKorean(query);
+            String query, double latitude, double longitude, double radius) {
+        GoogleTextSearchRequest request = GoogleTextSearchRequest.withKorean(query, latitude, longitude, radius);
         try {
             GoogleTextSearchResponse response = googlePlacesRestClient.post()
                     .uri("/v1/places:searchText")

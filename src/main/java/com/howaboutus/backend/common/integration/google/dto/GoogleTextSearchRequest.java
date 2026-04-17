@@ -5,11 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record GoogleTextSearchRequest(String textQuery, String languageCode, LocationBias locationBias) {
 
-    public static GoogleTextSearchRequest withKorean(String textQuery) {
-        return new GoogleTextSearchRequest(textQuery, "ko", null);
-    }
-
-    public static GoogleTextSearchRequest withKoreanAndLocation(
+    public static GoogleTextSearchRequest withKorean(
             String textQuery, double latitude, double longitude, double radius) {
         return new GoogleTextSearchRequest(textQuery, "ko",
                 new LocationBias(new Circle(new LatLng(latitude, longitude), radius)));

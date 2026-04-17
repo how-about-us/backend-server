@@ -8,8 +8,10 @@ import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
+
 import java.util.List;
 import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BookmarkService {
 
+    // TODO: 나중에 Room 관련 로직이 만들어지면 그때 의존성을 바꾸짜
     private final RoomRepository roomRepository;
     private final BookmarkRepository bookmarkRepository;
 

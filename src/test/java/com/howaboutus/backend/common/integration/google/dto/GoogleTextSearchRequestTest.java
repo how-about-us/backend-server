@@ -17,10 +17,11 @@ class GoogleTextSearchRequestTest {
 
         String json = objectMapper.writeValueAsString(request);
 
-        assertThat(json).contains("\"locationBias\"");
-        assertThat(json).contains("\"circle\"");
-        assertThat(json).contains("37.5");
-        assertThat(json).contains("127.0");
-        assertThat(json).contains("3000.0");
+        assertThat(json)
+            .contains("\"locationBias\"")
+            .contains("\"circle\"")
+            .contains("37.5")
+            .contains("127.0")
+            .contains("3000.0");
     }
 }

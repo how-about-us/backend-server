@@ -24,9 +24,9 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
     private BookmarkRepository bookmarkRepository;
 
     @Test
-    @DisplayName("북마크를 방에 저장하고 방 ID로 조회한다")
+    @DisplayName("방 ID로 조회하면 해당 방의 북마크만 반환한다")
     void savesBookmarkAndLoadsByRoomId() {
-        Room room = roomRepository.save(Room.create(
+        Room targetRoom = roomRepository.save(Room.create(
                 "도쿄 여행",
                 "도쿄",
                 LocalDate.of(2026, 5, 1),
@@ -35,30 +35,51 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
                 1L
         ));
 
-        bookmarkRepository.saveAndFlush(Bookmark.create(room, "place-1", "CAFE", 1L));
-
-        List<Bookmark> bookmarks = bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(room.getId());
-
-        assertThat(bookmarks).hasSize(1);
-        assertThat(bookmarks.get(0).getRoom().getId()).isEqualTo(room.getId());
-        assertThat(bookmarks.get(0).getGooglePlaceId()).isEqualTo("place-1");
-    }
-
-    @Test
-    @DisplayName("같은 방에서 동일한 googlePlaceId는 중복 저장할 수 없다")
-    void rejectsDuplicateGooglePlaceIdInSameRoom() {
-        Room room = roomRepository.save(Room.create(
+        Room otherRoom = roomRepository.save(Room.create(
                 "오사카 여행",
                 "오사카",
                 LocalDate.of(2026, 6, 1),
-                LocalDate.of(2026, 6, 2),
+                LocalDate.of(2026, 6, 3),
                 "OSAKA2026",
                 2L
         ));
 
-        bookmarkRepository.saveAndFlush(Bookmark.create(room, "place-1", "ALL", 2L));
+        bookmarkRepository.saveAndFlush(Bookmark.create(targetRoom, "place-1", "CAFE", 1L));
+        bookmarkRepository.saveAndFlush(Bookmark.create(targetRoom, "place-2", "RESTAURANT", 1L));
+        bookmarkRepository.saveAndFlush(Bookmark.create(otherRoom, "place-3", "HOTEL", 2L));
 
-        assertThatThrownBy(() -> bookmarkRepository.saveAndFlush(Bookmark.create(room, "place-1", "ALL", 2L)))
+        List<Bookmark> bookmarks = bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(targetRoom.getId());
+
+        assertThat(bookmarks).hasSize(2);
+        assertThat(bookmarks).allSatisfy(bookmark -> assertThat(bookmark.getRoom().getId()).isEqualTo(targetRoom.getId()));
+        assertThat(bookmarks).extracting(Bookmark::getGooglePlaceId).containsExactly("place-2", "place-1");
+    }
+
+    @Test
+    @DisplayName("같은 googlePlaceId는 다른 방에서는 허용되고 같은 방에서는 중복 저장할 수 없다")
+    void rejectsDuplicateGooglePlaceIdInSameRoom() {
+        Room targetRoom = roomRepository.save(Room.create(
+                "오사카 여행",
+                "오사카",
+                LocalDate.of(2026, 6, 1),
+                LocalDate.of(2026, 6, 2),
+                "OSAKA2027",
+                2L
+        ));
+
+        Room otherRoom = roomRepository.save(Room.create(
+                "후쿠오카 여행",
+                "후쿠오카",
+                LocalDate.of(2026, 7, 1),
+                LocalDate.of(2026, 7, 2),
+                "FUKUOKA2027",
+                3L
+        ));
+
+        bookmarkRepository.saveAndFlush(Bookmark.create(otherRoom, "place-1", "ALL", 3L));
+        bookmarkRepository.saveAndFlush(Bookmark.create(targetRoom, "place-1", "ALL", 2L));
+
+        assertThatThrownBy(() -> bookmarkRepository.saveAndFlush(Bookmark.create(targetRoom, "place-1", "ALL", 2L)))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

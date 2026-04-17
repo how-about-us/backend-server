@@ -1,13 +1,13 @@
 ---
 name: review-code-against-docs
-description: Before opening a PR, checks that changed code (git diff main) aligns with package structure, layer dependencies, CONTRIBUTING.md conventions, features.md specs, and erd.md structure
+description: Use when the user asks to create, open, prepare, or publish a PR/pull request, says PR 생성 or PR 올리기, or wants to verify that changed code matches docs/specs before review
 ---
 
 # Code-Docs Review
 
 ## When to Use
 
-PR을 올리기 전 또는 "내 구현이 스펙대로 맞는지" 확인이 필요할 때 실행한다.
+사용자가 PR 생성/오픈/준비를 요청했거나, "내 구현이 스펙대로 맞는지" 리뷰 전에 확인해야 할 때 실행한다.
 
 ## Checklist
 

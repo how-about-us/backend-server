@@ -17,8 +17,10 @@ import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializ
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,7 +39,17 @@ public class CacheConfig implements CachingConfigurer {
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .disableCachingNullValues()
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJacksonJsonRedisSerializer(objectMapper)));
+                .serializeValuesWith(RedisSerializationContext.SerializationPair
+                        .fromSerializer(GenericJacksonJsonRedisSerializer.builder(objectMapper::rebuild)
+                                .enableDefaultTyping(
+                                        BasicPolymorphicTypeValidator.builder()
+                                                .allowIfSubType("com.howaboutus.backend")
+                                                .allowIfBaseType(Map.class)
+                                                .allowIfBaseType(Collection.class)
+                                                .build()
+                                )
+                                .build()
+                        ));
 
         Map<String, RedisCacheConfiguration> initialCacheConfigurations =
                 Arrays.stream(CachePolicy.values())

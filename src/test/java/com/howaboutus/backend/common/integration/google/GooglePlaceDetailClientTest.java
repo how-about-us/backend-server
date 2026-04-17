@@ -7,7 +7,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.mock.http.client.MockClientHttpRequest;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.test.web.client.RequestMatcher;
 import org.springframework.web.client.RestClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,13 +42,14 @@ class GooglePlaceDetailClientTest {
     @Test
     @DisplayName("Google Places 상세 조회 엔드포인트로 올바른 헤더와 함께 요청한다")
     void getsPlaceDetailUsingPlaceDetailsEndpoint() {
-        server.expect(requestTo("https://places.googleapis.com/v1/places/ChIJ123"))
+        server.expect(requestTo("https://places.googleapis.com/v1/places/ChIJ123?languageCode=ko"))
                 .andExpect(method(HttpMethod.GET))
                 .andExpect(header("X-Goog-Api-Key", "test-key"))
                 .andExpect(header(
                         "X-Goog-FieldMask",
                         "id,displayName,formattedAddress,location,primaryType,rating,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours.weekdayDescriptions,photos.name"
                 ))
+                .andExpect(hasEmptyRequestBody())
                 .andRespond(withSuccess("""
                         {
                           "id": "places/ChIJ123",
@@ -59,5 +62,9 @@ class GooglePlaceDetailClientTest {
         assertThat(result.id()).isEqualTo("places/ChIJ123");
         assertThat(result.displayName().text()).isEqualTo("Cafe Layered");
         server.verify();
+    }
+
+    private RequestMatcher hasEmptyRequestBody() {
+        return request -> assertThat(((MockClientHttpRequest) request).getBodyAsString()).isEmpty();
     }
 }

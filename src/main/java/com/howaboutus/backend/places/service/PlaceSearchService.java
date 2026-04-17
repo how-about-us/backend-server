@@ -13,8 +13,8 @@ public class PlaceSearchService {
 
     private final GooglePlaceSearchClient googlePlaceSearchClient;
 
-    public List<PlaceSearchResult> search(String query) {
-        return googlePlaceSearchClient.search(query)
+    public List<PlaceSearchResult> search(String query, double latitude, double longitude, double radius) {
+        return googlePlaceSearchClient.search(query, latitude, longitude, radius)
                 .stream()
                 .map(PlaceSearchResult::from)
                 .toList();

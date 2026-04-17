@@ -1,26 +1,31 @@
 package com.howaboutus.backend.common.integration.google;
 
 import com.howaboutus.backend.common.config.properties.GooglePlacesProperties;
+import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchRequest;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.ClientHttpRequest;
+import org.springframework.mock.http.client.MockClientHttpRequest;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.test.web.client.RequestMatcher;
 import org.springframework.web.client.RestClient;
+import tools.jackson.databind.ObjectMapper;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 class GooglePlaceSearchClientTest {
 
     private MockRestServiceServer server;
     private GooglePlaceSearchClient client;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
@@ -64,10 +69,37 @@ class GooglePlaceSearchClientTest {
                         }
                         """, MediaType.APPLICATION_JSON));
 
-        List<GoogleTextSearchResponse.PlaceItem> result = client.search("seoul cafe");
+        List<GoogleTextSearchResponse.PlaceItem> result = client.search("seoul cafe", 37.5, 127.0, 5000.0);
 
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().id()).isEqualTo("ChIJ123");
         server.verify();
+    }
+
+    @Test
+    @DisplayName("위치 정보를 넘기면 locationBias.circle이 포함된 요청 본문을 전송한다")
+    void searchesWithLocationBiasWhenCoordinatesProvided() {
+        server.expect(requestTo("https://places.googleapis.com/v1/places:searchText"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(hasRequestBody(
+                        GoogleTextSearchRequest.withKorean("seoul cafe", 37.5, 127.0, 3000.0)
+                ))
+                .andRespond(withSuccess("{\"places\": []}", MediaType.APPLICATION_JSON));
+
+        List<GoogleTextSearchResponse.PlaceItem> result = client.search("seoul cafe", 37.5, 127.0, 3000.0);
+
+        assertThat(result).isEmpty();
+        server.verify();
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> RequestMatcher hasRequestBody(T expectedBody) {
+        Class<T> bodyType = (Class<T>) expectedBody.getClass();
+        return request -> assertThat(readBody(request, bodyType)).isEqualTo(expectedBody);
+    }
+
+    private <T> T readBody(ClientHttpRequest request, Class<T> bodyType) {
+        String requestBody = ((MockClientHttpRequest) request).getBodyAsString();
+        return objectMapper.readValue(requestBody, bodyType);
     }
 }

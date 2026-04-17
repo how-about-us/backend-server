@@ -8,9 +8,6 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum ErrorCode {
 
-    // 400 BAD REQUEST
-    INVALID_PLACE_QUERY(HttpStatus.BAD_REQUEST, "검색어는 공백일 수 없습니다"),
-
     // 401 UNAUTHORIZED
     GOOGLE_AUTH_FAILED(HttpStatus.UNAUTHORIZED, "Google 인증에 실패했습니다"),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다"),

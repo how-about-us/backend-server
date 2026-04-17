@@ -7,7 +7,6 @@ import com.howaboutus.backend.places.service.PlaceDetailService;
 import com.howaboutus.backend.places.service.PlaceSearchService;
 import com.howaboutus.backend.places.service.dto.PlaceDetailResult;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
-import java.util.List;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,6 +17,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+
+import java.util.List;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -92,9 +93,9 @@ class PlaceControllerTest {
     }
 
     @Test
-    @DisplayName("유효한 query로 검색하면 결과를 반환한다")
+    @DisplayName("유효한 query만으로 검색하면 위치 없이 서비스를 호출한다")
     void returnsSearchResultsWhenQueryIsValid() throws Exception {
-        given(placeSearchService.search(VALID_QUERY, null, null, null))
+        given(placeSearchService.search(VALID_QUERY, null, null, 5000.0))
                 .willReturn(List.of(placeSearchResult));
 
         mockMvc.perform(searchRequest(VALID_QUERY))
@@ -102,7 +103,65 @@ class PlaceControllerTest {
                 .andExpect(jsonPath("$[0].googlePlaceId").value("ChIJ123"))
                 .andExpect(jsonPath("$[0].name").value("Cafe Layered"));
 
-        then(placeSearchService).should().search(VALID_QUERY, null, null, null);
+        then(placeSearchService).should().search(VALID_QUERY, null, null, 5000.0);
+    }
+
+    @Test
+    @DisplayName("latitude와 longitude, radius를 모두 제공하면 해당 위치와 반경으로 서비스를 호출한다")
+    void callsServiceWithLocationWhenAllLocationParamsProvided() throws Exception {
+        given(placeSearchService.search(VALID_QUERY, 37.5, 127.0, 3000.0))
+                .willReturn(List.of(placeSearchResult));
+
+        mockMvc.perform(get(SEARCH_PATH)
+                        .param("query", VALID_QUERY)
+                        .param("latitude", "37.5")
+                        .param("longitude", "127.0")
+                        .param("radius", "3000.0"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].googlePlaceId").value("ChIJ123"));
+
+        then(placeSearchService).should().search(VALID_QUERY, 37.5, 127.0, 3000.0);
+    }
+
+    @Test
+    @DisplayName("latitude와 longitude만 제공하면 기본 반경 5000m로 서비스를 호출한다")
+    void callsServiceWithDefaultRadiusWhenRadiusNotProvided() throws Exception {
+        given(placeSearchService.search(VALID_QUERY, 37.5, 127.0, 5000.0))
+                .willReturn(List.of(placeSearchResult));
+
+        mockMvc.perform(get(SEARCH_PATH)
+                        .param("query", VALID_QUERY)
+                        .param("latitude", "37.5")
+                        .param("longitude", "127.0"))
+                .andExpect(status().isOk());
+
+        then(placeSearchService).should().search(VALID_QUERY, 37.5, 127.0, 5000.0);
+    }
+
+    @Test
+    @DisplayName("latitude만 있고 longitude가 없으면 400을 반환한다")
+    void returnsBadRequestWhenOnlyLatitudeProvided() throws Exception {
+        mockMvc.perform(get(SEARCH_PATH)
+                        .param("query", VALID_QUERY)
+                        .param("latitude", "37.5"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_LOCATION_PARAMS"))
+                .andExpect(jsonPath("$.message").value("latitude와 longitude는 함께 제공해야 합니다"));
+
+        verifyNoInteractions(placeSearchService);
+    }
+
+    @Test
+    @DisplayName("longitude만 있고 latitude가 없으면 400을 반환한다")
+    void returnsBadRequestWhenOnlyLongitudeProvided() throws Exception {
+        mockMvc.perform(get(SEARCH_PATH)
+                        .param("query", VALID_QUERY)
+                        .param("longitude", "127.0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_LOCATION_PARAMS"))
+                .andExpect(jsonPath("$.message").value("latitude와 longitude는 함께 제공해야 합니다"));
+
+        verifyNoInteractions(placeSearchService);
     }
 
     @Test
@@ -117,20 +176,20 @@ class PlaceControllerTest {
                 4.5,
                 "places/ChIJ123/photos/abc"
         );
-        given(placeSearchService.search(VALID_QUERY, null, null, null))
+        given(placeSearchService.search(VALID_QUERY, null, null, 5000.0))
                 .willReturn(List.of(resultWithoutLocation));
 
         mockMvc.perform(searchRequest(VALID_QUERY))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].location").value(Matchers.nullValue()));
 
-        then(placeSearchService).should().search(VALID_QUERY, null, null, null);
+        then(placeSearchService).should().search(VALID_QUERY, null, null, 5000.0);
     }
 
     @Test
     @DisplayName("외부 API 오류 발생 시 502를 반환한다")
     void returnsBadGatewayWhenExternalApiErrorOccurs() throws Exception {
-        given(placeSearchService.search(VALID_QUERY, null, null, null))
+        given(placeSearchService.search(VALID_QUERY, null, null, 5000.0))
                 .willThrow(new ExternalApiException(new RuntimeException("connection timeout")));
 
         mockMvc.perform(searchRequest(VALID_QUERY))
@@ -142,7 +201,7 @@ class PlaceControllerTest {
     @Test
     @DisplayName("처리되지 않은 예외 발생 시 500을 반환한다")
     void returnsInternalServerErrorForUnhandledException() throws Exception {
-        given(placeSearchService.search(VALID_QUERY, null, null, null))
+        given(placeSearchService.search(VALID_QUERY, null, null, 5000.0))
                 .willThrow(new RuntimeException("예상치 못한 오류"));
 
         mockMvc.perform(searchRequest(VALID_QUERY))

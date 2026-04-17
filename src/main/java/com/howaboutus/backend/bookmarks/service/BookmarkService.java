@@ -32,7 +32,7 @@ public class BookmarkService {
 
         Bookmark bookmark = Bookmark.create(room, command.googlePlaceId(), command.category(), null);
         try {
-            return BookmarkResult.from(bookmarkRepository.save(bookmark));
+            return BookmarkResult.from(bookmarkRepository.saveAndFlush(bookmark));
         } catch (DataIntegrityViolationException e) {
             throw new CustomException(ErrorCode.BOOKMARK_ALREADY_EXISTS, e);
         }

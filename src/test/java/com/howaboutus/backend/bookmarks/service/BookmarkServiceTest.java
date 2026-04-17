@@ -53,14 +53,14 @@ class BookmarkServiceTest {
 
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(bookmarkRepository.existsByRoom_IdAndGooglePlaceId(roomId, "place-1")).willReturn(false);
-        given(bookmarkRepository.save(any(Bookmark.class))).willReturn(savedBookmark);
+        given(bookmarkRepository.saveAndFlush(any(Bookmark.class))).willReturn(savedBookmark);
 
         BookmarkResult result = bookmarkService.create(roomId, new BookmarkCreateCommand("place-1", null));
 
         assertThat(result.category()).isEqualTo(Bookmark.DEFAULT_CATEGORY);
 
         ArgumentCaptor<Bookmark> bookmarkCaptor = ArgumentCaptor.forClass(Bookmark.class);
-        verify(bookmarkRepository).save(bookmarkCaptor.capture());
+        verify(bookmarkRepository).saveAndFlush(bookmarkCaptor.capture());
         assertThat(bookmarkCaptor.getValue().getCategory()).isEqualTo(Bookmark.DEFAULT_CATEGORY);
         assertThat(bookmarkCaptor.getValue().getAddedBy()).isNull();
     }
@@ -166,7 +166,7 @@ class BookmarkServiceTest {
 
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(bookmarkRepository.existsByRoom_IdAndGooglePlaceId(roomId, "place-1")).willReturn(false);
-        given(bookmarkRepository.save(any(Bookmark.class)))
+        given(bookmarkRepository.saveAndFlush(any(Bookmark.class)))
                 .willThrow(new DataIntegrityViolationException("duplicate"));
 
         assertThatThrownBy(() -> bookmarkService.create(roomId, new BookmarkCreateCommand("place-1", "CAFE")))

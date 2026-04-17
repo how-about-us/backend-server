@@ -41,7 +41,7 @@ public class Bookmark extends BaseTimeEntity {
     @Column(nullable = false, length = 30)
     private String category;
 
-    @Column(name = "added_by", nullable = false)
+    @Column(name = "added_by")
     private Long addedBy;
 
     private Bookmark(Room room, String googlePlaceId, String category, Long addedBy) {

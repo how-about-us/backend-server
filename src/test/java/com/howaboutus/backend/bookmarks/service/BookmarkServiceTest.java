@@ -25,6 +25,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class BookmarkServiceTest {
@@ -105,6 +107,25 @@ class BookmarkServiceTest {
     }
 
     @Test
+    @DisplayName("방의 북마크 목록 조회 시 BookmarkResult로 매핑된 결과를 반환한다")
+    void getBookmarksReturnsMappedResults() {
+        UUID roomId = UUID.randomUUID();
+        Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
+        Bookmark bookmark = Bookmark.create(room, "place-1", "CAFE", null);
+
+        ReflectionTestUtils.setField(room, "id", roomId);
+        ReflectionTestUtils.setField(bookmark, "id", 10L);
+        ReflectionTestUtils.setField(bookmark, "createdAt", Instant.parse("2026-04-17T00:00:00Z"));
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(roomId)).willReturn(List.of(bookmark));
+
+        List<BookmarkResult> results = bookmarkService.getBookmarks(roomId);
+
+        assertThat(results).containsExactly(BookmarkResult.from(bookmark));
+    }
+
+    @Test
     @DisplayName("방 밖의 북마크를 삭제하려고 하면 BOOKMARK_NOT_FOUND 예외를 던진다")
     void deleteThrowsWhenBookmarkOutsideRoom() {
         UUID roomId = UUID.randomUUID();
@@ -117,5 +138,40 @@ class BookmarkServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BOOKMARK_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("방의 북마크 삭제 시 repository.delete를 호출한다")
+    void deleteRemovesBookmark() {
+        UUID roomId = UUID.randomUUID();
+        Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
+        Bookmark bookmark = Bookmark.create(room, "place-1", "CAFE", null);
+
+        ReflectionTestUtils.setField(room, "id", roomId);
+        ReflectionTestUtils.setField(bookmark, "id", 10L);
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(bookmarkRepository.findByIdAndRoom_Id(10L, roomId)).willReturn(Optional.of(bookmark));
+
+        bookmarkService.delete(roomId, 10L);
+
+        verify(bookmarkRepository).delete(bookmark);
+    }
+
+    @Test
+    @DisplayName("저장 중 DB 중복이 발생하면 BOOKMARK_ALREADY_EXISTS 예외로 변환한다")
+    void createTranslatesDatabaseDuplicateOnSave() {
+        UUID roomId = UUID.randomUUID();
+        Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(bookmarkRepository.existsByRoom_IdAndGooglePlaceId(roomId, "place-1")).willReturn(false);
+        given(bookmarkRepository.save(any(Bookmark.class)))
+                .willThrow(new DataIntegrityViolationException("duplicate"));
+
+        assertThatThrownBy(() -> bookmarkService.create(roomId, new BookmarkCreateCommand("place-1", "CAFE")))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.BOOKMARK_ALREADY_EXISTS);
     }
 }

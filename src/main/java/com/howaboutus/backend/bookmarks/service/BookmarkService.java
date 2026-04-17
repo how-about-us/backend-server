@@ -11,6 +11,7 @@ import com.howaboutus.backend.rooms.repository.RoomRepository;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +31,11 @@ public class BookmarkService {
         }
 
         Bookmark bookmark = Bookmark.create(room, command.googlePlaceId(), command.category(), null);
-        return BookmarkResult.from(bookmarkRepository.save(bookmark));
+        try {
+            return BookmarkResult.from(bookmarkRepository.save(bookmark));
+        } catch (DataIntegrityViolationException e) {
+            throw new CustomException(ErrorCode.BOOKMARK_ALREADY_EXISTS, e);
+        }
     }
 
     public List<BookmarkResult> getBookmarks(UUID roomId) {

@@ -57,6 +57,21 @@ class BookmarkControllerTest {
     }
 
     @Test
+    @DisplayName("googlePlaceId가 300자를 초과하면 400을 반환한다")
+    void returnsBadRequestWhenGooglePlaceIdIsTooLong() throws Exception {
+        mockMvc.perform(post("/rooms/{roomId}/bookmarks", ROOM_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"googlePlaceId": "%s", "category": "CAFE"}
+                                """.formatted("a".repeat(301))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("googlePlaceId는 300자 이하여야 합니다"));
+
+        verifyNoInteractions(bookmarkService);
+    }
+
+    @Test
     @DisplayName("북마크 생성 성공 시 201을 반환한다")
     void createsBookmarkSuccessfully() throws Exception {
         given(bookmarkService.create(eq(ROOM_ID), any(BookmarkCreateCommand.class))).willReturn(BOOKMARK_RESULT);
@@ -78,6 +93,21 @@ class BookmarkControllerTest {
         then(bookmarkService).should().create(eq(ROOM_ID), captor.capture());
         assertThat(captor.getValue().googlePlaceId()).isEqualTo("place-1");
         assertThat(captor.getValue().category()).isEqualTo("CAFE");
+    }
+
+    @Test
+    @DisplayName("category가 30자를 초과하면 400을 반환한다")
+    void returnsBadRequestWhenCategoryIsTooLong() throws Exception {
+        mockMvc.perform(post("/rooms/{roomId}/bookmarks", ROOM_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"googlePlaceId": "place-1", "category": "%s"}
+                                """.formatted("a".repeat(31))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("category는 30자 이하여야 합니다"));
+
+        verifyNoInteractions(bookmarkService);
     }
 
     @Test

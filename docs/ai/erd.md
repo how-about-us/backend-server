@@ -38,7 +38,7 @@ Google OAuth 기반 사용자 정보
 | start_date | DATE | NULLABLE | 여행 시작일 |
 | end_date | DATE | NULLABLE | 여행 종료일 |
 | invite_code | VARCHAR(50) | UNIQUE, NOT NULL | 초대 링크용 고정 코드 (방 생성 시 자동 발급) |
-| created_by | BIGINT | FK → users.id, NOT NULL | 방 생성자 |
+| created_by | BIGINT | 사용자 ID 참조, NOT NULL | 방 생성자 (현재 구현은 users.id 값을 보관하지만 DB FK 제약은 두지 않음) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
 
@@ -98,7 +98,7 @@ Google OAuth 기반 사용자 정보
 | id | BIGINT | PK, AUTO_INCREMENT | |
 | room_id | UUID | FK → rooms.id, NOT NULL | |
 | google_place_id | VARCHAR(300) | NOT NULL | Google Place ID |
-| added_by | BIGINT | FK → users.id, NULL 가능 | 등록한 사용자 (현재는 인증 연동 전이라 임시로 nullable) |
+| added_by | BIGINT | 사용자 ID 참조, NULL 가능 | 등록한 사용자 (현재는 인증 연동 전이라 임시로 nullable) |
 | category | VARCHAR(30) | NOT NULL, DEFAULT 'ALL' | |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |

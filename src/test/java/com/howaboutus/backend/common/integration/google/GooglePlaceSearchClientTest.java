@@ -8,19 +8,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.ClientHttpRequest;
 import org.springframework.mock.http.client.MockClientHttpRequest;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.client.RequestMatcher;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 class GooglePlaceSearchClientTest {
@@ -84,8 +82,7 @@ class GooglePlaceSearchClientTest {
         server.expect(requestTo("https://places.googleapis.com/v1/places:searchText"))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(hasRequestBody(
-                        GoogleTextSearchRequest.withKorean("seoul cafe", 37.5, 127.0, 3000.0),
-                        GoogleTextSearchRequest.class
+                        GoogleTextSearchRequest.withKorean("seoul cafe", 37.5, 127.0, 3000.0)
                 ))
                 .andRespond(withSuccess("{\"places\": []}", MediaType.APPLICATION_JSON));
 
@@ -95,12 +92,13 @@ class GooglePlaceSearchClientTest {
         server.verify();
     }
 
-    private <T> RequestMatcher hasRequestBody(T expectedBody, Class<T> bodyType) {
+    @SuppressWarnings("unchecked")
+    private <T> RequestMatcher hasRequestBody(T expectedBody) {
+        Class<T> bodyType = (Class<T>) expectedBody.getClass();
         return request -> assertThat(readBody(request, bodyType)).isEqualTo(expectedBody);
     }
 
-    private <T> T readBody(org.springframework.http.client.ClientHttpRequest request, Class<T> bodyType)
-            throws IOException {
+    private <T> T readBody(ClientHttpRequest request, Class<T> bodyType) {
         String requestBody = ((MockClientHttpRequest) request).getBodyAsString();
         return objectMapper.readValue(requestBody, bodyType);
     }

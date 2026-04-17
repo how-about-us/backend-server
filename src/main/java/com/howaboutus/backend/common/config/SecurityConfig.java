@@ -17,7 +17,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @RequiredArgsConstructor
-@EnableConfigurationProperties(CorsProperties.class)    // 테스트 시 정상 동작을 위해 추가
+@EnableConfigurationProperties(CorsProperties.class)    // 단위 테스트 시 정상 동작을 위해 추가
 public class SecurityConfig {
 
     private final CorsProperties corsProperties;
@@ -34,7 +34,10 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
-                                "/swagger-ui/**")
+                                "/swagger-ui/**",
+                                "/auth/google/login",
+                                "/auth/refresh",
+                                "/auth/logout")
                         .permitAll()
                         // 일단 임시로 인증 열어 놓음
                         .anyRequest().permitAll())

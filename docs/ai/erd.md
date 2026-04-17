@@ -169,12 +169,13 @@ Google OAuth 기반 사용자 정보
 
 ## Redis 관리 데이터 (ERD 외)
 
-| 키 패턴 | 용도 | TTL |
-|---------|------|-----|
-| `room:{roomId}:metadata` | 방 메타데이터 캐시 (DB 스냅샷) | Sliding TTL |
-| `room:{roomId}:connected_users` | 현재 접속 중인 유저 목록 (ephemeral) | 세션 종료 시 제거 |
-| `place:detail:{googlePlaceId}` | 장소 상세 조회 결과 캐시 | 3시간 |
-| `refresh:{userId}` | Refresh Token 저장 (예정) | TTL 7~14일 |
+| 키 패턴 | 용도 | TTL | 설명 |
+|---------|------|-----|------|
+| `room:{roomId}:metadata` | 방 메타데이터 캐시 (DB 스냅샷) | Sliding TTL | |
+| `room:{roomId}:connected_users` | 현재 접속 중인 유저 목록 (ephemeral) | 세션 종료 시 제거 | |
+| `place:detail:{googlePlaceId}` | 장소 상세 조회 결과 캐시 | 3시간 | |
+| `refresh:token:{uuid}` | userId (String) | 14일 | 토큰 → 유저 매핑, 유효성 검증 |
+| `refresh:user:{userId}` | Set\<uuid\> | 없음 | 유저 활성 토큰 목록, 전체 무효화 & Replay Detection |
 
 ---
 

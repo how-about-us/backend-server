@@ -32,3 +32,6 @@ jwt:
   secret: ${JWT_SECRET}
   #개발용, 36시간으로 설정, 나중에 0하나 빼기
   access-token-expiration: 36000000
+
+refresh-token:
+  expiration: 1209600000  # 14일 (밀리초)

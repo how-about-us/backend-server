@@ -98,7 +98,7 @@ Google OAuth 기반 사용자 정보
 | id | BIGINT | PK, AUTO_INCREMENT | |
 | room_id | UUID | FK → rooms.id, NOT NULL | |
 | google_place_id | VARCHAR(300) | NOT NULL | Google Place ID |
-| added_by | BIGINT | FK → users.id, NOT NULL | 등록한 사용자 |
+| added_by | BIGINT | FK → users.id, NULL 가능 | 등록한 사용자 (현재는 인증 연동 전이라 임시로 nullable) |
 | category | VARCHAR(30) | NOT NULL, DEFAULT 'ALL' | |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |

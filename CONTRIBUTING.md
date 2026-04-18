@@ -69,6 +69,13 @@ com.howaboutus.backend.
     └── entity/       ← JPA Entity
 ```
 
+### 문서 구조
+
+- Markdown 문서를 새로 추가하거나 디렉토리를 정리할 때는 도메인 기준이 아니라 aggregate 기준으로 나눈다.
+- 하나의 aggregate에서 함께 변경되고 함께 이해해야 하는 문서들은 같은 디렉토리 아래에 둔다.
+- aggregate 경계가 명확하지 않으면 임의로 디렉토리를 만들거나 이동하지 말고, 사용자에게 어떤 기준으로 디렉토리를 구성할지 먼저 물어본다.
+- aggregate와 무관한 공통 규칙, 인덱스, 결정 기록 가이드는 최상위 공통 문서나 `docs/ai/decisions/`처럼 목적이 분명한 공용 디렉토리에 둔다.
+
 ### 예외 처리
 
 - 비즈니스 예외는 커스텀 예외 클래스로 정의하고 `GlobalExceptionHandler`에서 처리한다.

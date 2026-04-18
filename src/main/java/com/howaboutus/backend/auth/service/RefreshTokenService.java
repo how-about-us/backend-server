@@ -44,14 +44,14 @@ public class RefreshTokenService {
         TokenParts parts = parseToken(token);
 
         String tokenKey = TOKEN_KEY_PREFIX + parts.uuid();
-        String userId = redisTemplate.opsForValue().get(tokenKey);
+        // getAndDelete: GET+DELETE 원자 실행(GETDEL). 동시 요청이 들어와도 한 쪽만 userId를 얻어 새 토큰을 발급한다.
+        String userId = redisTemplate.opsForValue().getAndDelete(tokenKey);
         //redis에서 조회했으나, uuid에 해당하는 userid==null 이면, 이미 사용된토큰 또는 위조된 토큰
         if (userId == null) {
             handleMissingToken(parts);
             return null; // handleMissingToken이 항상 에러를 던져서 이 줄은 실행 안됨.
         }
-        //null이 아니라면, 기존의 RTK는 폐기하고, 새로운 토큰을 발급한다.
-        redisTemplate.delete(tokenKey);
+        //null이 아니라면, 기존의 RTK는 폐기되었으므로 새로운 토큰을 발급한다.
         String userKey = USER_KEY_PREFIX + userId;
         redisTemplate.opsForSet().remove(userKey, parts.uuid());
         redisTemplate.opsForValue().set(USED_KEY_PREFIX + parts.uuid(), "1", USED_TTL);

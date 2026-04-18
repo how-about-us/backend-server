@@ -70,13 +70,12 @@ class RefreshTokenServiceTest {
     void rotateValidToken() {
         String oldUuid = "old-uuid";
         String oldToken = "1:" + oldUuid;
-        given(valueOperations.get("refresh:token:old-uuid")).willReturn("1");
-        given(redisTemplate.delete("refresh:token:old-uuid")).willReturn(true);
+        given(valueOperations.getAndDelete("refresh:token:old-uuid")).willReturn("1");
 
         String newToken = refreshTokenService.rotate(oldToken);
 
         assertThat(newToken).isNotBlank().isNotEqualTo(oldToken).startsWith("1:");
-        verify(redisTemplate).delete("refresh:token:old-uuid");
+        verify(valueOperations).getAndDelete("refresh:token:old-uuid");
         verify(setOperations).remove("refresh:user:1", oldUuid);
         verify(valueOperations).set(
                 eq("refresh:used:old-uuid"),
@@ -89,8 +88,8 @@ class RefreshTokenServiceTest {
     @DisplayName("만료된 토큰으로 Rotation하면 REFRESH_TOKEN_NOT_FOUND 예외를 던진다")
     void throwsWhenTokenExpired() {
         String token = "1:expired-uuid";
-        given(valueOperations.get("refresh:token:expired-uuid")).willReturn(null);
-        given(redisTemplate.hasKey("refresh:used:expired-uuid")).willReturn(false); // Set isMember 대신 hasKey
+        given(valueOperations.getAndDelete("refresh:token:expired-uuid")).willReturn(null);
+        given(redisTemplate.hasKey("refresh:used:expired-uuid")).willReturn(false);
 
         assertThatThrownBy(() -> refreshTokenService.rotate(token))
                 .isInstanceOf(CustomException.class)
@@ -105,7 +104,7 @@ class RefreshTokenServiceTest {
         String activeUuid = "active-uuid";
         String token = "1:" + reusedUuid;
 
-        given(valueOperations.get("refresh:token:reused-uuid")).willReturn(null);
+        given(valueOperations.getAndDelete("refresh:token:reused-uuid")).willReturn(null);
         given(redisTemplate.hasKey("refresh:used:reused-uuid")).willReturn(true); // used 마커 있음
         given(setOperations.members("refresh:user:1")).willReturn(Set.of(reusedUuid, activeUuid));
         given(redisTemplate.delete("refresh:token:reused-uuid")).willReturn(true);
@@ -128,7 +127,7 @@ class RefreshTokenServiceTest {
     void throwsNotFoundWhenTokenTtlExpiredNaturally() {
         // refresh:token:{uuid} 는 TTL 만료, refresh:used:{uuid} 도 없음 → 정상 만료
         String token = "1:naturally-expired-uuid";
-        given(valueOperations.get("refresh:token:naturally-expired-uuid")).willReturn(null);
+        given(valueOperations.getAndDelete("refresh:token:naturally-expired-uuid")).willReturn(null);
         given(redisTemplate.hasKey("refresh:used:naturally-expired-uuid")).willReturn(false);
 
         assertThatThrownBy(() -> refreshTokenService.rotate(token))

@@ -89,7 +89,28 @@ Google OAuth 기반 사용자 정보
 
 ---
 
-## 5. bookmarks (장소 보관함 / 후보지)
+## 5. bookmark_categories (북마크 카테고리)
+
+방별 사용자 정의 북마크 카테고리. 북마크는 반드시 하나의 카테고리에 속합니다.
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|------|------|----------|------|
+| id | BIGINT | PK, AUTO_INCREMENT | |
+| room_id | UUID | FK → rooms.id, NOT NULL | |
+| name | VARCHAR(50) | NOT NULL | 방 내 카테고리 이름 |
+| created_by | BIGINT | 사용자 ID 참조, NULL 가능 | 생성한 사용자 (현재는 인증 연동 전이라 임시로 nullable) |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
+| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
+
+**제약:** UNIQUE(room_id, name)
+
+**인덱스:** (room_id)
+
+> 카테고리는 방 생성 직후 0개일 수 있습니다. 북마크 생성 시에는 반드시 현재 방 소속 카테고리를 지정해야 하며, 카테고리 삭제 시 소속 북마크를 먼저 삭제한 뒤 카테고리를 삭제합니다.
+
+---
+
+## 6. bookmarks (장소 보관함 / 후보지)
 
 방 내 공유 후보지 목록. 팀원이 후보로 등록한 장소.
 
@@ -97,19 +118,19 @@ Google OAuth 기반 사용자 정보
 |------|------|----------|------|
 | id | BIGINT | PK, AUTO_INCREMENT | |
 | room_id | UUID | FK → rooms.id, NOT NULL | |
+| category_id | BIGINT | FK → bookmark_categories.id, NOT NULL | 현재 방 소속 카테고리 |
 | google_place_id | VARCHAR(300) | NOT NULL | Google Place ID |
 | added_by | BIGINT | 사용자 ID 참조, NULL 가능 | 등록한 사용자 (현재는 인증 연동 전이라 임시로 nullable) |
-| category | VARCHAR(30) | NOT NULL, DEFAULT 'ALL' | |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
 
 **제약:** UNIQUE(room_id, google_place_id)
 
-**인덱스:** (room_id), (google_place_id)
+**인덱스:** (room_id), (category_id), (google_place_id)
 
 ---
 
-## 6. schedules (일자별 일정)
+## 7. schedules (일자별 일정)
 
 여행 일정의 일자 단위 그룹
 
@@ -126,7 +147,7 @@ Google OAuth 기반 사용자 정보
 
 ---
 
-## 7. schedule_items (일정 항목)
+## 8. schedule_items (일정 항목)
 
 일자별 방문 장소 및 시간 배치. Drag and Drop 정렬 지원.
 
@@ -160,7 +181,9 @@ Google OAuth 기반 사용자 정보
 | users ↔ messages | 1:N | 한 유저가 여러 메시지 입력 가능 |
 | rooms ↔ room_members | 1:N | 한 방에 여러 멤버 |
 | rooms ↔ messages | 1:N | 한 방에 여러 메시지 |
+| rooms ↔ bookmark_categories | 1:N | 한 방에 여러 북마크 카테고리 |
 | rooms ↔ bookmarks | 1:N | 한 방에 여러 후보지 |
+| bookmark_categories ↔ bookmarks | 1:N | 한 카테고리에 여러 후보지 |
 | rooms ↔ schedules | 1:N | 한 방에 여러 일자 |
 | schedules ↔ schedule_items | 1:N | 한 일자에 여러 방문 장소 |
 

@@ -4,6 +4,8 @@ import com.howaboutus.backend.bookmarks.entity.Bookmark;
 import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkCreateCommand;
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkResult;
+import com.howaboutus.backend.bookmarkcategories.entity.BookmarkCategory;
+import com.howaboutus.backend.bookmarkcategories.repository.BookmarkCategoryRepository;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
@@ -25,15 +27,21 @@ public class BookmarkService {
     // TODO: 나중에 Room 관련 로직이 만들어지면 그때 의존성을 바꾸짜
     private final RoomRepository roomRepository;
     private final BookmarkRepository bookmarkRepository;
+    private final BookmarkCategoryRepository bookmarkCategoryRepository;
 
     @Transactional
     public BookmarkResult create(UUID roomId, BookmarkCreateCommand command) {
         Room room = getRoom(roomId);
+        if (!bookmarkCategoryRepository.existsByRoom_Id(roomId)) {
+            throw new CustomException(ErrorCode.BOOKMARK_CATEGORY_EMPTY);
+        }
+
+        BookmarkCategory category = getCategoryInRoom(roomId, command.categoryId());
         if (bookmarkRepository.existsByRoom_IdAndGooglePlaceId(roomId, command.googlePlaceId())) {
             throw new CustomException(ErrorCode.BOOKMARK_ALREADY_EXISTS);
         }
 
-        Bookmark bookmark = Bookmark.create(room, command.googlePlaceId(), command.category(), null);
+        Bookmark bookmark = Bookmark.create(room, command.googlePlaceId(), category, null);
         try {
             return BookmarkResult.from(bookmarkRepository.saveAndFlush(bookmark));
         } catch (DataIntegrityViolationException e) {
@@ -57,8 +65,24 @@ public class BookmarkService {
         bookmarkRepository.delete(bookmark);
     }
 
+    @Transactional
+    public BookmarkResult updateCategory(UUID roomId, Long bookmarkId, Long categoryId) {
+        getRoom(roomId);
+        Bookmark bookmark = bookmarkRepository.findByIdAndRoom_Id(bookmarkId, roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BOOKMARK_NOT_FOUND));
+        BookmarkCategory category = getCategoryInRoom(roomId, categoryId);
+
+        bookmark.changeCategory(category);
+        return BookmarkResult.from(bookmarkRepository.saveAndFlush(bookmark));
+    }
+
     private Room getRoom(UUID roomId) {
         return roomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
+    }
+
+    private BookmarkCategory getCategoryInRoom(UUID roomId, Long categoryId) {
+        return bookmarkCategoryRepository.findByIdAndRoom_Id(categoryId, roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BOOKMARK_CATEGORY_NOT_FOUND));
     }
 }

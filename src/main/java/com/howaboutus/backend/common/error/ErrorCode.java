@@ -16,9 +16,12 @@ public enum ErrorCode {
 
     // 404 NOT FOUND
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "방을 찾을 수 없습니다"),
+    BOOKMARK_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "북마크 카테고리를 찾을 수 없습니다"),
     BOOKMARK_NOT_FOUND(HttpStatus.NOT_FOUND, "북마크를 찾을 수 없습니다"),
 
     // 409 CONFLICT
+    BOOKMARK_CATEGORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 북마크 카테고리입니다"),
+    BOOKMARK_CATEGORY_EMPTY(HttpStatus.CONFLICT, "북마크 카테고리가 없습니다"),
     BOOKMARK_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 보관함에 추가된 장소입니다"),
 
     // 502 BAD GATEWAY

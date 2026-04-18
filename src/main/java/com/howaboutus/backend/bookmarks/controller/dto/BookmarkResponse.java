@@ -8,6 +8,7 @@ public record BookmarkResponse(
         Long bookmarkId,
         UUID roomId,
         String googlePlaceId,
+        Long categoryId,
         String category,
         Long addedBy,
         Instant createdAt
@@ -17,6 +18,7 @@ public record BookmarkResponse(
                 result.bookmarkId(),
                 result.roomId(),
                 result.googlePlaceId(),
+                result.categoryId(),
                 result.category(),
                 result.addedBy(),
                 result.createdAt()

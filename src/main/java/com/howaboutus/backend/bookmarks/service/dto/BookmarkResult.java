@@ -8,6 +8,7 @@ public record BookmarkResult(
         Long bookmarkId,
         UUID roomId,
         String googlePlaceId,
+        Long categoryId,
         String category,
         Long addedBy,
         Instant createdAt
@@ -17,7 +18,8 @@ public record BookmarkResult(
                 bookmark.getId(),
                 bookmark.getRoom().getId(),
                 bookmark.getGooglePlaceId(),
-                bookmark.getCategory(),
+                bookmark.getCategory().getId(),
+                bookmark.getCategoryName(),
                 bookmark.getAddedBy(),
                 bookmark.getCreatedAt()
         );

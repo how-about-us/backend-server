@@ -1,0 +1,66 @@
+package com.howaboutus.backend.bookmarkcategories.controller;
+
+import com.howaboutus.backend.bookmarkcategories.controller.dto.BookmarkCategoryResponse;
+import com.howaboutus.backend.bookmarkcategories.controller.dto.CreateBookmarkCategoryRequest;
+import com.howaboutus.backend.bookmarkcategories.controller.dto.UpdateBookmarkCategoryRequest;
+import com.howaboutus.backend.bookmarkcategories.service.BookmarkCategoryService;
+import java.util.List;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/rooms/{roomId}/bookmark-categories")
+public class BookmarkCategoryController {
+
+    private final BookmarkCategoryService bookmarkCategoryService;
+
+    @PostMapping
+    public ResponseEntity<BookmarkCategoryResponse> create(
+            @PathVariable UUID roomId,
+            @RequestBody @Valid CreateBookmarkCategoryRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(BookmarkCategoryResponse.from(
+                        bookmarkCategoryService.create(roomId, request.toCommand())
+                ));
+    }
+
+    @GetMapping
+    public List<BookmarkCategoryResponse> getCategories(@PathVariable UUID roomId) {
+        return bookmarkCategoryService.getCategories(roomId).stream()
+                .map(BookmarkCategoryResponse::from)
+                .toList();
+    }
+
+    @PatchMapping("/{categoryId}")
+    public BookmarkCategoryResponse rename(
+            @PathVariable UUID roomId,
+            @PathVariable Long categoryId,
+            @RequestBody @Valid UpdateBookmarkCategoryRequest request
+    ) {
+        return BookmarkCategoryResponse.from(
+                bookmarkCategoryService.rename(roomId, categoryId, request.toCommand())
+        );
+    }
+
+    @DeleteMapping("/{categoryId}")
+    public ResponseEntity<Void> delete(
+            @PathVariable UUID roomId,
+            @PathVariable Long categoryId
+    ) {
+        bookmarkCategoryService.delete(roomId, categoryId);
+        return ResponseEntity.noContent().build();
+    }
+}

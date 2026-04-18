@@ -12,5 +12,9 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
     List<Bookmark> findAllByRoom_IdOrderByCreatedAtDesc(UUID roomId);
 
+    List<Bookmark> findAllByRoom_IdAndCategory_IdOrderByCreatedAtDesc(UUID roomId, Long categoryId);
+
     Optional<Bookmark> findByIdAndRoom_Id(Long bookmarkId, UUID roomId);
+
+    void deleteAllByCategory_Id(Long categoryId);
 }

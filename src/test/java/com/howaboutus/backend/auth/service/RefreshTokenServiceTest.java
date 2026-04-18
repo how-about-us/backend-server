@@ -58,6 +58,10 @@ class RefreshTokenServiceTest {
                 eq(Duration.ofMillis(1209600000L))
         );
         verify(setOperations).add("refresh:user:1", uuid);
+        verify(redisTemplate).expire(
+                eq("refresh:user:1"),
+                eq(Duration.ofMillis(1209600000L))
+        );
     }
 
     @Test

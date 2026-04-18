@@ -6,9 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
-import com.howaboutus.backend.bookmarkcategories.entity.BookmarkCategory;
-import com.howaboutus.backend.bookmarkcategories.repository.BookmarkCategoryRepository;
 import com.howaboutus.backend.bookmarks.entity.Bookmark;
+import com.howaboutus.backend.bookmarks.entity.BookmarkCategory;
+import com.howaboutus.backend.bookmarks.repository.BookmarkCategoryRepository;
 import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkCreateCommand;
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkResult;

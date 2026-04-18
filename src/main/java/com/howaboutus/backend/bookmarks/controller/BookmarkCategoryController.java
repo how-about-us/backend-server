@@ -1,9 +1,9 @@
-package com.howaboutus.backend.bookmarkcategories.controller;
+package com.howaboutus.backend.bookmarks.controller;
 
-import com.howaboutus.backend.bookmarkcategories.controller.dto.BookmarkCategoryResponse;
-import com.howaboutus.backend.bookmarkcategories.controller.dto.CreateBookmarkCategoryRequest;
-import com.howaboutus.backend.bookmarkcategories.controller.dto.UpdateBookmarkCategoryRequest;
-import com.howaboutus.backend.bookmarkcategories.service.BookmarkCategoryService;
+import com.howaboutus.backend.bookmarks.controller.dto.BookmarkCategoryResponse;
+import com.howaboutus.backend.bookmarks.controller.dto.CreateBookmarkCategoryRequest;
+import com.howaboutus.backend.bookmarks.controller.dto.RenameBookmarkCategoryRequest;
+import com.howaboutus.backend.bookmarks.service.BookmarkCategoryService;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +48,7 @@ public class BookmarkCategoryController {
     public BookmarkCategoryResponse rename(
             @PathVariable UUID roomId,
             @PathVariable Long categoryId,
-            @RequestBody @Valid UpdateBookmarkCategoryRequest request
+            @RequestBody @Valid RenameBookmarkCategoryRequest request
     ) {
         return BookmarkCategoryResponse.from(
                 bookmarkCategoryService.rename(roomId, categoryId, request.toCommand())

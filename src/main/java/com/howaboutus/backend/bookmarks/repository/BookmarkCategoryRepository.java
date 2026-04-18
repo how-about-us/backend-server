@@ -1,6 +1,6 @@
-package com.howaboutus.backend.bookmarkcategories.repository;
+package com.howaboutus.backend.bookmarks.repository;
 
-import com.howaboutus.backend.bookmarkcategories.entity.BookmarkCategory;
+import com.howaboutus.backend.bookmarks.entity.BookmarkCategory;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

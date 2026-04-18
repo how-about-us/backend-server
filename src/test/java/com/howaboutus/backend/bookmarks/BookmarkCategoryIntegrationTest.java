@@ -1,4 +1,4 @@
-package com.howaboutus.backend.bookmarkcategories;
+package com.howaboutus.backend.bookmarks;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -8,8 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.howaboutus.backend.bookmarkcategories.repository.BookmarkCategoryRepository;
 import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
+import com.howaboutus.backend.bookmarks.repository.BookmarkCategoryRepository;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
@@ -24,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @AutoConfigureMockMvc
+@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
 
     @Autowired

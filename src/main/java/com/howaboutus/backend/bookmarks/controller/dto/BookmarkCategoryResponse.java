@@ -1,6 +1,6 @@
-package com.howaboutus.backend.bookmarkcategories.controller.dto;
+package com.howaboutus.backend.bookmarks.controller.dto;
 
-import com.howaboutus.backend.bookmarkcategories.service.dto.BookmarkCategoryResult;
+import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryResult;
 import java.time.Instant;
 import java.util.UUID;
 

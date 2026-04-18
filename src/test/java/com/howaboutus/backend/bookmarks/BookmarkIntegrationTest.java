@@ -9,9 +9,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.howaboutus.backend.bookmarkcategories.entity.BookmarkCategory;
-import com.howaboutus.backend.bookmarkcategories.repository.BookmarkCategoryRepository;
 import com.howaboutus.backend.bookmarks.entity.Bookmark;
+import com.howaboutus.backend.bookmarks.entity.BookmarkCategory;
+import com.howaboutus.backend.bookmarks.repository.BookmarkCategoryRepository;
 import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
@@ -27,6 +27,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.web.servlet.MockMvc;
 
 @AutoConfigureMockMvc
+@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 class BookmarkIntegrationTest extends BaseIntegrationTest {
 
     @Autowired

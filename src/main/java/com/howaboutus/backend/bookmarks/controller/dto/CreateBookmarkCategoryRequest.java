@@ -1,6 +1,6 @@
-package com.howaboutus.backend.bookmarkcategories.controller.dto;
+package com.howaboutus.backend.bookmarks.controller.dto;
 
-import com.howaboutus.backend.bookmarkcategories.service.dto.BookmarkCategoryCreateCommand;
+import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryCreateCommand;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 

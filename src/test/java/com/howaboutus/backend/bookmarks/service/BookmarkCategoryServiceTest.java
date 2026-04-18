@@ -1,4 +1,4 @@
-package com.howaboutus.backend.bookmarkcategories.service;
+package com.howaboutus.backend.bookmarks.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -6,11 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
-import com.howaboutus.backend.bookmarkcategories.entity.BookmarkCategory;
-import com.howaboutus.backend.bookmarkcategories.repository.BookmarkCategoryRepository;
-import com.howaboutus.backend.bookmarkcategories.service.dto.BookmarkCategoryCreateCommand;
-import com.howaboutus.backend.bookmarkcategories.service.dto.BookmarkCategoryRenameCommand;
-import com.howaboutus.backend.bookmarkcategories.service.dto.BookmarkCategoryResult;
+import com.howaboutus.backend.bookmarks.entity.BookmarkCategory;
+import com.howaboutus.backend.bookmarks.repository.BookmarkCategoryRepository;
+import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryCreateCommand;
+import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryRenameCommand;
+import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryResult;
 import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;

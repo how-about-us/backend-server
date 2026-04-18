@@ -1,7 +1,7 @@
-package com.howaboutus.backend.bookmarkcategories.controller;
+package com.howaboutus.backend.bookmarks.controller;
 
-import com.howaboutus.backend.bookmarkcategories.service.BookmarkCategoryService;
-import com.howaboutus.backend.bookmarkcategories.service.dto.BookmarkCategoryResult;
+import com.howaboutus.backend.bookmarks.service.BookmarkCategoryService;
+import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryResult;
 import com.howaboutus.backend.common.config.SecurityConfig;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;

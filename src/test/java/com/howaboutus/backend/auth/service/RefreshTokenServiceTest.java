@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.time.Duration;
@@ -119,6 +120,7 @@ class RefreshTokenServiceTest {
         verify(redisTemplate).delete("refresh:token:reused-uuid");
         verify(redisTemplate).delete("refresh:token:active-uuid");
         verify(redisTemplate).delete("refresh:user:1");
+        verify(redisTemplate, never()).delete("refresh:used:reused-uuid");
     }
 
     @Test

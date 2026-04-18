@@ -20,6 +20,8 @@ public class RefreshTokenService {
     private static final String TOKEN_KEY_PREFIX = "refresh:token:";
     private static final String USER_KEY_PREFIX = "refresh:user:";
     private static final String USED_KEY_PREFIX = "refresh:used:";
+    // rotate 직후 재사용 감지 창. 5분 이후 재사용 시 NOT_FOUND로 거부되며 공격자 진입은 불가하나,
+    // invalidateAll(다른 기기 강제 로그아웃)은 발동되지 않음. 의도된 트레이드오프.
     private static final Duration USED_TTL = Duration.ofMinutes(5);
 
     private final StringRedisTemplate redisTemplate;

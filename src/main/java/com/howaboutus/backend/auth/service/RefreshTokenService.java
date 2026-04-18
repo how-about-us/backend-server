@@ -29,7 +29,6 @@ public class RefreshTokenService {
         String tokenKey = TOKEN_KEY_PREFIX + uuid;
         String userKey = USER_KEY_PREFIX + userId;
 
-        //클라이언트 측에서 보낸 token(uuid) : userid
         redisTemplate.opsForValue().set(tokenKey, String.valueOf(userId), Duration.ofMillis(properties.expiration()));
         redisTemplate.opsForSet().add(userKey, uuid);
         redisTemplate.expire(userKey, Duration.ofMillis(properties.expiration()));

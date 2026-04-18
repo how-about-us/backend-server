@@ -89,7 +89,7 @@ class RefreshTokenServiceTest {
     void throwsWhenTokenExpired() {
         String token = "1:expired-uuid";
         given(valueOperations.get("refresh:token:expired-uuid")).willReturn(null);
-        given(setOperations.isMember("refresh:user:1", "expired-uuid")).willReturn(false);
+        given(redisTemplate.hasKey("refresh:used:expired-uuid")).willReturn(false); // Set isMember 대신 hasKey
 
         assertThatThrownBy(() -> refreshTokenService.rotate(token))
                 .isInstanceOf(CustomException.class)
@@ -105,7 +105,7 @@ class RefreshTokenServiceTest {
         String token = "1:" + reusedUuid;
 
         given(valueOperations.get("refresh:token:reused-uuid")).willReturn(null);
-        given(setOperations.isMember("refresh:user:1", reusedUuid)).willReturn(true);
+        given(redisTemplate.hasKey("refresh:used:reused-uuid")).willReturn(true); // used 마커 있음
         given(setOperations.members("refresh:user:1")).willReturn(Set.of(reusedUuid, activeUuid));
         given(redisTemplate.delete("refresh:token:reused-uuid")).willReturn(true);
         given(redisTemplate.delete("refresh:token:active-uuid")).willReturn(true);
@@ -119,6 +119,20 @@ class RefreshTokenServiceTest {
         verify(redisTemplate).delete("refresh:token:reused-uuid");
         verify(redisTemplate).delete("refresh:token:active-uuid");
         verify(redisTemplate).delete("refresh:user:1");
+    }
+
+    @Test
+    @DisplayName("TTL 만료 후 정상 요청은 REUSE_DETECTED가 아닌 REFRESH_TOKEN_NOT_FOUND를 던진다")
+    void throwsNotFoundWhenTokenTtlExpiredNaturally() {
+        // refresh:token:{uuid} 는 TTL 만료, refresh:used:{uuid} 도 없음 → 정상 만료
+        String token = "1:naturally-expired-uuid";
+        given(valueOperations.get("refresh:token:naturally-expired-uuid")).willReturn(null);
+        given(redisTemplate.hasKey("refresh:used:naturally-expired-uuid")).willReturn(false);
+
+        assertThatThrownBy(() -> refreshTokenService.rotate(token))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
     }
 
     @Test

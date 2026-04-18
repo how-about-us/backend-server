@@ -73,9 +73,8 @@ public class RefreshTokenService {
     }
 
     private void handleMissingToken(TokenParts parts) {
-        String userKey = USER_KEY_PREFIX + parts.userId();
-        Boolean isMember = redisTemplate.opsForSet().isMember(userKey, parts.uuid());
-        if (Boolean.TRUE.equals(isMember)) {
+        Boolean isUsed = redisTemplate.hasKey(USED_KEY_PREFIX + parts.uuid());
+        if (Boolean.TRUE.equals(isUsed)) {
             invalidateAllTokens(parts.userId());
             throw new CustomException(ErrorCode.REFRESH_TOKEN_REUSE_DETECTED);
         }

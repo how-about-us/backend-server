@@ -101,6 +101,14 @@ public class RefreshTokenService {
         }
         String userId = token.substring(0, separatorIndex);
         String uuid = token.substring(separatorIndex + 1);
+        if (userId.isEmpty() || uuid.isEmpty()) {
+            throw new CustomException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+        }
+        try {
+            Long.parseLong(userId);
+        } catch (NumberFormatException e) {
+            throw new CustomException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+        }
         return new TokenParts(userId, uuid);
     }
 

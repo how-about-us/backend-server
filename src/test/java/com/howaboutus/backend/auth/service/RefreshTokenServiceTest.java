@@ -147,6 +147,33 @@ class RefreshTokenServiceTest {
     }
 
     @Test
+    @DisplayName("userId가 비어있는 토큰은 REFRESH_TOKEN_NOT_FOUND 예외를 던진다")
+    void throwsWhenUserIdEmpty() {
+        assertThatThrownBy(() -> refreshTokenService.rotate(":some-uuid"))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("uuid가 비어있는 토큰은 REFRESH_TOKEN_NOT_FOUND 예외를 던진다")
+    void throwsWhenUuidEmpty() {
+        assertThatThrownBy(() -> refreshTokenService.rotate("1:"))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("userId가 숫자가 아닌 토큰은 REFRESH_TOKEN_NOT_FOUND 예외를 던진다")
+    void throwsWhenUserIdNotNumeric() {
+        assertThatThrownBy(() -> refreshTokenService.rotate("abc:some-uuid"))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+    }
+
+    @Test
     @DisplayName("로그아웃 시 해당 Refresh Token만 Redis에서 삭제한다")
     void deletesSingleToken() {
         String uuid = "target-uuid";

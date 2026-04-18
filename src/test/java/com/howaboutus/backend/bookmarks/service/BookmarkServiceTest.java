@@ -150,7 +150,7 @@ class BookmarkServiceTest {
 
         given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bookmarkService.getBookmarks(roomId))
+        assertThatThrownBy(() -> bookmarkService.getBookmarks(roomId, null))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
@@ -172,7 +172,7 @@ class BookmarkServiceTest {
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(roomId)).willReturn(List.of(bookmark));
 
-        List<BookmarkResult> results = bookmarkService.getBookmarks(roomId);
+        List<BookmarkResult> results = bookmarkService.getBookmarks(roomId, null);
 
         assertThat(results).containsExactly(BookmarkResult.from(bookmark));
         assertThat(results.getFirst().categoryId()).isEqualTo(20L);

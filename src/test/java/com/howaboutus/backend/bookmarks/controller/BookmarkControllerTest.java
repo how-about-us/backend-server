@@ -53,7 +53,7 @@ class BookmarkControllerTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
-                .andExpect(jsonPath("$.message").value("googlePlaceId는 공백일 수 없습니다"));
+                .andExpect(jsonPath("$.message").value("googlePlaceId 형식이 올바르지 않습니다"));
 
         verifyNoInteractions(bookmarkService);
     }
@@ -154,7 +154,7 @@ class BookmarkControllerTest {
     @Test
     @DisplayName("방이 없으면 목록 조회 시 404를 반환한다")
     void returnsNotFoundWhenRoomIsMissing() throws Exception {
-        given(bookmarkService.getBookmarks(ROOM_ID))
+        given(bookmarkService.getBookmarks(ROOM_ID, null))
                 .willThrow(new CustomException(ErrorCode.ROOM_NOT_FOUND));
 
         mockMvc.perform(get("/rooms/{roomId}/bookmarks", ROOM_ID))
@@ -165,7 +165,7 @@ class BookmarkControllerTest {
     @Test
     @DisplayName("북마크 목록 조회 성공 시 categoryId와 category를 포함해 반환한다")
     void returnsBookmarkListSuccessfully() throws Exception {
-        given(bookmarkService.getBookmarks(ROOM_ID)).willReturn(List.of(BOOKMARK_RESULT));
+        given(bookmarkService.getBookmarks(ROOM_ID, null)).willReturn(List.of(BOOKMARK_RESULT));
 
         mockMvc.perform(get("/rooms/{roomId}/bookmarks", ROOM_ID))
                 .andExpect(status().isOk())

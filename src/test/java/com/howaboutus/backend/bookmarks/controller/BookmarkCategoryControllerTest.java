@@ -168,6 +168,7 @@ class BookmarkCategoryControllerTest {
             ROOM_ID,
             "맛집",
             7L,
-            Instant.parse("2025-01-01T00:00:00Z")
+            Instant.parse("2025-01-01T00:00:00Z"),
+            3L
     );
 }

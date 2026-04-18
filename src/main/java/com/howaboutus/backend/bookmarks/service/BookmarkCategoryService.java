@@ -6,12 +6,15 @@ import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryCreateComman
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryRenameCommand;
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryResult;
 import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
+import com.howaboutus.backend.bookmarks.repository.CategoryBookmarkCount;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -45,8 +48,11 @@ public class BookmarkCategoryService {
 
     public List<BookmarkCategoryResult> getCategories(UUID roomId) {
         getRoom(roomId);
+        Map<Long, Long> countMap = bookmarkRepository.countGroupedByCategoryId(roomId)
+                .stream()
+                .collect(Collectors.toMap(CategoryBookmarkCount::categoryId, CategoryBookmarkCount::count));
         return bookmarkCategoryRepository.findAllByRoom_IdOrderByCreatedAtAsc(roomId).stream()
-                .map(BookmarkCategoryResult::from)
+                .map(cat -> BookmarkCategoryResult.from(cat, countMap.getOrDefault(cat.getId(), 0L)))
                 .toList();
     }
 

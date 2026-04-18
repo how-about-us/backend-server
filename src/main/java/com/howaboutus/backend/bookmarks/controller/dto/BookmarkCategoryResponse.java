@@ -9,7 +9,8 @@ public record BookmarkCategoryResponse(
         UUID roomId,
         String name,
         Long createdBy,
-        Instant createdAt
+        Instant createdAt,
+        long placeCount
 ) {
     public static BookmarkCategoryResponse from(BookmarkCategoryResult result) {
         return new BookmarkCategoryResponse(
@@ -17,7 +18,8 @@ public record BookmarkCategoryResponse(
                 result.roomId(),
                 result.name(),
                 result.createdBy(),
-                result.createdAt()
+                result.createdAt(),
+                result.placeCount()
         );
     }
 }

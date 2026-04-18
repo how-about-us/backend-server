@@ -19,6 +19,8 @@ public class RefreshTokenService {
 
     private static final String TOKEN_KEY_PREFIX = "refresh:token:";
     private static final String USER_KEY_PREFIX = "refresh:user:";
+    private static final String USED_KEY_PREFIX = "refresh:used:";
+    private static final Duration USED_TTL = Duration.ofMinutes(5);
 
     private final StringRedisTemplate redisTemplate;
     private final RefreshTokenProperties properties;
@@ -50,6 +52,7 @@ public class RefreshTokenService {
         redisTemplate.delete(tokenKey);
         String userKey = USER_KEY_PREFIX + userId;
         redisTemplate.opsForSet().remove(userKey, parts.uuid());
+        redisTemplate.opsForValue().set(USED_KEY_PREFIX + parts.uuid(), "1", USED_TTL);
 
         return create(Long.valueOf(userId));
     }

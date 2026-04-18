@@ -77,6 +77,11 @@ class RefreshTokenServiceTest {
         assertThat(newToken).isNotBlank().isNotEqualTo(oldToken).startsWith("1:");
         verify(redisTemplate).delete("refresh:token:old-uuid");
         verify(setOperations).remove("refresh:user:1", oldUuid);
+        verify(valueOperations).set(
+                eq("refresh:used:old-uuid"),
+                eq("1"),
+                eq(Duration.ofMinutes(5))
+        );
     }
 
     @Test

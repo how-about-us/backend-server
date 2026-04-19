@@ -40,7 +40,7 @@ public class RefreshTokenService {
         return token;
     }
 
-    public String rotate(String token) {
+    public RotateResult rotate(String token) {
         TokenParts parts = parseToken(token);
 
         String tokenKey = TOKEN_KEY_PREFIX + parts.uuid();
@@ -56,7 +56,11 @@ public class RefreshTokenService {
         redisTemplate.opsForSet().remove(userKey, parts.uuid());
         redisTemplate.opsForValue().set(USED_KEY_PREFIX + parts.uuid(), "1", USED_TTL);
 
-        return create(Long.valueOf(userId));
+        Long userIdLong = Long.valueOf(userId);
+        return new RotateResult(create(userIdLong), userIdLong);
+    }
+
+    public record RotateResult(String token, Long userId) {
     }
 
     public void delete(String token) {

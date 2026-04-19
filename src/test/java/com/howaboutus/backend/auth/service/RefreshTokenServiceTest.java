@@ -72,10 +72,10 @@ class RefreshTokenServiceTest {
         String oldToken = "1:" + oldUuid;
         given(valueOperations.getAndDelete("refresh:token:old-uuid")).willReturn("1");
 
-        String newToken = refreshTokenService.rotate(oldToken);
+        RefreshTokenService.RotateResult result = refreshTokenService.rotate(oldToken);
 
-        assertThat(newToken).isNotBlank().isNotEqualTo(oldToken).startsWith("1:");
-        verify(valueOperations).getAndDelete("refresh:token:old-uuid");
+        assertThat(result.token()).isNotBlank().isNotEqualTo(oldToken).startsWith("1:");
+        assertThat(result.userId()).isEqualTo(1L);
         verify(setOperations).remove("refresh:user:1", oldUuid);
         verify(valueOperations).set(
                 eq("refresh:used:old-uuid"),

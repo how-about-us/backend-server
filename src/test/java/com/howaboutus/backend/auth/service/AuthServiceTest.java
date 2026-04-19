@@ -71,7 +71,8 @@ class AuthServiceTest {
     @Test
     @DisplayName("Refresh Token으로 새 토큰 쌍을 발급한다")
     void refreshReturnsNewTokens() {
-        given(refreshTokenService.rotate("1:old-uuid")).willReturn("1:new-uuid");
+        given(refreshTokenService.rotate("1:old-uuid"))
+                .willReturn(new RefreshTokenService.RotateResult("1:new-uuid", 1L));
         given(jwtProvider.generateAccessToken(1L)).willReturn("new-jwt");
 
         LoginResult result = authService.refresh("1:old-uuid");

@@ -39,11 +39,10 @@ public class AuthService {
     }
 
     public LoginResult refresh(String refreshToken) {
-        String newRefreshToken = refreshTokenService.rotate(refreshToken);
-        Long userId = Long.valueOf(newRefreshToken.substring(0, newRefreshToken.indexOf(':')));
-        String accessToken = jwtProvider.generateAccessToken(userId);
+        RefreshTokenService.RotateResult rotated = refreshTokenService.rotate(refreshToken);
+        String accessToken = jwtProvider.generateAccessToken(rotated.userId());
 
-        return new LoginResult(accessToken, newRefreshToken, userId);
+        return new LoginResult(accessToken, rotated.token(), rotated.userId());
     }
 
     public void logout(String refreshToken) {

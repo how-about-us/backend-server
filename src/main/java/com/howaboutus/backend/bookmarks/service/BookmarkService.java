@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BookmarkService {
 
-    // TODO: 나중에 Room 관련 로직이 만들어지면 그때 의존성을 바꾸짜
+    // TODO: 나중에 Room 관련 로직이 만들어지면 그때 의존성을 바꾸자
     private final RoomRepository roomRepository;
     private final BookmarkRepository bookmarkRepository;
     private final BookmarkCategoryRepository bookmarkCategoryRepository;

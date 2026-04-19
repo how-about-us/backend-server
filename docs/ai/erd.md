@@ -98,6 +98,7 @@ Google OAuth 기반 사용자 정보
 | id | BIGINT | PK, AUTO_INCREMENT | |
 | room_id | UUID | FK → rooms.id, NOT NULL | |
 | name | VARCHAR(50) | NOT NULL | 방 내 카테고리 이름 |
+| color_code | VARCHAR(7) | NOT NULL | 카테고리 색상 코드 (`#RRGGBB`) |
 | created_by | BIGINT | 사용자 ID 참조, NULL 가능 | 생성한 사용자 (현재는 인증 연동 전이라 임시로 nullable) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
@@ -106,7 +107,7 @@ Google OAuth 기반 사용자 정보
 
 **인덱스:** (room_id)
 
-> 카테고리는 방 생성 직후 0개일 수 있습니다. 북마크 생성 시에는 반드시 현재 방 소속 카테고리를 지정해야 하며, 카테고리 삭제 시 소속 북마크를 먼저 삭제한 뒤 카테고리를 삭제합니다.
+> 카테고리는 방 생성 직후 0개일 수 있습니다. 북마크 생성 시에는 반드시 현재 방 소속 카테고리를 지정해야 하며, 카테고리 생성/수정 시 색상 코드(`#RRGGBB`)를 함께 저장합니다. 카테고리 삭제 시 소속 북마크를 먼저 삭제한 뒤 카테고리를 삭제합니다.
 
 ---
 

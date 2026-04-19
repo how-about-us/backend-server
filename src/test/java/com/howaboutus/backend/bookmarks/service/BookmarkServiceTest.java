@@ -54,7 +54,7 @@ class BookmarkServiceTest {
     void createReturnsSavedBookmarkWithCategory() {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
-        BookmarkCategory category = BookmarkCategory.create(room, "맛집", null);
+        BookmarkCategory category = BookmarkCategory.create(room, "맛집", "#FF8800", null);
         Bookmark savedBookmark = Bookmark.create(room, "place-1", category, null);
 
         ReflectionTestUtils.setField(room, "id", roomId);
@@ -127,7 +127,7 @@ class BookmarkServiceTest {
     void createThrowsWhenDuplicateBookmarkExists() {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
-        BookmarkCategory category = BookmarkCategory.create(room, "맛집", null);
+        BookmarkCategory category = BookmarkCategory.create(room, "맛집", "#FF8800", null);
 
         ReflectionTestUtils.setField(room, "id", roomId);
         ReflectionTestUtils.setField(category, "id", 10L);
@@ -161,7 +161,7 @@ class BookmarkServiceTest {
     void getBookmarksReturnsMappedResults() {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
-        BookmarkCategory category = BookmarkCategory.create(room, "카페", null);
+        BookmarkCategory category = BookmarkCategory.create(room, "카페", "#3366FF", null);
         Bookmark bookmark = Bookmark.create(room, "place-1", category, null);
 
         ReflectionTestUtils.setField(room, "id", roomId);
@@ -184,8 +184,8 @@ class BookmarkServiceTest {
     void updateCategoryReturnsSavedBookmark() {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
-        BookmarkCategory oldCategory = BookmarkCategory.create(room, "맛집", null);
-        BookmarkCategory newCategory = BookmarkCategory.create(room, "카페", null);
+        BookmarkCategory oldCategory = BookmarkCategory.create(room, "맛집", "#FF8800", null);
+        BookmarkCategory newCategory = BookmarkCategory.create(room, "카페", "#3366FF", null);
         Bookmark bookmark = Bookmark.create(room, "place-1", oldCategory, null);
 
         ReflectionTestUtils.setField(room, "id", roomId);
@@ -212,7 +212,7 @@ class BookmarkServiceTest {
     void updateCategoryThrowsWhenCategoryMissing() {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
-        BookmarkCategory category = BookmarkCategory.create(room, "맛집", null);
+        BookmarkCategory category = BookmarkCategory.create(room, "맛집", "#FF8800", null);
         Bookmark bookmark = Bookmark.create(room, "place-1", category, null);
 
         ReflectionTestUtils.setField(room, "id", roomId);
@@ -249,7 +249,7 @@ class BookmarkServiceTest {
     void deleteRemovesBookmark() {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
-        BookmarkCategory category = BookmarkCategory.create(room, "카페", null);
+        BookmarkCategory category = BookmarkCategory.create(room, "카페", "#3366FF", null);
         Bookmark bookmark = Bookmark.create(room, "place-1", category, null);
 
         ReflectionTestUtils.setField(room, "id", roomId);
@@ -269,7 +269,7 @@ class BookmarkServiceTest {
     void createTranslatesDatabaseDuplicateOnSave() {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
-        BookmarkCategory category = BookmarkCategory.create(room, "맛집", null);
+        BookmarkCategory category = BookmarkCategory.create(room, "맛집", "#FF8800", null);
 
         ReflectionTestUtils.setField(room, "id", roomId);
         ReflectionTestUtils.setField(category, "id", 10L);

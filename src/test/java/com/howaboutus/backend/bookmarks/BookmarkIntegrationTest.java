@@ -61,10 +61,10 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
                 1L
         ));
         BookmarkCategory foodCategory = bookmarkCategoryRepository.saveAndFlush(
-                BookmarkCategory.create(room, "맛집", null)
+                BookmarkCategory.create(room, "맛집", "#FF8800", null)
         );
         BookmarkCategory cafeCategory = bookmarkCategoryRepository.saveAndFlush(
-                BookmarkCategory.create(room, "카페", null)
+                BookmarkCategory.create(room, "카페", "#3366FF", null)
         );
 
         mockMvc.perform(post("/rooms/{roomId}/bookmarks", room.getId())
@@ -126,11 +126,11 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
                 3L
         ));
 
-        bookmarkCategoryRepository.saveAndFlush(BookmarkCategory.create(roomA, "맛집", null));
-        bookmarkCategoryRepository.saveAndFlush(BookmarkCategory.create(roomB, "맛집", null));
+        bookmarkCategoryRepository.saveAndFlush(BookmarkCategory.create(roomA, "맛집", "#FF8800", null));
+        bookmarkCategoryRepository.saveAndFlush(BookmarkCategory.create(roomB, "맛집", "#FF8800", null));
 
         assertThatThrownBy(() ->
-                bookmarkCategoryRepository.saveAndFlush(BookmarkCategory.create(roomA, "맛집", null)))
+                bookmarkCategoryRepository.saveAndFlush(BookmarkCategory.create(roomA, "맛집", "#3366FF", null)))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
@@ -154,7 +154,7 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
                 2L
         ));
         BookmarkCategory category = bookmarkCategoryRepository.saveAndFlush(
-                BookmarkCategory.create(roomA, "맛집", null)
+                BookmarkCategory.create(roomA, "맛집", "#FF8800", null)
         );
 
         assertThatThrownBy(() ->

@@ -8,6 +8,7 @@ public record BookmarkCategoryResult(
         Long categoryId,
         UUID roomId,
         String name,
+        String colorCode,
         Long createdBy,
         Instant createdAt,
         long placeCount
@@ -22,6 +23,7 @@ public record BookmarkCategoryResult(
                 category.getId(),
                 category.getRoom().getId(),
                 category.getName(),
+                category.getColorCode(),
                 category.getCreatedBy(),
                 category.getCreatedAt(),
                 placeCount

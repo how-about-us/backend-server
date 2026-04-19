@@ -76,9 +76,9 @@
 | `[x]` | 보관함에 장소 추가 | 검색된 장소를 방의 후보지로 등록. 생성 시 방 소속 `categoryId`가 필수 | bookmarks, bookmark_categories |
 | `[x]` | 보관함 목록 조회 | 방의 후보지 목록 | bookmarks |
 | `[x]` | 보관함 항목 삭제 | 후보지에서 제거 | bookmarks |
-| `[x]` | 보관함 카테고리 목록 조회 | 방에서 사용 가능한 북마크 카테고리 목록 조회 | bookmark_categories |
-| `[x]` | 보관함 카테고리 생성 | 방별 사용자 정의 카테고리 생성 | bookmark_categories |
-| `[x]` | 보관함 카테고리 이름 변경 | 기존 카테고리 이름 수정 | bookmark_categories |
+| `[x]` | 보관함 카테고리 목록 조회 | 방에서 사용 가능한 북마크 카테고리 목록 조회, 색상 코드 포함 | bookmark_categories |
+| `[x]` | 보관함 카테고리 생성 | 방별 사용자 정의 카테고리 생성, 색상 코드 필수 | bookmark_categories |
+| `[x]` | 보관함 카테고리 수정 | 기존 카테고리 이름과 색상 코드 수정 | bookmark_categories |
 | `[x]` | 보관함 카테고리 삭제 | 카테고리 삭제 시 소속 북마크도 함께 삭제 | bookmark_categories, bookmarks |
 | `[x]` | 보관함 카테고리 변경 | 항목 카테고리 수정 | bookmarks, bookmark_categories |
 | `[ ]` | 장소 채팅에 공유 | 보관함/검색 장소를 채팅 메시지로 전송 | bookmarks → messages |

@@ -36,20 +36,25 @@ public class BookmarkCategory extends BaseTimeEntity {
     @Column(nullable = false, length = 50)
     private String name;
 
+    @Column(name = "color_code", nullable = false, length = 7)
+    private String colorCode;
+
     @Column(name = "created_by")
     private Long createdBy;
 
-    private BookmarkCategory(Room room, String name, Long createdBy) {
+    private BookmarkCategory(Room room, String name, String colorCode, Long createdBy) {
         this.room = room;
         this.name = name;
+        this.colorCode = colorCode;
         this.createdBy = createdBy;
     }
 
-    public static BookmarkCategory create(Room room, String name, Long createdBy) {
-        return new BookmarkCategory(room, name, createdBy);
+    public static BookmarkCategory create(Room room, String name, String colorCode, Long createdBy) {
+        return new BookmarkCategory(room, name, colorCode, createdBy);
     }
 
-    public void rename(String name) {
+    public void update(String name, String colorCode) {
         this.name = name;
+        this.colorCode = colorCode;
     }
 }

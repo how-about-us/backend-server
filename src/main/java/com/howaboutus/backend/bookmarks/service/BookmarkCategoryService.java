@@ -33,12 +33,13 @@ public class BookmarkCategoryService {
     public BookmarkCategoryResult create(UUID roomId, BookmarkCategoryCreateCommand command) {
         Room room = getRoom(roomId);
         String name = normalizeName(command.name());
+        String colorCode = normalizeColorCode(command.colorCode());
 
         if (bookmarkCategoryRepository.existsByRoom_IdAndName(roomId, name)) {
             throw new CustomException(ErrorCode.BOOKMARK_CATEGORY_ALREADY_EXISTS);
         }
 
-        BookmarkCategory category = BookmarkCategory.create(room, name, null);
+        BookmarkCategory category = BookmarkCategory.create(room, name, colorCode, null);
         try {
             return BookmarkCategoryResult.from(bookmarkCategoryRepository.saveAndFlush(category));
         } catch (DataIntegrityViolationException e) {
@@ -61,12 +62,13 @@ public class BookmarkCategoryService {
         getRoom(roomId);
         BookmarkCategory category = getCategoryInRoom(roomId, categoryId);
         String name = normalizeName(command.name());
+        String colorCode = normalizeColorCode(command.colorCode());
 
         if (!category.getName().equals(name) && bookmarkCategoryRepository.existsByRoom_IdAndName(roomId, name)) {
             throw new CustomException(ErrorCode.BOOKMARK_CATEGORY_ALREADY_EXISTS);
         }
 
-        category.rename(name);
+        category.update(name, colorCode);
         try {
             return BookmarkCategoryResult.from(bookmarkCategoryRepository.saveAndFlush(category));
         } catch (DataIntegrityViolationException e) {
@@ -97,5 +99,12 @@ public class BookmarkCategoryService {
             throw new CustomException(ErrorCode.BOOKMARK_CATEGORY_EMPTY);
         }
         return name.trim();
+    }
+
+    private String normalizeColorCode(String colorCode) {
+        if (colorCode == null || colorCode.isBlank()) {
+            throw new IllegalArgumentException("colorCode must not be blank");
+        }
+        return colorCode.trim();
     }
 }

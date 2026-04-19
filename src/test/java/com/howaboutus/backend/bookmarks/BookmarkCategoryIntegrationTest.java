@@ -61,11 +61,12 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
         String createResponse = mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", room.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name": "맛집"}
+                                {"name": "맛집", "colorCode": "#FF8800"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.roomId").value(room.getId().toString()))
                 .andExpect(jsonPath("$.name").value("맛집"))
+                .andExpect(jsonPath("$.colorCode").value("#FF8800"))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -75,16 +76,18 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get("/rooms/{roomId}/bookmark-categories", room.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].categoryId").value(categoryId))
-                .andExpect(jsonPath("$[0].name").value("맛집"));
+                .andExpect(jsonPath("$[0].name").value("맛집"))
+                .andExpect(jsonPath("$[0].colorCode").value("#FF8800"));
 
         mockMvc.perform(patch("/rooms/{roomId}/bookmark-categories/{categoryId}", room.getId(), categoryId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name": "카페"}
+                                {"name": "카페", "colorCode": "#3366FF"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.categoryId").value(categoryId))
-                .andExpect(jsonPath("$.name").value("카페"));
+                .andExpect(jsonPath("$.name").value("카페"))
+                .andExpect(jsonPath("$.colorCode").value("#3366FF"));
 
         mockMvc.perform(delete("/rooms/{roomId}/bookmark-categories/{categoryId}", room.getId(), categoryId))
                 .andExpect(status().isNoContent());
@@ -115,7 +118,7 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
         String createResponse = mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", roomA.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name": "맛집"}
+                                {"name": "맛집", "colorCode": "#FF8800"}
                                 """))
                 .andExpect(status().isCreated())
                 .andReturn()
@@ -127,7 +130,7 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(patch("/rooms/{roomId}/bookmark-categories/{categoryId}", roomB.getId(), categoryId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name": "카페"}
+                                {"name": "카페", "colorCode": "#3366FF"}
                                 """))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(ErrorCode.BOOKMARK_CATEGORY_NOT_FOUND.name()));

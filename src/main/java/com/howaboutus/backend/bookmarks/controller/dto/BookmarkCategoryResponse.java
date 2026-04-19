@@ -8,6 +8,7 @@ public record BookmarkCategoryResponse(
         Long categoryId,
         UUID roomId,
         String name,
+        String colorCode,
         Long createdBy,
         Instant createdAt,
         long placeCount
@@ -17,6 +18,7 @@ public record BookmarkCategoryResponse(
                 result.categoryId(),
                 result.roomId(),
                 result.name(),
+                result.colorCode(),
                 result.createdBy(),
                 result.createdAt(),
                 result.placeCount()

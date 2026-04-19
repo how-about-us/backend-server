@@ -49,12 +49,13 @@ class BookmarkCategoryControllerTest {
         mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name": "맛집"}
+                                {"name": "맛집", "colorCode": "#FF8800"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.categoryId").value(BOOKMARK_CATEGORY_RESULT.categoryId()))
                 .andExpect(jsonPath("$.roomId").value(ROOM_ID.toString()))
                 .andExpect(jsonPath("$.name").value(BOOKMARK_CATEGORY_RESULT.name()))
+                .andExpect(jsonPath("$.colorCode").value(BOOKMARK_CATEGORY_RESULT.colorCode()))
                 .andExpect(jsonPath("$.createdBy").value(BOOKMARK_CATEGORY_RESULT.createdBy()))
                 .andExpect(jsonPath("$.createdAt").value(BOOKMARK_CATEGORY_RESULT.createdAt().toString()));
     }
@@ -65,7 +66,7 @@ class BookmarkCategoryControllerTest {
         mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name": "   "}
+                                {"name": "   ", "colorCode": "#FF8800"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
@@ -80,11 +81,26 @@ class BookmarkCategoryControllerTest {
         mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name": "%s"}
+                                {"name": "%s", "colorCode": "#FF8800"}
                                 """.formatted("a".repeat(51))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.message").value("name은 50자 이하여야 합니다"));
+
+        verifyNoInteractions(bookmarkCategoryService);
+    }
+
+    @Test
+    @DisplayName("colorCode가 #RRGGBB 형식이 아니면 생성 시 400을 반환한다")
+    void returnsBadRequestWhenCreateColorCodeIsInvalid() throws Exception {
+        mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name": "맛집", "colorCode": "FF8800"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("colorCode는 #RRGGBB 형식이어야 합니다"));
 
         verifyNoInteractions(bookmarkCategoryService);
     }
@@ -99,6 +115,7 @@ class BookmarkCategoryControllerTest {
                 .andExpect(jsonPath("$[0].categoryId").value(BOOKMARK_CATEGORY_RESULT.categoryId()))
                 .andExpect(jsonPath("$[0].roomId").value(ROOM_ID.toString()))
                 .andExpect(jsonPath("$[0].name").value(BOOKMARK_CATEGORY_RESULT.name()))
+                .andExpect(jsonPath("$[0].colorCode").value(BOOKMARK_CATEGORY_RESULT.colorCode()))
                 .andExpect(jsonPath("$[0].createdBy").value(BOOKMARK_CATEGORY_RESULT.createdBy()))
                 .andExpect(jsonPath("$[0].createdAt").value(BOOKMARK_CATEGORY_RESULT.createdAt().toString()));
     }
@@ -112,12 +129,13 @@ class BookmarkCategoryControllerTest {
         mockMvc.perform(patch("/rooms/{roomId}/bookmark-categories/{categoryId}", ROOM_ID, CATEGORY_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name": "카페"}
+                                {"name": "카페", "colorCode": "#3366FF"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.categoryId").value(BOOKMARK_CATEGORY_RESULT.categoryId()))
                 .andExpect(jsonPath("$.roomId").value(ROOM_ID.toString()))
                 .andExpect(jsonPath("$.name").value(BOOKMARK_CATEGORY_RESULT.name()))
+                .andExpect(jsonPath("$.colorCode").value(BOOKMARK_CATEGORY_RESULT.colorCode()))
                 .andExpect(jsonPath("$.createdBy").value(BOOKMARK_CATEGORY_RESULT.createdBy()))
                 .andExpect(jsonPath("$.createdAt").value(BOOKMARK_CATEGORY_RESULT.createdAt().toString()));
     }
@@ -128,11 +146,26 @@ class BookmarkCategoryControllerTest {
         mockMvc.perform(patch("/rooms/{roomId}/bookmark-categories/{categoryId}", ROOM_ID, CATEGORY_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name": "   "}
+                                {"name": "   ", "colorCode": "#3366FF"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.message").value("name은 공백일 수 없습니다"));
+
+        verifyNoInteractions(bookmarkCategoryService);
+    }
+
+    @Test
+    @DisplayName("colorCode가 #RRGGBB 형식이 아니면 수정 시 400을 반환한다")
+    void returnsBadRequestWhenRenameColorCodeIsInvalid() throws Exception {
+        mockMvc.perform(patch("/rooms/{roomId}/bookmark-categories/{categoryId}", ROOM_ID, CATEGORY_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name": "카페", "colorCode": "3366FF"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("colorCode는 #RRGGBB 형식이어야 합니다"));
 
         verifyNoInteractions(bookmarkCategoryService);
     }
@@ -155,7 +188,7 @@ class BookmarkCategoryControllerTest {
         mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name": "맛집"}
+                                {"name": "맛집", "colorCode": "#FF8800"}
                                 """))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("BOOKMARK_CATEGORY_NOT_FOUND"));
@@ -167,6 +200,7 @@ class BookmarkCategoryControllerTest {
             CATEGORY_ID,
             ROOM_ID,
             "맛집",
+            "#FF8800",
             7L,
             Instant.parse("2025-01-01T00:00:00Z"),
             3L

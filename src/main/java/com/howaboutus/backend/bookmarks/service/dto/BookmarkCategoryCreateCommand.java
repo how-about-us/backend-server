@@ -1,4 +1,4 @@
 package com.howaboutus.backend.bookmarks.service.dto;
 
-public record BookmarkCategoryCreateCommand(String name) {
+public record BookmarkCategoryCreateCommand(String name, String colorCode) {
 }

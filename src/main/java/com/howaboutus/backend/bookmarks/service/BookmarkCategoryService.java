@@ -6,7 +6,7 @@ import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryCreateComman
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryRenameCommand;
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryResult;
 import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
-import com.howaboutus.backend.bookmarks.repository.CategoryBookmarkCount;
+import com.howaboutus.backend.bookmarks.repository.dto.CategoryBookmarkCount;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;

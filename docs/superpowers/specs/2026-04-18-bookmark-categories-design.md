@@ -19,6 +19,8 @@
 - 방별 카테고리 목록 조회 API
 - 카테고리 이름 변경 API
 - 카테고리 삭제 API
+- 카테고리 색상 코드(`colorCode`) 저장/수정/조회
+- 카테고리 목록 응답의 북마크 개수 집계(`placeCount`)
 - 북마크 생성 시 `categoryId` 필수화
 - 북마크 카테고리 변경 API
 - 카테고리 삭제 시 소속 북마크 함께 삭제
@@ -26,9 +28,8 @@
 
 ### 제외
 
-- 카테고리 색상, 아이콘, 정렬 순서
+- 카테고리 아이콘, 정렬 순서
 - 카테고리 soft delete
-- 카테고리별 북마크 개수 집계 필드
 - 인증 사용자 기반 `createdBy`, `addedBy` 실제 기록
 - 방 멤버십 인가
 
@@ -82,12 +83,14 @@
 요청 바디:
 
 - `name`
+- `colorCode` (`#RRGGBB`)
 
 응답:
 
 - `categoryId`
 - `roomId`
 - `name`
+- `colorCode`
 - `createdBy`
 - `createdAt`
 
@@ -104,10 +107,10 @@
 - `categoryId`
 - `roomId`
 - `name`
+- `colorCode`
+- `placeCount`
 - `createdBy`
 - `createdAt`
-
-1차에서는 북마크 개수나 추가 메타데이터를 포함하지 않는다.
 
 ### 3. 카테고리 이름 변경
 
@@ -116,6 +119,7 @@
 요청 바디:
 
 - `name`
+- `colorCode` (`#RRGGBB`)
 
 규칙:
 

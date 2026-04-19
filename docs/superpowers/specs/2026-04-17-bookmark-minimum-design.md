@@ -1,5 +1,9 @@
 # Bookmark Minimum Design
 
+> 상태: 초기 보관함 수직 슬라이스 설계 문서. 현재 구현은 이 문서의 일부를 대체했으며, 카테고리 저장 방식은 더 이상 문자열 `category`/기본값 `ALL` 기준이 아니다.
+>
+> 현재 기준 설계는 `docs/superpowers/specs/2026-04-18-bookmark-categories-design.md`를 우선 참고한다. 북마크는 `categoryId`로 `bookmark_categories`를 참조하고, 목록 조회도 `categoryId` 필터를 지원한다.
+
 ## 목표
 
 보관함 기능의 1차 수직 슬라이스를 구현한다. 이번 단계에서는 인증과 방 멤버십 인가를 붙이지 않고, `Room` 최소 엔티티를 기준으로 북마크 `추가 / 목록 조회 / 삭제`만 제공한다.

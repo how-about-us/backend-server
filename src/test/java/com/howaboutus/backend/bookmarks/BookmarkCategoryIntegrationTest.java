@@ -14,6 +14,7 @@ import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.support.BaseIntegrationTest;
+import com.jayway.jsonpath.JsonPath;
 import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -71,7 +72,7 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
                 .getResponse()
                 .getContentAsString();
 
-        Long categoryId = Long.valueOf(createResponse.replaceAll(".*\"categoryId\":(\\d+).*", "$1"));
+        Long categoryId = ((Number) JsonPath.read(createResponse, "$.categoryId")).longValue();
 
         mockMvc.perform(get("/rooms/{roomId}/bookmark-categories", room.getId()))
                 .andExpect(status().isOk())
@@ -125,7 +126,7 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
                 .getResponse()
                 .getContentAsString();
 
-        Long categoryId = Long.valueOf(createResponse.replaceAll(".*\"categoryId\":(\\d+).*", "$1"));
+        Long categoryId = ((Number) JsonPath.read(createResponse, "$.categoryId")).longValue();
 
         mockMvc.perform(patch("/rooms/{roomId}/bookmark-categories/{categoryId}", roomB.getId(), categoryId)
                         .contentType(MediaType.APPLICATION_JSON)

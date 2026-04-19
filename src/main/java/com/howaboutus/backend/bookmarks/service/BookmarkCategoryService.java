@@ -32,8 +32,8 @@ public class BookmarkCategoryService {
     @Transactional
     public BookmarkCategoryResult create(UUID roomId, BookmarkCategoryCreateCommand command) {
         Room room = getRoom(roomId);
-        String name = normalizeName(command.name());
-        String colorCode = normalizeColorCode(command.colorCode());
+        String name = command.name().trim();
+        String colorCode = command.colorCode().trim();
 
         if (bookmarkCategoryRepository.existsByRoom_IdAndName(roomId, name)) {
             throw new CustomException(ErrorCode.BOOKMARK_CATEGORY_ALREADY_EXISTS);
@@ -61,8 +61,8 @@ public class BookmarkCategoryService {
     public BookmarkCategoryResult rename(UUID roomId, Long categoryId, BookmarkCategoryRenameCommand command) {
         getRoom(roomId);
         BookmarkCategory category = getCategoryInRoom(roomId, categoryId);
-        String name = normalizeName(command.name());
-        String colorCode = normalizeColorCode(command.colorCode());
+        String name = command.name().trim();
+        String colorCode = command.colorCode().trim();
 
         if (!category.getName().equals(name) && bookmarkCategoryRepository.existsByRoom_IdAndName(roomId, name)) {
             throw new CustomException(ErrorCode.BOOKMARK_CATEGORY_ALREADY_EXISTS);
@@ -94,17 +94,4 @@ public class BookmarkCategoryService {
                 .orElseThrow(() -> new CustomException(ErrorCode.BOOKMARK_CATEGORY_NOT_FOUND));
     }
 
-    private String normalizeName(String name) {
-        if (name == null || name.isBlank()) {
-            throw new CustomException(ErrorCode.BOOKMARK_CATEGORY_EMPTY);
-        }
-        return name.trim();
-    }
-
-    private String normalizeColorCode(String colorCode) {
-        if (colorCode == null || colorCode.isBlank()) {
-            throw new IllegalArgumentException("colorCode must not be blank");
-        }
-        return colorCode.trim();
-    }
 }

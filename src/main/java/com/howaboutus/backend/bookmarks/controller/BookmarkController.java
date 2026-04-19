@@ -64,7 +64,7 @@ public class BookmarkController {
 
     @Operation(
             summary = "보관함 카테고리 변경",
-            description = "보관함 항목의 카테고리를 다른 방 소속 카테고리로 변경합니다."
+            description = "보관함 항목의 카테고리를 현재 방 소속 카테고리로 변경합니다."
     )
     @PatchMapping("/{bookmarkId}/category")
     public BookmarkResponse updateCategory(

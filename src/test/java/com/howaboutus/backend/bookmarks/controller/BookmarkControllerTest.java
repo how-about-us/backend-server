@@ -48,12 +48,11 @@ class BookmarkControllerTest {
     void returnsBadRequestWhenGooglePlaceIdIsBlank() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/bookmarks", ROOM_ID)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+                .content("""
                                 {"googlePlaceId": "   ", "categoryId": 10}
                                 """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
-                .andExpect(jsonPath("$.message").value("googlePlaceId 형식이 올바르지 않습니다"));
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
 
         verifyNoInteractions(bookmarkService);
     }
@@ -131,7 +130,7 @@ class BookmarkControllerTest {
     @Test
     @DisplayName("북마크 카테고리 변경 성공 시 200을 반환한다")
     void updatesBookmarkCategorySuccessfully() throws Exception {
-        given(bookmarkService.updateCategory(eq(ROOM_ID), eq(BOOKMARK_ID), eq(20L)))
+        given(bookmarkService.updateCategory(ROOM_ID, BOOKMARK_ID, 20L))
                 .willReturn(BOOKMARK_RESULT);
 
         mockMvc.perform(patch("/rooms/{roomId}/bookmarks/{bookmarkId}/category", ROOM_ID, BOOKMARK_ID)

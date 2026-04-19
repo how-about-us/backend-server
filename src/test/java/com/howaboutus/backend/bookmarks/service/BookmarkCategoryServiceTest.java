@@ -81,11 +81,12 @@ class BookmarkCategoryServiceTest {
     void createThrowsWhenDuplicateCategoryExists() {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
+        BookmarkCategoryCreateCommand command = new BookmarkCategoryCreateCommand("맛집", "#FF8800");
 
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(bookmarkCategoryRepository.existsByRoom_IdAndName(roomId, "맛집")).willReturn(true);
 
-        assertThatThrownBy(() -> bookmarkCategoryService.create(roomId, new BookmarkCategoryCreateCommand("맛집", "#FF8800")))
+        assertThatThrownBy(() -> bookmarkCategoryService.create(roomId, command))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BOOKMARK_CATEGORY_ALREADY_EXISTS);
@@ -160,6 +161,7 @@ class BookmarkCategoryServiceTest {
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
         Room otherRoom = Room.create("오사카 여행", "오사카", null, null, "INVITE-2", 2L);
         BookmarkCategory category = BookmarkCategory.create(otherRoom, "맛집", "#FF8800", null);
+        BookmarkCategoryRenameCommand command = new BookmarkCategoryRenameCommand("카페", "#3366FF");
 
         ReflectionTestUtils.setField(room, "id", roomId);
         ReflectionTestUtils.setField(otherRoom, "id", otherRoomId);
@@ -168,7 +170,7 @@ class BookmarkCategoryServiceTest {
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(bookmarkCategoryRepository.findByIdAndRoom_Id(10L, roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bookmarkCategoryService.rename(roomId, 10L, new BookmarkCategoryRenameCommand("카페", "#3366FF")))
+        assertThatThrownBy(() -> bookmarkCategoryService.rename(roomId, 10L, command))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BOOKMARK_CATEGORY_NOT_FOUND);
@@ -180,6 +182,7 @@ class BookmarkCategoryServiceTest {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
         BookmarkCategory category = BookmarkCategory.create(room, "맛집", "#FF8800", null);
+        BookmarkCategoryRenameCommand command = new BookmarkCategoryRenameCommand("카페", "#3366FF");
 
         ReflectionTestUtils.setField(room, "id", roomId);
         ReflectionTestUtils.setField(category, "id", 10L);
@@ -188,7 +191,7 @@ class BookmarkCategoryServiceTest {
         given(bookmarkCategoryRepository.findByIdAndRoom_Id(10L, roomId)).willReturn(Optional.of(category));
         given(bookmarkCategoryRepository.existsByRoom_IdAndName(roomId, "카페")).willReturn(true);
 
-        assertThatThrownBy(() -> bookmarkCategoryService.rename(roomId, 10L, new BookmarkCategoryRenameCommand("카페", "#3366FF")))
+        assertThatThrownBy(() -> bookmarkCategoryService.rename(roomId, 10L, command))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BOOKMARK_CATEGORY_ALREADY_EXISTS);
@@ -241,13 +244,14 @@ class BookmarkCategoryServiceTest {
     void createTranslatesDatabaseDuplicateOnSave() {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
+        BookmarkCategoryCreateCommand command = new BookmarkCategoryCreateCommand("맛집", "#FF8800");
 
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(bookmarkCategoryRepository.existsByRoom_IdAndName(roomId, "맛집")).willReturn(false);
         given(bookmarkCategoryRepository.saveAndFlush(any(BookmarkCategory.class)))
                 .willThrow(new DataIntegrityViolationException("duplicate"));
 
-        assertThatThrownBy(() -> bookmarkCategoryService.create(roomId, new BookmarkCategoryCreateCommand("맛집", "#FF8800")))
+        assertThatThrownBy(() -> bookmarkCategoryService.create(roomId, command))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BOOKMARK_CATEGORY_ALREADY_EXISTS);
@@ -259,6 +263,7 @@ class BookmarkCategoryServiceTest {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
         BookmarkCategory category = BookmarkCategory.create(room, "맛집", "#FF8800", null);
+        BookmarkCategoryRenameCommand command = new BookmarkCategoryRenameCommand("카페", "#3366FF");
 
         ReflectionTestUtils.setField(room, "id", roomId);
         ReflectionTestUtils.setField(category, "id", 10L);
@@ -269,7 +274,7 @@ class BookmarkCategoryServiceTest {
         given(bookmarkCategoryRepository.saveAndFlush(any(BookmarkCategory.class)))
                 .willThrow(new DataIntegrityViolationException("duplicate"));
 
-        assertThatThrownBy(() -> bookmarkCategoryService.rename(roomId, 10L, new BookmarkCategoryRenameCommand("카페", "#3366FF")))
+        assertThatThrownBy(() -> bookmarkCategoryService.rename(roomId, 10L, command))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BOOKMARK_CATEGORY_ALREADY_EXISTS);

@@ -128,9 +128,9 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
 
         bookmarkCategoryRepository.saveAndFlush(BookmarkCategory.create(roomA, "맛집", "#FF8800", null));
         bookmarkCategoryRepository.saveAndFlush(BookmarkCategory.create(roomB, "맛집", "#FF8800", null));
+        BookmarkCategory duplicateCategory = BookmarkCategory.create(roomA, "맛집", "#3366FF", null);
 
-        assertThatThrownBy(() ->
-                bookmarkCategoryRepository.saveAndFlush(BookmarkCategory.create(roomA, "맛집", "#3366FF", null)))
+        assertThatThrownBy(() -> bookmarkCategoryRepository.saveAndFlush(duplicateCategory))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
@@ -156,9 +156,9 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
         BookmarkCategory category = bookmarkCategoryRepository.saveAndFlush(
                 BookmarkCategory.create(roomA, "맛집", "#FF8800", null)
         );
+        Bookmark crossRoomBookmark = Bookmark.create(roomB, "place-cross-room", category, null);
 
-        assertThatThrownBy(() ->
-                bookmarkRepository.saveAndFlush(Bookmark.create(roomB, "place-cross-room", category, null)))
+        assertThatThrownBy(() -> bookmarkRepository.saveAndFlush(crossRoomBookmark))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

@@ -4,6 +4,9 @@ import com.howaboutus.backend.bookmarks.controller.dto.BookmarkResponse;
 import com.howaboutus.backend.bookmarks.controller.dto.CreateBookmarkRequest;
 import com.howaboutus.backend.bookmarks.controller.dto.UpdateBookmarkCategoryRequest;
 import com.howaboutus.backend.bookmarks.service.BookmarkService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Bookmarks", description = "보관함 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/rooms/{roomId}/bookmarks")
@@ -27,9 +31,14 @@ public class BookmarkController {
 
     private final BookmarkService bookmarkService;
 
+    @Operation(
+            summary = "보관함 항목 생성",
+            description = "방에 후보 장소를 보관함 항목으로 추가합니다."
+    )
     @PostMapping
     @SuppressWarnings("JvmTaintAnalysis")
     public ResponseEntity<BookmarkResponse> create(
+            @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @RequestBody @Valid CreateBookmarkRequest request
     ) {
@@ -37,9 +46,15 @@ public class BookmarkController {
                 .body(BookmarkResponse.from(bookmarkService.create(roomId, request.toCommand())));
     }
 
+    @Operation(
+            summary = "보관함 목록 조회",
+            description = "방의 보관함 항목 목록을 조회합니다. categoryId를 지정하면 해당 카테고리만 필터링합니다."
+    )
     @GetMapping
     public List<BookmarkResponse> getBookmarks(
+            @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
+            @Parameter(description = "필터링할 카테고리 ID", example = "1")
             @RequestParam(required = false) Long categoryId
     ) {
         return bookmarkService.getBookmarks(roomId, categoryId).stream()
@@ -47,9 +62,15 @@ public class BookmarkController {
                 .toList();
     }
 
+    @Operation(
+            summary = "보관함 카테고리 변경",
+            description = "보관함 항목의 카테고리를 다른 방 소속 카테고리로 변경합니다."
+    )
     @PatchMapping("/{bookmarkId}/category")
     public BookmarkResponse updateCategory(
+            @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
+            @Parameter(description = "보관함 항목 ID", example = "1")
             @PathVariable Long bookmarkId,
             @RequestBody @Valid UpdateBookmarkCategoryRequest request
     ) {
@@ -58,9 +79,15 @@ public class BookmarkController {
         );
     }
 
+    @Operation(
+            summary = "보관함 항목 삭제",
+            description = "방의 보관함 항목을 삭제합니다."
+    )
     @DeleteMapping("/{bookmarkId}")
     public ResponseEntity<Void> delete(
+            @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
+            @Parameter(description = "보관함 항목 ID", example = "1")
             @PathVariable Long bookmarkId
     ) {
         bookmarkService.delete(roomId, bookmarkId);

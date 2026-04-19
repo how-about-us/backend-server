@@ -5,6 +5,7 @@ import com.howaboutus.backend.bookmarks.repository.dto.CategoryBookmarkCount;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,6 +19,7 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
     List<Bookmark> findAllByRoom_IdOrderByCreatedAtDesc(UUID roomId);
 
+    @EntityGraph(attributePaths = {"category", "room"})
     List<Bookmark> findAllByRoom_IdAndCategory_IdOrderByCreatedAtDesc(UUID roomId, Long categoryId);
 
     Optional<Bookmark> findByIdAndRoom_Id(Long bookmarkId, UUID roomId);

@@ -48,14 +48,14 @@ public class BookmarkController {
 
     @Operation(
             summary = "보관함 목록 조회",
-            description = "방의 보관함 항목 목록을 조회합니다. categoryId를 지정하면 해당 카테고리만 필터링합니다."
+            description = "방의 보관함 항목 목록을 카테고리별로 조회합니다."
     )
     @GetMapping
     public List<BookmarkResponse> getBookmarks(
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
-            @Parameter(description = "필터링할 카테고리 ID", example = "1")
-            @RequestParam(required = false) Long categoryId
+            @Parameter(description = "카테고리 ID", example = "1")
+            @RequestParam long categoryId
     ) {
         return bookmarkService.getBookmarks(roomId, categoryId).stream()
                 .map(BookmarkResponse::from)

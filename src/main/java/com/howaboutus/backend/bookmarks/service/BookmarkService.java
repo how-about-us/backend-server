@@ -49,15 +49,12 @@ public class BookmarkService {
         }
     }
 
-    public List<BookmarkResult> getBookmarks(UUID roomId, Long categoryId) {
+    public List<BookmarkResult> getBookmarks(UUID roomId, long categoryId) {
         getRoom(roomId);
-        List<Bookmark> bookmarks;
-        if (categoryId != null) {
-            bookmarks = bookmarkRepository.findAllByRoom_IdAndCategory_IdOrderByCreatedAtDesc(roomId, categoryId);
-        } else {
-            bookmarks = bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(roomId);
-        }
-        return bookmarks.stream().map(BookmarkResult::from).toList();
+        return bookmarkRepository.findAllByRoom_IdAndCategory_IdOrderByCreatedAtDesc(roomId, categoryId)
+                .stream()
+                .map(BookmarkResult::from)
+                .toList();
     }
 
     @Transactional

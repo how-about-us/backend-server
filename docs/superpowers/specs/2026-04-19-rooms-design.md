@@ -23,7 +23,7 @@
 | 권한 체크 | 서비스 레이어 직접 체크 | HOST 권한 필요한 API가 6개뿐, 추상화는 과도 |
 | 역할 명칭 | HOST / MEMBER / PENDING | ADMIN은 서비스 관리자와 혼동. HOST가 방 맥락에 적합 |
 | Room PK | BIGINT `id` (내부) + UUID `uuid` (외부 노출) | UUID PK는 16바이트로 B-tree 인덱싱 비효율, FK도 비대해짐 |
-| 승인 대기 방식 | SSE (Server-Sent Events) | Long Polling보다 연결 효율적, EventSource 자동 재연결 내장, 단방향 알림에 적합 |
+| 승인 대기 방식 | HTTP 상태 조회 (새로고침 버튼) | SSE/Long Polling보다 구현이 단순하고, 클라이언트가 명시적으로 상태를 확인하므로 직관적 |
 
 ---
 
@@ -150,7 +150,7 @@ public enum RoomRole {
 |---|--------|-----|------|------|
 | 6 | POST | `/rooms/{roomUuid}/invite-code` | 초대 코드 재발급 | HOST |
 | 7 | POST | `/rooms/join` | 초대 코드로 입장 요청 | 인증된 사용자 |
-| 8 | GET | `/rooms/join/status?inviteCode={code}` | 승인 대기 SSE | 입장 요청한 사용자 |
+| 8 | GET | `/rooms/join/status?inviteCode={code}` | 입장 상태 조회 | 입장 요청한 사용자 |
 | 9 | GET | `/rooms/{roomUuid}/join-requests` | 대기 중인 입장 요청 목록 | HOST |
 | 10 | POST | `/rooms/{roomUuid}/join-requests/{requestId}/approve` | 입장 승인 | HOST |
 | 11 | POST | `/rooms/{roomUuid}/join-requests/{requestId}/reject` | 입장 거절 | HOST |
@@ -248,17 +248,23 @@ public enum RoomRole {
 }
 ```
 
-**승인 대기 SSE (GET /rooms/join/status?inviteCode={code})**
-```
-Content-Type: text/event-stream
+**입장 상태 조회 (GET /rooms/join/status?inviteCode={code})**
+```json
+// Response 200 — 아직 대기 중
+{
+  "status": "pending",
+  "roomTitle": "부산 여행"
+}
 
-// 승인 시
-event: approved
-data: {"uuid":"...", "title":"부산 여행", "role":"MEMBER"}
+// Response 200 — 승인됨
+{
+  "status": "approved",
+  "uuid": "...",
+  "roomTitle": "부산 여행",
+  "role": "MEMBER"
+}
 
-// 거절 시
-event: rejected
-data: {}
+// Response 404 — 거절됨 (레코드 삭제되어 조회 불가)
 ```
 
 **입장 요청 목록 (GET /rooms/{roomUuid}/join-requests)**
@@ -336,20 +342,20 @@ data: {}
 3. 이미 PENDING → 대기 상태 반환 (멱등, 202)
 4. 신규 → `RoomMember.of(room, user, PENDING)` 저장 → 202
 
-**승인 대기 SSE**
-1. 현재 사용자의 해당 방 멤버 상태 확인
-2. 이미 MEMBER → 즉시 `approved` 이벤트 전송 후 종료
-3. PENDING → `SseEmitter` 등록, 상태 변경 시 이벤트 전송
+**입장 상태 조회 (GET /rooms/join/status)**
+1. `inviteCode`로 Room 조회
+2. 현재 사용자의 해당 방 멤버 상태 확인
+3. MEMBER/HOST → `approved` + 방 정보 반환
+4. PENDING → `pending` 반환
+5. 레코드 없음(거절됨) → 404
 
 **입장 승인**
 1. HOST 확인
 2. 해당 요청의 role을 `PENDING → MEMBER`로 변경
-3. 등록된 `SseEmitter`에 `approved` 이벤트 전송
 
 **입장 거절**
 1. HOST 확인
 2. 해당 `room_member` 레코드 삭제
-3. 등록된 `SseEmitter`에 `rejected` 이벤트 전송
 
 ### 권한 체크 공통 패턴
 
@@ -386,7 +392,7 @@ private RoomMember getHostMember(Room room, Long userId) {
 |------|------|
 | 이미 MEMBER/HOST가 초대 코드로 입장 요청 | 방 정보 반환 (200) |
 | 이미 PENDING이 초대 코드로 입장 요청 | 대기 상태 반환 (202) |
-| SSE 연결 시 이미 MEMBER | 즉시 `approved` 이벤트 전송 후 종료 |
+| 상태 조회 시 이미 MEMBER | `approved` + 방 정보 반환 (200) |
 
 ---
 
@@ -395,8 +401,8 @@ private RoomMember getHostMember(Room room, Long userId) {
 방 입장의 전체 흐름에서 Rooms 기능과 STOMP의 접점을 기록한다.
 
 ```
-초대 코드 입력 → PENDING 등록 → SSE 대기
-→ HOST 승인 → MEMBER 변경 → SSE approved 전송
+초대 코드 입력 → PENDING 등록 → 대기 화면 (새로고침 버튼으로 상태 조회)
+→ HOST 승인 → MEMBER 변경 → 클라이언트 새로고침 시 approved 확인
 → 초기 HTTP (데이터 로드 + 멤버 검증) → WS 업그레이드 → STOMP CONNECT → SUBSCRIBE
 ```
 

@@ -48,8 +48,7 @@ public class RefreshTokenService {
         String userId = redisTemplate.opsForValue().getAndDelete(tokenKey);
         //redis에서 조회했으나, uuid에 해당하는 userid==null 이면, 이미 사용된토큰 또는 위조된 토큰
         if (userId == null) {
-            handleMissingToken(parts);
-            return null; // handleMissingToken이 항상 에러를 던져서 이 줄은 실행 안됨.
+            throw handleMissingToken(parts);
         }
         //null이 아니라면, 기존의 RTK는 폐기되었으므로 새로운 토큰을 발급한다.
         String userKey = USER_KEY_PREFIX + userId;
@@ -78,7 +77,7 @@ public class RefreshTokenService {
         }
     }
 
-    private void handleMissingToken(TokenParts parts) {
+    private CustomException handleMissingToken(TokenParts parts) {
         Boolean isUsed = redisTemplate.hasKey(USED_KEY_PREFIX + parts.uuid());
         if (Boolean.TRUE.equals(isUsed)) {
             invalidateAllTokens(parts.userId());

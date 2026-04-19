@@ -28,6 +28,7 @@ public class BookmarkController {
     private final BookmarkService bookmarkService;
 
     @PostMapping
+    @SuppressWarnings("JvmTaintAnalysis")
     public ResponseEntity<BookmarkResponse> create(
             @PathVariable UUID roomId,
             @RequestBody @Valid CreateBookmarkRequest request

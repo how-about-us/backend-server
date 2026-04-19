@@ -82,10 +82,11 @@ class BookmarkServiceTest {
     @DisplayName("방이 없으면 생성 시 ROOM_NOT_FOUND 예외를 던진다")
     void createThrowsWhenRoomMissing() {
         UUID roomId = UUID.randomUUID();
+        BookmarkCreateCommand command = new BookmarkCreateCommand("place-1", 10L);
 
         given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bookmarkService.create(roomId, new BookmarkCreateCommand("place-1", 10L)))
+        assertThatThrownBy(() -> bookmarkService.create(roomId, command))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);

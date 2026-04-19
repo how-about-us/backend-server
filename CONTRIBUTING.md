@@ -42,6 +42,16 @@
 - PR 본문에 변경 이유와 테스트 방법을 간략히 적는다.
 - 리뷰 전 로컬에서 `./gradlew build`가 통과해야 한다.
 
+### SonarQube 확인 방법
+
+- PR에 SonarQube Cloud 봇 코멘트가 달리면, 코멘트 안의 `14 New issues` 같은 이슈 링크를 눌러 상세 목록을 확인한다.
+- 봇 코멘트가 보이지 않으면 PR 상단의 `Checks` 탭에서 `SonarCloud Code Analysis` 체크 실행 결과를 열고, Summary에 있는 이슈 링크를 따라간다.
+- 개별 이슈를 볼 때는 `TODO` 관련 항목인지 먼저 구분하고, 실제 수정 대상과 단순 메모성 항목을 섞지 않는다.
+- 수정이 필요한 항목은 파일 경로, 라인, 규칙 제목을 함께 확인한 뒤 대응한다.
+- SonarQube 링크 예시:
+  - 대시보드: `https://sonarcloud.io/dashboard?id=<project-key>&pullRequest=<pr-number>`
+  - 이슈 목록: `https://sonarcloud.io/project/issues?id=<project-key>&pullRequest=<pr-number>&issueStatuses=OPEN,CONFIRMED&sinceLeakPeriod=true`
+
 ## Code Convention
 
 - Lombok을 적극적으로 활용한다.

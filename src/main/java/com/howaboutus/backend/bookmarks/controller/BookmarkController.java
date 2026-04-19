@@ -71,7 +71,7 @@ public class BookmarkController {
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "보관함 항목 ID", example = "1")
-            @PathVariable Long bookmarkId,
+            @PathVariable long bookmarkId,
             @RequestBody @Valid UpdateBookmarkCategoryRequest request
     ) {
         return BookmarkResponse.from(
@@ -88,7 +88,7 @@ public class BookmarkController {
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "보관함 항목 ID", example = "1")
-            @PathVariable Long bookmarkId
+            @PathVariable long bookmarkId
     ) {
         bookmarkService.delete(roomId, bookmarkId);
         return ResponseEntity.noContent().build();

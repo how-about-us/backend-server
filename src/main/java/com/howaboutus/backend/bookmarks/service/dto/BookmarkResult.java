@@ -5,10 +5,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record BookmarkResult(
-        Long bookmarkId,
+        long bookmarkId,
         UUID roomId,
         String googlePlaceId,
-        Long categoryId,
+        long categoryId,
         String category,
         Long addedBy,
         Instant createdAt

@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record BookmarkCategoryResult(
-        Long categoryId,
+        long categoryId,
         UUID roomId,
         String name,
         String colorCode,

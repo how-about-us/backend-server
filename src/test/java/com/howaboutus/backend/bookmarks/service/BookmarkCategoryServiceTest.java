@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 
 import com.howaboutus.backend.bookmarks.entity.BookmarkCategory;
@@ -212,7 +213,7 @@ class BookmarkCategoryServiceTest {
 
         bookmarkCategoryService.delete(roomId, 10L);
 
-        InOrder inOrder = org.mockito.Mockito.inOrder(bookmarkRepository, bookmarkCategoryRepository);
+        InOrder inOrder = inOrder(bookmarkRepository, bookmarkCategoryRepository);
         inOrder.verify(bookmarkRepository).deleteAllByCategory_Id(10L);
         inOrder.verify(bookmarkCategoryRepository).delete(category);
     }

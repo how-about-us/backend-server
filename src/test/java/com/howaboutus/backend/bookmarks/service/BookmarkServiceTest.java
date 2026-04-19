@@ -154,7 +154,7 @@ class BookmarkServiceTest {
 
         given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bookmarkService.getBookmarks(roomId, null))
+        assertThatThrownBy(() -> bookmarkService.getBookmarks(roomId, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
@@ -174,9 +174,9 @@ class BookmarkServiceTest {
         ReflectionTestUtils.setField(bookmark, "createdAt", Instant.parse("2026-04-17T00:00:00Z"));
 
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
-        given(bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(roomId)).willReturn(List.of(bookmark));
+        given(bookmarkRepository.findAllByRoom_IdAndCategory_IdOrderByCreatedAtDesc(roomId, 20L)).willReturn(List.of(bookmark));
 
-        List<BookmarkResult> results = bookmarkService.getBookmarks(roomId, null);
+        List<BookmarkResult> results = bookmarkService.getBookmarks(roomId, 20L);
 
         assertThat(results).containsExactly(BookmarkResult.from(bookmark));
         assertThat(results.getFirst().categoryId()).isEqualTo(20L);

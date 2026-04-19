@@ -153,10 +153,10 @@ class BookmarkControllerTest {
     @Test
     @DisplayName("방이 없으면 목록 조회 시 404를 반환한다")
     void returnsNotFoundWhenRoomIsMissing() throws Exception {
-        given(bookmarkService.getBookmarks(ROOM_ID, null))
+        given(bookmarkService.getBookmarks(ROOM_ID, 1L))
                 .willThrow(new CustomException(ErrorCode.ROOM_NOT_FOUND));
 
-        mockMvc.perform(get("/rooms/{roomId}/bookmarks", ROOM_ID))
+        mockMvc.perform(get("/rooms/{roomId}/bookmarks", ROOM_ID).param("categoryId", "1"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("ROOM_NOT_FOUND"));
     }
@@ -164,9 +164,9 @@ class BookmarkControllerTest {
     @Test
     @DisplayName("북마크 목록 조회 성공 시 categoryId와 category를 포함해 반환한다")
     void returnsBookmarkListSuccessfully() throws Exception {
-        given(bookmarkService.getBookmarks(ROOM_ID, null)).willReturn(List.of(BOOKMARK_RESULT));
+        given(bookmarkService.getBookmarks(ROOM_ID, 1L)).willReturn(List.of(BOOKMARK_RESULT));
 
-        mockMvc.perform(get("/rooms/{roomId}/bookmarks", ROOM_ID))
+        mockMvc.perform(get("/rooms/{roomId}/bookmarks", ROOM_ID).param("categoryId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].bookmarkId").value(BOOKMARK_RESULT.bookmarkId()))
                 .andExpect(jsonPath("$[0].roomId").value(ROOM_ID.toString()))

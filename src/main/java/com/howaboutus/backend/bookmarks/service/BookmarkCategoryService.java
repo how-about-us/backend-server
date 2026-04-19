@@ -58,7 +58,7 @@ public class BookmarkCategoryService {
     }
 
     @Transactional
-    public BookmarkCategoryResult rename(UUID roomId, Long categoryId, BookmarkCategoryRenameCommand command) {
+    public BookmarkCategoryResult rename(UUID roomId, long categoryId, BookmarkCategoryRenameCommand command) {
         getRoom(roomId);
         BookmarkCategory category = getCategoryInRoom(roomId, categoryId);
         String name = command.name().trim();
@@ -77,7 +77,7 @@ public class BookmarkCategoryService {
     }
 
     @Transactional
-    public void delete(UUID roomId, Long categoryId) {
+    public void delete(UUID roomId, long categoryId) {
         getRoom(roomId);
         BookmarkCategory category = getCategoryInRoom(roomId, categoryId);
         bookmarkRepository.deleteAllByCategory_Id(categoryId);
@@ -89,7 +89,7 @@ public class BookmarkCategoryService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
     }
 
-    private BookmarkCategory getCategoryInRoom(UUID roomId, Long categoryId) {
+    private BookmarkCategory getCategoryInRoom(UUID roomId, long categoryId) {
         return bookmarkCategoryRepository.findByIdAndRoom_Id(categoryId, roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BOOKMARK_CATEGORY_NOT_FOUND));
     }

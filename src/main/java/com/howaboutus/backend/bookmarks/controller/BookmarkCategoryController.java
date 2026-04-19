@@ -70,7 +70,7 @@ public class BookmarkCategoryController {
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "보관함 카테고리 ID", example = "1")
-            @PathVariable Long categoryId,
+            @PathVariable long categoryId,
             @RequestBody @Valid RenameBookmarkCategoryRequest request
     ) {
         return BookmarkCategoryResponse.from(
@@ -87,7 +87,7 @@ public class BookmarkCategoryController {
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "보관함 카테고리 ID", example = "1")
-            @PathVariable Long categoryId
+            @PathVariable long categoryId
     ) {
         bookmarkCategoryService.delete(roomId, categoryId);
         return ResponseEntity.noContent().build();

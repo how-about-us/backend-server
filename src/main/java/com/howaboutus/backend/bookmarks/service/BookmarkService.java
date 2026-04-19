@@ -58,7 +58,7 @@ public class BookmarkService {
     }
 
     @Transactional
-    public void delete(UUID roomId, Long bookmarkId) {
+    public void delete(UUID roomId, long bookmarkId) {
         getRoom(roomId);
         Bookmark bookmark = bookmarkRepository.findByIdAndRoom_Id(bookmarkId, roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BOOKMARK_NOT_FOUND));
@@ -66,7 +66,7 @@ public class BookmarkService {
     }
 
     @Transactional
-    public BookmarkResult updateCategory(UUID roomId, Long bookmarkId, Long categoryId) {
+    public BookmarkResult updateCategory(UUID roomId, long bookmarkId, long categoryId) {
         getRoom(roomId);
         Bookmark bookmark = bookmarkRepository.findByIdAndRoom_Id(bookmarkId, roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BOOKMARK_NOT_FOUND));

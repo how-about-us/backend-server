@@ -88,7 +88,8 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.categoryId").value(cafeCategory.getId()))
                 .andExpect(jsonPath("$.category").value("카페"));
 
-        mockMvc.perform(get("/rooms/{roomId}/bookmarks", room.getId()))
+        mockMvc.perform(get("/rooms/{roomId}/bookmarks", room.getId())
+                        .param("categoryId", cafeCategory.getId().toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].categoryId").value(cafeCategory.getId()))
                 .andExpect(jsonPath("$[0].category").value("카페"));

@@ -79,9 +79,9 @@ public class RefreshTokenService {
         Boolean isUsed = redisTemplate.hasKey(USED_KEY_PREFIX + parts.uuid());
         if (Boolean.TRUE.equals(isUsed)) {
             invalidateAllTokens(parts.userId());
-            throw new CustomException(ErrorCode.REFRESH_TOKEN_REUSE_DETECTED);
+            return new CustomException(ErrorCode.REFRESH_TOKEN_REUSE_DETECTED);
         }
-        throw new CustomException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+        return new CustomException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
     }
 
     private void invalidateAllTokens(String userId) {

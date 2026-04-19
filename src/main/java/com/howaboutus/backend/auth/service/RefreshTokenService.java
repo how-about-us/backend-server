@@ -8,13 +8,11 @@ import com.howaboutus.backend.common.config.properties.RefreshTokenProperties;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-@EnableConfigurationProperties(RefreshTokenProperties.class)
 public class RefreshTokenService {
 
     private static final String TOKEN_KEY_PREFIX = "refresh:token:";

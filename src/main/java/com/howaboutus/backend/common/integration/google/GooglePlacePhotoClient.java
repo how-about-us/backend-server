@@ -30,7 +30,10 @@ public class GooglePlacePhotoClient {
                     .header("X-Goog-Api-Key", properties.apiKey())
                     .retrieve()
                     .body(GooglePlacePhotoResponse.class);
-            return response != null ? response.photoUri() : null;
+            if (response == null || response.photoUri() == null) {
+                throw new ExternalApiException(new RuntimeException("Google Photo API returned no photoUri"));
+            }
+            return response.photoUri();
         } catch (RestClientException exception) {
             throw new ExternalApiException(exception);
         }

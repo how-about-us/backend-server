@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -83,7 +84,7 @@ public class PlaceController {
     public PlacePhotoResponse getPhotoUrl(
             @Parameter(description = "Google 장소 사진 리소스 이름", example = "places/ChIJ123/photos/abc")
             @RequestParam
-            @NotBlank(message = "name은 공백일 수 없습니다")
+            @Pattern(regexp = "^places/[^/]+/photos/[^/]+$", message = "유효하지 않은 photoName 형식입니다")
             String name) {
         return new PlacePhotoResponse(placePhotoService.getPhotoUrl(name));
     }

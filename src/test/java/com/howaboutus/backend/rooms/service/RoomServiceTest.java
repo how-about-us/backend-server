@@ -19,6 +19,7 @@ import com.howaboutus.backend.rooms.service.dto.RoomCreateCommand;
 import com.howaboutus.backend.rooms.service.dto.RoomDetailResult;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,6 +77,81 @@ class RoomServiceTest {
         ArgumentCaptor<RoomMember> memberCaptor = ArgumentCaptor.forClass(RoomMember.class);
         verify(roomMemberRepository).save(memberCaptor.capture());
         assertThat(memberCaptor.getValue().getRole()).isEqualTo(RoomRole.HOST);
+    }
+
+    @Test
+    @DisplayName("방 상세 조회 시 방 정보와 요청자 역할, 멤버 수를 반환한다")
+    void getDetailReturnsRoomInfoWithRoleAndMemberCount() {
+        UUID roomId = UUID.randomUUID();
+        Long userId = 1L;
+        Room room = Room.create("부산 여행", "부산",
+                LocalDate.of(2026, 5, 1), LocalDate.of(2026, 5, 3), "aB3xK9mQ2w", userId);
+        ReflectionTestUtils.setField(room, "id", roomId);
+        ReflectionTestUtils.setField(room, "createdAt", Instant.now());
+
+        User user = User.ofGoogle("google-id", "test@test.com", "테스터", null);
+        ReflectionTestUtils.setField(user, "id", userId);
+        RoomMember member = RoomMember.of(room, user, RoomRole.HOST);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(member));
+        given(roomMemberRepository.countByRoom_IdAndRoleIn(roomId, List.of(RoomRole.HOST, RoomRole.MEMBER)))
+                .willReturn(3L);
+
+        RoomDetailResult result = roomService.getDetail(roomId, userId);
+
+        assertThat(result.title()).isEqualTo("부산 여행");
+        assertThat(result.role()).isEqualTo(RoomRole.HOST);
+        assertThat(result.memberCount()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("삭제된 방을 조회하면 ROOM_NOT_FOUND 예외")
+    void getDetailThrowsWhenRoomDeleted() {
+        UUID roomId = UUID.randomUUID();
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> roomService.getDetail(roomId, 1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("방 멤버가 아닌 사용자가 상세 조회하면 NOT_ROOM_MEMBER 예외")
+    void getDetailThrowsWhenNotMember() {
+        UUID roomId = UUID.randomUUID();
+        Room room = Room.create("부산 여행", "부산", null, null, "aB3xK9mQ2w", 1L);
+        ReflectionTestUtils.setField(room, "id", roomId);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, 99L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> roomService.getDetail(roomId, 99L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.NOT_ROOM_MEMBER);
+    }
+
+    @Test
+    @DisplayName("PENDING 상태 사용자가 상세 조회하면 NOT_ROOM_MEMBER 예외")
+    void getDetailThrowsWhenPendingMember() {
+        UUID roomId = UUID.randomUUID();
+        Long userId = 2L;
+        Room room = Room.create("부산 여행", "부산", null, null, "aB3xK9mQ2w", 1L);
+        ReflectionTestUtils.setField(room, "id", roomId);
+
+        User user = User.ofGoogle("google-id", "pending@test.com", "대기자", null);
+        ReflectionTestUtils.setField(user, "id", userId);
+        RoomMember pendingMember = RoomMember.of(room, user, RoomRole.PENDING);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(pendingMember));
+
+        assertThatThrownBy(() -> roomService.getDetail(roomId, userId))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.NOT_ROOM_MEMBER);
     }
 
     @Test

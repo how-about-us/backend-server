@@ -52,6 +52,13 @@ public class RoomService {
         return RoomDetailResult.of(room, RoomRole.HOST, 1);
     }
 
+    public RoomDetailResult getDetail(UUID roomId, Long userId) {
+        Room room = getActiveRoom(roomId);
+        RoomMember member = getActiveMember(roomId, userId);
+        long memberCount = roomMemberRepository.countByRoom_IdAndRoleIn(roomId, ACTIVE_ROLES);
+        return RoomDetailResult.of(room, member.getRole(), memberCount);
+    }
+
     private void validateDateRange(LocalDate startDate, LocalDate endDate) {
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new CustomException(ErrorCode.INVALID_DATE_RANGE);

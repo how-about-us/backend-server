@@ -29,7 +29,7 @@ public class ScheduleItemService {
     @Transactional
     public ScheduleItemResult create(UUID roomId, Long scheduleId, ScheduleItemCreateCommand command) {
         getRoom(roomId);
-        Schedule schedule = getSchedule(roomId, scheduleId);
+        Schedule schedule = getScheduleForWrite(roomId, scheduleId);
         int nextOrderIndex = scheduleItemRepository.findMaxOrderIndexBySchedule_Id(scheduleId)
                 .map(maxOrderIndex -> maxOrderIndex + 1)
                 .orElse(0);
@@ -56,7 +56,7 @@ public class ScheduleItemService {
     @Transactional
     public ScheduleItemResult update(UUID roomId, Long scheduleId, Long itemId, ScheduleItemUpdateCommand command) {
         getRoom(roomId);
-        getSchedule(roomId, scheduleId);
+        getScheduleForWrite(roomId, scheduleId);
         ScheduleItem scheduleItem = getScheduleItem(scheduleId, itemId);
 
         scheduleItem.updateTimeInfo(command.startTime(), command.durationMinutes());
@@ -66,7 +66,7 @@ public class ScheduleItemService {
     @Transactional
     public void delete(UUID roomId, Long scheduleId, Long itemId) {
         getRoom(roomId);
-        getSchedule(roomId, scheduleId);
+        getScheduleForWrite(roomId, scheduleId);
         ScheduleItem scheduleItem = getScheduleItem(scheduleId, itemId);
 
         scheduleItemRepository.delete(scheduleItem);
@@ -96,6 +96,11 @@ public class ScheduleItemService {
 
     private Schedule getSchedule(UUID roomId, Long scheduleId) {
         return scheduleRepository.findByIdAndRoom_Id(scheduleId, roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SCHEDULE_NOT_FOUND));
+    }
+
+    private Schedule getScheduleForWrite(UUID roomId, Long scheduleId) {
+        return scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(scheduleId, roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SCHEDULE_NOT_FOUND));
     }
 

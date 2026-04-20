@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -42,6 +43,9 @@ public class Schedule extends BaseTimeEntity {
 
     @Column(name = "date", nullable = false)
     private LocalDate date;
+
+    @Version
+    private Long version;
 
     private Schedule(Room room, int dayNumber, LocalDate date) {
         this.room = room;

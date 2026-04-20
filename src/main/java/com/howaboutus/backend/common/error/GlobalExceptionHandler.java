@@ -3,6 +3,7 @@ package com.howaboutus.backend.common.error;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.validation.FieldError;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -75,6 +76,13 @@ public class GlobalExceptionHandler {
                 .orElse("요청 본문이 유효하지 않습니다");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiErrorResponse.of(HttpStatus.BAD_REQUEST, message));
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ApiErrorResponse> handleOptimisticLockingFailure(OptimisticLockingFailureException e) {
+        log.warn("Optimistic locking failure", e);
+        return ResponseEntity.status(ErrorCode.SCHEDULE_CONFLICT.getStatus())
+                .body(ApiErrorResponse.of(ErrorCode.SCHEDULE_CONFLICT));
     }
 
     @ExceptionHandler(Exception.class)

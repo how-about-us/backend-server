@@ -29,6 +29,7 @@ public enum ErrorCode {
     BOOKMARK_CATEGORY_EMPTY(HttpStatus.CONFLICT, "북마크 카테고리가 없습니다"),
     BOOKMARK_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 보관함에 추가된 장소입니다"),
     SCHEDULE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 일정입니다"),
+    SCHEDULE_CONFLICT(HttpStatus.CONFLICT, "일정이 동시에 변경되었습니다. 최신 상태를 확인한 뒤 다시 시도해 주세요"),
 
     // 502 BAD GATEWAY
     EXTERNAL_API_ERROR(HttpStatus.BAD_GATEWAY, "외부 API 호출 중 오류가 발생했습니다");

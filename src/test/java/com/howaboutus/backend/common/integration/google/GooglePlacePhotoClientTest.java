@@ -43,7 +43,7 @@ class GooglePlacePhotoClientTest {
     void returnsPhotoUriForGivenPhotoName() {
         String photoName = "places/ChIJ123/photos/abc";
         server.expect(requestTo(
-                        "https://places.googleapis.com/v1/" + photoName
+                        "https://places.googleapis.com/v1/places%2FChIJ123%2Fphotos%2Fabc"
                                 + "/media?maxWidthPx=400&maxHeightPx=400&skipHttpRedirect=true"))
                 .andExpect(method(HttpMethod.GET))
                 .andExpect(header("X-Goog-Api-Key", "test-key"))

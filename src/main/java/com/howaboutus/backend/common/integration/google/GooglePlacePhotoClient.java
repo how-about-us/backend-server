@@ -19,11 +19,14 @@ public class GooglePlacePhotoClient {
     private final GooglePlacesProperties properties;
 
     public String getPhotoUri(String photoName) {
-        String uri = String.format("/v1/%s/media?maxWidthPx=%d&maxHeightPx=%d&skipHttpRedirect=true",
-                photoName, MAX_WIDTH_PX, MAX_HEIGHT_PX);
         try {
             GooglePlacePhotoResponse response = googlePlacesRestClient.get()
-                    .uri(uri)
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/v1/{photoName}/media")
+                            .queryParam("maxWidthPx", MAX_WIDTH_PX)
+                            .queryParam("maxHeightPx", MAX_HEIGHT_PX)
+                            .queryParam("skipHttpRedirect", true)
+                            .build(photoName))
                     .header("X-Goog-Api-Key", properties.apiKey())
                     .retrieve()
                     .body(GooglePlacePhotoResponse.class);

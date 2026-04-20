@@ -105,7 +105,7 @@ class RefreshTokenServiceTest {
         String token = "1:" + reusedUuid;
 
         given(valueOperations.getAndDelete("refresh:token:reused-uuid")).willReturn(null);
-        given(redisTemplate.hasKey("refresh:used:reused-uuid")).willReturn(true); // used 마커 있음
+        given(valueOperations.get("refresh:used:reused-uuid")).willReturn("1"); // used 마커에 userId 저장
         given(setOperations.members("refresh:user:1")).willReturn(Set.of(reusedUuid, activeUuid));
         given(redisTemplate.delete("refresh:token:reused-uuid")).willReturn(true);
         given(redisTemplate.delete("refresh:token:active-uuid")).willReturn(true);
@@ -128,7 +128,7 @@ class RefreshTokenServiceTest {
         // refresh:token:{uuid} 는 TTL 만료, refresh:used:{uuid} 도 없음 → 정상 만료
         String token = "1:naturally-expired-uuid";
         given(valueOperations.getAndDelete("refresh:token:naturally-expired-uuid")).willReturn(null);
-        given(redisTemplate.hasKey("refresh:used:naturally-expired-uuid")).willReturn(false);
+        given(valueOperations.get("refresh:used:naturally-expired-uuid")).willReturn(null);
 
         assertThatThrownBy(() -> refreshTokenService.rotate(token))
                 .isInstanceOf(CustomException.class)

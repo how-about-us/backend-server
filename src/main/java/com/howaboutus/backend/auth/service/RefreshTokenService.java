@@ -51,7 +51,7 @@ public class RefreshTokenService {
         //null이 아니라면, 기존의 RTK는 폐기되었으므로 새로운 토큰을 발급한다.
         String userKey = USER_KEY_PREFIX + userId;
         redisTemplate.opsForSet().remove(userKey, parts.uuid());
-        redisTemplate.opsForValue().set(USED_KEY_PREFIX + parts.uuid(), "1", USED_TTL);
+        redisTemplate.opsForValue().set(USED_KEY_PREFIX + parts.uuid(), userId, USED_TTL);
 
         Long userIdLong = Long.valueOf(userId);
         return new RotateResult(create(userIdLong), userIdLong);
@@ -76,9 +76,9 @@ public class RefreshTokenService {
     }
 
     private CustomException handleMissingToken(TokenParts parts) {
-        Boolean isUsed = redisTemplate.hasKey(USED_KEY_PREFIX + parts.uuid());
-        if (Boolean.TRUE.equals(isUsed)) {
-            invalidateAllTokens(parts.userId());
+        String storedUserId = redisTemplate.opsForValue().get(USED_KEY_PREFIX + parts.uuid());
+        if (storedUserId != null) {
+            invalidateAllTokens(storedUserId);
             return new CustomException(ErrorCode.REFRESH_TOKEN_REUSE_DETECTED);
         }
         return new CustomException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);

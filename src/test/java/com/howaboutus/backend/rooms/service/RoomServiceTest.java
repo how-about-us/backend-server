@@ -17,9 +17,11 @@ import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.rooms.service.dto.RoomCreateCommand;
 import com.howaboutus.backend.rooms.service.dto.RoomDetailResult;
+import com.howaboutus.backend.rooms.service.dto.RoomListResult;
 import com.howaboutus.backend.rooms.service.dto.RoomUpdateCommand;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +36,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class RoomServiceTest {
+
+    private static final List<RoomRole> ACTIVE_ROLES = List.of(RoomRole.HOST, RoomRole.MEMBER);
 
     @Mock private RoomRepository roomRepository;
     @Mock private RoomMemberRepository roomMemberRepository;
@@ -259,5 +263,82 @@ class RoomServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.NOT_ROOM_HOST);
+    }
+
+    @Test
+    @DisplayName("커서 없이 내 방 목록을 조회하면 최신순으로 반환한다")
+    void getMyRoomsWithoutCursorReturnsLatest() {
+        Long userId = 1L;
+        List<RoomMember> members = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            Room room = Room.create("방" + i, "서울", null, null, "code" + i, userId);
+            ReflectionTestUtils.setField(room, "id", UUID.randomUUID());
+            User user = User.ofGoogle("google-id", "test@test.com", "테스터", null);
+            ReflectionTestUtils.setField(user, "id", userId);
+            RoomMember member = RoomMember.of(room, user, RoomRole.HOST);
+            ReflectionTestUtils.setField(member, "joinedAt", Instant.now().minusSeconds(i * 10L));
+            members.add(member);
+        }
+
+        given(roomMemberRepository.findByUser_IdAndRoleInAndRoom_DeletedAtIsNullOrderByJoinedAtDesc(
+                userId, ACTIVE_ROLES, org.springframework.data.domain.PageRequest.of(0, 11)))
+                .willReturn(members);
+
+        RoomListResult result = roomService.getMyRooms(userId, null, 10);
+
+        assertThat(result.rooms()).hasSize(3);
+        assertThat(result.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("커서 있을 때 내 방 목록을 조회하면 커서 이전 항목을 반환한다")
+    void getMyRoomsWithCursorReturnsBefore() {
+        Long userId = 1L;
+        Instant cursor = Instant.now();
+        List<RoomMember> members = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            Room room = Room.create("방" + i, "서울", null, null, "code" + i, userId);
+            ReflectionTestUtils.setField(room, "id", UUID.randomUUID());
+            User user = User.ofGoogle("google-id", "test@test.com", "테스터", null);
+            ReflectionTestUtils.setField(user, "id", userId);
+            RoomMember member = RoomMember.of(room, user, RoomRole.HOST);
+            ReflectionTestUtils.setField(member, "joinedAt", cursor.minusSeconds((i + 1) * 10L));
+            members.add(member);
+        }
+
+        given(roomMemberRepository.findByUser_IdAndRoleInAndRoom_DeletedAtIsNullAndJoinedAtBeforeOrderByJoinedAtDesc(
+                userId, ACTIVE_ROLES, cursor, org.springframework.data.domain.PageRequest.of(0, 11)))
+                .willReturn(members);
+
+        RoomListResult result = roomService.getMyRooms(userId, cursor, 10);
+
+        assertThat(result.rooms()).hasSize(2);
+        assertThat(result.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("size+1개 반환 시 hasNext=true이고 nextCursor가 설정된다")
+    void getMyRoomsHasNextWhenMoreExists() {
+        Long userId = 1L;
+        List<RoomMember> members = new ArrayList<>();
+        for (int i = 0; i < 11; i++) {
+            Room room = Room.create("방" + i, "서울", null, null, "code" + i, userId);
+            ReflectionTestUtils.setField(room, "id", UUID.randomUUID());
+            User user = User.ofGoogle("google-id", "test@test.com", "테스터", null);
+            ReflectionTestUtils.setField(user, "id", userId);
+            RoomMember member = RoomMember.of(room, user, RoomRole.HOST);
+            ReflectionTestUtils.setField(member, "joinedAt", Instant.now().minusSeconds(i * 10L));
+            members.add(member);
+        }
+
+        given(roomMemberRepository.findByUser_IdAndRoleInAndRoom_DeletedAtIsNullOrderByJoinedAtDesc(
+                userId, ACTIVE_ROLES, org.springframework.data.domain.PageRequest.of(0, 11)))
+                .willReturn(members);
+
+        RoomListResult result = roomService.getMyRooms(userId, null, 10);
+
+        assertThat(result.rooms()).hasSize(10);
+        assertThat(result.hasNext()).isTrue();
+        assertThat(result.nextCursor()).isNotNull();
     }
 }

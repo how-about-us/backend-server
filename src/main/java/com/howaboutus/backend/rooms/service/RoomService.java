@@ -12,6 +12,7 @@ import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.rooms.service.dto.RoomCreateCommand;
 import com.howaboutus.backend.rooms.service.dto.RoomDetailResult;
 import com.howaboutus.backend.rooms.service.dto.RoomListResult;
+import com.howaboutus.backend.rooms.service.dto.RoomListResult.RoomSummary;
 import com.howaboutus.backend.rooms.service.dto.RoomUpdateCommand;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -74,6 +75,38 @@ public class RoomService {
         Room room = getActiveRoom(roomId);
         getHostMember(roomId, userId);
         room.delete();
+    }
+
+    public RoomListResult getMyRooms(Long userId, Instant cursor, int size) {
+        PageRequest pageable = PageRequest.of(0, size + 1);
+        List<RoomMember> members;
+        if (cursor == null) {
+            members = roomMemberRepository
+                    .findByUser_IdAndRoleInAndRoom_DeletedAtIsNullOrderByJoinedAtDesc(
+                            userId, ACTIVE_ROLES, pageable);
+        } else {
+            members = roomMemberRepository
+                    .findByUser_IdAndRoleInAndRoom_DeletedAtIsNullAndJoinedAtBeforeOrderByJoinedAtDesc(
+                            userId, ACTIVE_ROLES, cursor, pageable);
+        }
+
+        boolean hasNext = members.size() > size;
+        List<RoomMember> page = hasNext ? members.subList(0, size) : members;
+
+        Instant nextCursor = null;
+        if (hasNext) {
+            nextCursor = page.get(page.size() - 1).getJoinedAt();
+        }
+
+        List<RoomSummary> summaries = page.stream().map(m -> {
+            Room room = m.getRoom();
+            long memberCount = roomMemberRepository.countByRoom_IdAndRoleIn(room.getId(), ACTIVE_ROLES);
+            return new RoomSummary(room.getId(), room.getTitle(), room.getDestination(),
+                    room.getStartDate(), room.getEndDate(), memberCount,
+                    m.getRole().name(), m.getJoinedAt());
+        }).toList();
+
+        return new RoomListResult(summaries, nextCursor, hasNext);
     }
 
     private void validateDateRange(LocalDate startDate, LocalDate endDate) {

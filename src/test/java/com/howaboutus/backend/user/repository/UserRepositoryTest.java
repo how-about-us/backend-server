@@ -1,8 +1,8 @@
-package com.howaboutus.backend.auth.repository;
+package com.howaboutus.backend.user.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.howaboutus.backend.auth.entity.User;
+import com.howaboutus.backend.user.entity.User;
 import com.howaboutus.backend.support.BaseIntegrationTest;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;

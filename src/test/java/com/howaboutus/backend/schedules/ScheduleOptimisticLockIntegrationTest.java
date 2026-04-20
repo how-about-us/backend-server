@@ -203,8 +203,9 @@ class ScheduleOptimisticLockIntegrationTest extends BaseIntegrationTest {
 
         @Around("execution(* com.howaboutus.backend.schedules.repository.ScheduleRepository.findByIdAndRoom_IdWithOptimisticLock(..))")
         Object awaitConcurrentLookup(ProceedingJoinPoint joinPoint) throws Throwable {
+            Object result = joinPoint.proceed();
             repositoryLookupBarrier.awaitIfActive();
-            return joinPoint.proceed();
+            return result;
         }
     }
 

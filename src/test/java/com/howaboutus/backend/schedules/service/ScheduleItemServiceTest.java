@@ -151,6 +151,37 @@ class ScheduleItemServiceTest {
     }
 
     @Test
+    @DisplayName("일정 항목 목록 조회 시 orderIndex 오름차순 결과를 ScheduleItemResult로 반환한다")
+    void getItemsReturnsOrderedMappedResults() {
+        UUID roomId = UUID.randomUUID();
+        Room room = createRoom(roomId);
+        Schedule schedule = createSchedule(room, 100L);
+        ScheduleItem first = createScheduleItem(schedule, 10L, "place-1", 0);
+        ScheduleItem second = createScheduleItem(schedule, 11L, "place-2", 1);
+        Instant firstCreatedAt = Instant.parse("2026-04-20T00:00:00Z");
+        Instant secondCreatedAt = Instant.parse("2026-04-20T01:00:00Z");
+
+        ReflectionTestUtils.setField(first, "createdAt", firstCreatedAt);
+        ReflectionTestUtils.setField(second, "createdAt", secondCreatedAt);
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(scheduleRepository.findByIdAndRoom_Id(100L, roomId)).willReturn(Optional.of(schedule));
+        given(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(100L))
+                .willReturn(List.of(first, second));
+
+        List<ScheduleItemResult> results = scheduleItemService.getItems(roomId, 100L);
+
+        assertThat(results).containsExactly(
+                ScheduleItemResult.from(first),
+                ScheduleItemResult.from(second)
+        );
+        assertThat(results.get(0).orderIndex()).isEqualTo(0);
+        assertThat(results.get(0).googlePlaceId()).isEqualTo("place-1");
+        assertThat(results.get(1).orderIndex()).isEqualTo(1);
+        assertThat(results.get(1).googlePlaceId()).isEqualTo("place-2");
+    }
+
+    @Test
     @DisplayName("방이 없으면 일정 항목 조회 시 ROOM_NOT_FOUND 예외를 던진다")
     void getItemsThrowsWhenRoomMissing() {
         UUID roomId = UUID.randomUUID();

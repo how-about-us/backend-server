@@ -22,6 +22,7 @@ public enum ErrorCode {
     BOOKMARK_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "북마크 카테고리를 찾을 수 없습니다"),
     BOOKMARK_NOT_FOUND(HttpStatus.NOT_FOUND, "북마크를 찾을 수 없습니다"),
     SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "일정을 찾을 수 없습니다"),
+    SCHEDULE_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "일정 항목을 찾을 수 없습니다"),
 
     // 409 CONFLICT
     BOOKMARK_CATEGORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 북마크 카테고리입니다"),

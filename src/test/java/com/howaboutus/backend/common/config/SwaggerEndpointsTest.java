@@ -1,5 +1,7 @@
 package com.howaboutus.backend.common.config;
 
+import com.howaboutus.backend.auth.filter.JwtAuthenticationFilter;
+import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.places.controller.PlaceController;
 import com.howaboutus.backend.places.service.PlaceDetailService;
 import com.howaboutus.backend.places.service.PlaceSearchService;
@@ -26,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PlaceController.class)
-@Import({OpenApiConfig.class, SecurityConfig.class})
+@Import({OpenApiConfig.class, SecurityConfig.class, JwtAuthenticationFilter.class})
 @ImportAutoConfiguration({
         SpringDocConfiguration.class,
         SpringDocConfigProperties.class,
@@ -41,6 +43,9 @@ class SwaggerEndpointsTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private JwtProvider jwtProvider;
 
     @MockitoBean
     private PlaceSearchService placeSearchService;

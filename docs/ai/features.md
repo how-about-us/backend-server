@@ -36,12 +36,12 @@
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[ ]` | 방 생성 | 방 제목, 여행지, 날짜 입력 → invite_code 자동 발급 | rooms |
-| `[ ]` | 내 방 목록 조회 | 내가 참여 중인 방 목록 | rooms, room_members |
-| `[ ]` | 방 상세 조회 | 방 메타정보 (제목, 여행지, 날짜, 멤버 수 등) | rooms |
-| `[ ]` | 방 수정 | 방 제목, 여행지, 날짜 수정 (ADMIN만) | rooms |
-| `[ ]` | 방 삭제 | 방 삭제 (ADMIN만) | rooms |
-| `[ ]` | 초대 코드 재발급 | 기존 invite_code 폐기 후 신규 발급 (ADMIN만) | rooms |
+| `[x]` | 방 생성 | 방 제목, 여행지, 날짜 입력 → invite_code 자동 발급 | rooms |
+| `[x]` | 내 방 목록 조회 | 내가 참여 중인 방 목록 | rooms, room_members |
+| `[x]` | 방 상세 조회 | 방 메타정보 (제목, 여행지, 날짜, 멤버 수 등) | rooms |
+| `[x]` | 방 수정 | 방 제목, 여행지, 날짜 수정 (HOST만) | rooms |
+| `[x]` | 방 삭제 | 방 삭제 (HOST만, soft delete) | rooms |
+| `[ ]` | 초대 코드 재발급 | 기존 invite_code 폐기 후 신규 발급 (HOST만) | rooms |
 | `[ ]` | 초대 링크로 방 입장 | invite_code로 room_members에 등록 | rooms, room_members |
 
 ---
@@ -50,8 +50,8 @@
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[ ]` | 방 멤버 목록 조회 | 방 참여자 목록 + 역할(ADMIN/MEMBER) + 접속 상태 | room_members |
-| `[ ]` | 멤버 강퇴 | ADMIN이 특정 멤버 내보내기 | room_members |
+| `[ ]` | 방 멤버 목록 조회 | 방 참여자 목록 + 역할(HOST/MEMBER) + 접속 상태 | room_members |
+| `[ ]` | 멤버 강퇴 | HOST가 특정 멤버 내보내기 | room_members |
 | `[ ]` | 방 나가기 | 본인이 방에서 탈퇴 | room_members |
 | `[ ]` | 현재 접속 중인 유저 조회 | 실시간 접속 유저 목록 | Redis (connected_users) |
 | `[-]` | 방장 위임 | 권한 이전 | room_members |

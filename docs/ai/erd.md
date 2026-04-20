@@ -39,6 +39,7 @@ Google OAuth 기반 사용자 정보
 | end_date | DATE | NULLABLE | 여행 종료일 |
 | invite_code | VARCHAR(50) | UNIQUE, NOT NULL | 초대 링크용 고정 코드 (방 생성 시 자동 발급) |
 | created_by | BIGINT | 사용자 ID 참조, NOT NULL | 방 생성자 (현재 구현은 users.id 값을 보관하지만 DB FK 제약은 두지 않음) |
+| deleted_at | TIMESTAMP | NULLABLE | Soft delete 시각 |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
 
@@ -55,7 +56,7 @@ Google OAuth 기반 사용자 정보
 | id | BIGINT | PK, AUTO_INCREMENT | |
 | room_id | UUID | FK → rooms.id, NOT NULL | |
 | user_id | BIGINT | FK → users.id, NOT NULL | |
-| role | VARCHAR(20) | NOT NULL, DEFAULT 'MEMBER' | ADMIN / MEMBER |
+| role | VARCHAR(20) | NOT NULL, DEFAULT 'MEMBER' | HOST / MEMBER / PENDING |
 | joined_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 참여 일시 |
 | last_read_message_id | BIGINT | NULLABLE | 마지막으로 읽은 메시지 ID |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |

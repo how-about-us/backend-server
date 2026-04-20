@@ -196,7 +196,7 @@ Google OAuth 기반 사용자 정보
 |---------|------|-----|------|
 | `room:{roomId}:metadata` | 방 메타데이터 캐시 (DB 스냅샷) | Sliding TTL | |
 | `room:{roomId}:connected_users` | 현재 접속 중인 유저 목록 (ephemeral) | 세션 종료 시 제거 | |
-| `place:detail:{googlePlaceId}` | 장소 상세 조회 결과 캐시 | 3시간 | |
+| `place:detail:{googlePlaceId}` | 장소 상세 조회 결과 캐시 | 5분 | |
 | `refresh:token:{uuid}` | userId (String) | 14일 | 토큰 → 유저 매핑, 유효성 검증 |
 | `refresh:user:{userId}` | Set\<uuid\> | 없음 | 유저 활성 토큰 목록, 전체 무효화 & Replay Detection |
 
@@ -208,7 +208,7 @@ Google OAuth 기반 사용자 정보
 2. **google_place_id 직접 참조:** places 중간 테이블 없이 bookmarks·schedule_items에서 google_place_id(VARCHAR)를 직접 저장한다. 단순 검색 결과를 DB에 eager insert할 필요가 없고, 북마크/일정 추가 시점에만 장소 식별자가 기록된다. 각 테이블의 google_place_id 컬럼에 인덱스를 부여해 조회 성능을 확보한다.
 3. **message.id auto-increment:** WebSocket 재접속 시 마지막 수신 ID 기반 미수신 메시지 조회 패턴에 최적화.
 4. **room.id UUID:** 초대 URL에 노출되므로 추측 불가능한 UUID 사용.
-5. **장소 상세 캐시:** 자유도가 높은 검색어는 캐시 히트율이 낮을 수 있으므로 검색 결과는 캐시하지 않는다. 대신 Google Place 상세 조회 응답은 `google_place_id` 기준으로 Redis에 3시간 TTL로 저장한다.
+5. **장소 상세 캐시:** 자유도가 높은 검색어는 캐시 히트율이 낮을 수 있으므로 검색 결과는 캐시하지 않는다. 대신 Google Place 상세 조회 응답은 `google_place_id` 기준으로 Redis에 5분 TTL로 저장한다.
 6. **schedule_items.order_index:** D&D UI를 위한 정렬 인덱스. 재정렬 시 해당 컬럼만 업데이트.
 7. **이동 정보 비동기 갱신:** travel_mode, distance_meters, duration_seconds는 "현재 장소 → 다음 장소" 구간 이동 정보 저장. 마지막 장소의 이동 정보는 NULL.
 8. **Soft Delete 미적용 (초안):** 방 삭제 시 CASCADE 또는 별도 정책은 추후 논의.

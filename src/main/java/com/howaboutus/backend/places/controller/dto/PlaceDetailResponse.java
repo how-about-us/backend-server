@@ -15,7 +15,7 @@ public record PlaceDetailResponse(
         String websiteUri,
         String googleMapsUri,
         List<String> weekdayDescriptions,
-        List<String> photoNames
+        List<String> photoUrls
 ) {
     public static PlaceDetailResponse from(PlaceDetailResult result) {
         Location location = null;
@@ -34,7 +34,7 @@ public record PlaceDetailResponse(
                 result.websiteUri(),
                 result.googleMapsUri(),
                 result.weekdayDescriptions(),
-                result.photoNames()
+                result.photoUrls()
         );
     }
 

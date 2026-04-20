@@ -15,9 +15,9 @@ public record PlaceDetailResult(
         String websiteUri,
         String googleMapsUri,
         List<String> weekdayDescriptions,
-        List<String> photoNames
+        List<String> photoUrls
 ) {
-    public static PlaceDetailResult from(GooglePlaceDetailResponse place) {
+    public static PlaceDetailResult from(GooglePlaceDetailResponse place, List<String> photoUrls) {
         String googlePlaceId = place.id();
         if (googlePlaceId != null && googlePlaceId.startsWith("places/")) {
             googlePlaceId = googlePlaceId.substring("places/".length());
@@ -38,13 +38,6 @@ public record PlaceDetailResult(
             weekdayDescriptions = place.regularOpeningHours().weekdayDescriptions();
         }
 
-        List<String> photoNames = List.of();
-        if (place.photos() != null) {
-            photoNames = place.photos().stream()
-                    .map(GooglePlaceDetailResponse.Photo::name)
-                    .toList();
-        }
-
         return new PlaceDetailResult(
                 googlePlaceId,
                 name,
@@ -56,7 +49,7 @@ public record PlaceDetailResult(
                 place.websiteUri(),
                 place.googleMapsUri(),
                 weekdayDescriptions,
-                photoNames
+                photoUrls
         );
     }
 

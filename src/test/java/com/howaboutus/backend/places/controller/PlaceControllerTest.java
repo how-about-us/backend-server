@@ -57,7 +57,7 @@ class PlaceControllerTest {
                 new PlaceSearchResult.Location(37.57, 126.98),
                 "cafe",
                 4.5,
-                "places/ChIJ123/photos/abc"
+                "https://cdn.example.com/photo.jpg"
         );
         placeDetailResult = new PlaceDetailResult(
                 "ChIJ123",
@@ -70,7 +70,7 @@ class PlaceControllerTest {
                 "https://layered.example",
                 "https://maps.google.com/?cid=123",
                 List.of("월요일: 09:00~18:00"),
-                List.of("places/ChIJ123/photos/a", "places/ChIJ123/photos/b")
+                List.of("https://cdn.example.com/a.jpg", "https://cdn.example.com/b.jpg")
         );
     }
 
@@ -232,7 +232,7 @@ class PlaceControllerTest {
                 null,
                 "cafe",
                 4.5,
-                "places/ChIJ123/photos/abc"
+                "https://cdn.example.com/photo.jpg"
         );
         given(placeSearchService.search(VALID_QUERY, DEFAULT_LAT, DEFAULT_LNG, 5000.0))
                 .willReturn(List.of(resultWithoutLocation));
@@ -278,7 +278,7 @@ class PlaceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.googlePlaceId").value("ChIJ123"))
                 .andExpect(jsonPath("$.phoneNumber").value("02-123-4567"))
-                .andExpect(jsonPath("$.photoNames[0]").value("places/ChIJ123/photos/a"));
+                .andExpect(jsonPath("$.photoUrls[0]").value("https://cdn.example.com/a.jpg"));
 
         then(placeDetailService).should().getDetail("ChIJ123");
     }

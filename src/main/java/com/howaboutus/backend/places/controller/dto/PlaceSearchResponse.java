@@ -9,7 +9,7 @@ public record PlaceSearchResponse(
         Location location,
         String primaryType,
         Double rating,
-        String photoName
+        String photoUrl
 ) {
     public record Location(Double lat, Double lng) {
     }
@@ -27,7 +27,7 @@ public record PlaceSearchResponse(
                 location,
                 result.primaryType(),
                 result.rating(),
-                result.photoName()
+                result.photoUrl()
         );
     }
 }

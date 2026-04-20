@@ -10,6 +10,7 @@ import com.howaboutus.backend.common.error.ErrorCode;
 import java.time.Duration;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,9 @@ public class AuthController {
     private final AuthService authService;
     private final JwtProperties jwtProperties;
     private final RefreshTokenProperties refreshTokenProperties;
+
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
 
     @PostMapping("/google/login")
     public ResponseEntity<Void> googleLogin(@RequestBody GoogleLoginRequest request) {
@@ -58,10 +62,11 @@ public class AuthController {
             authService.logout(refreshToken);
         }
 
+        boolean secure = "prod".equals(activeProfile);
         ResponseCookie expiredAccess = ResponseCookie.from("access_token", "")
-                .httpOnly(true).sameSite("Lax").path("/").maxAge(0).build();
+                .httpOnly(true).sameSite("Lax").path("/").maxAge(0).secure(secure).build();
         ResponseCookie expiredRefresh = ResponseCookie.from("refresh_token", "")
-                .httpOnly(true).sameSite("Lax").path("/auth/refresh").maxAge(0).build();
+                .httpOnly(true).sameSite("Lax").path("/auth").maxAge(0).secure(secure).build();
 
         return ResponseEntity.noContent()
                 .header(HttpHeaders.SET_COOKIE, expiredAccess.toString())
@@ -70,20 +75,24 @@ public class AuthController {
     }
 
     private ResponseCookie buildAccessTokenCookie(String token) {
+        boolean secure = "prod".equals(activeProfile);
         return ResponseCookie.from("access_token", token)
                 .httpOnly(true)
                 .sameSite("Lax")
                 .path("/")
                 .maxAge(Duration.ofMillis(jwtProperties.accessTokenExpiration()))
+                .secure(secure)
                 .build();
     }
 
     private ResponseCookie buildRefreshTokenCookie(String token) {
+        boolean secure = "prod".equals(activeProfile);
         return ResponseCookie.from("refresh_token", token)
                 .httpOnly(true)
                 .sameSite("Lax")
-                .path("/auth/refresh")
+                .path("/auth")
                 .maxAge(Duration.ofMillis(refreshTokenProperties.expiration()))
+                .secure(secure)
                 .build();
     }
 }

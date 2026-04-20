@@ -56,8 +56,10 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("access_token"))
                 .andExpect(cookie().httpOnly("access_token", true))
+                .andExpect(cookie().path("access_token", "/"))
                 .andExpect(cookie().exists("refresh_token"))
-                .andExpect(cookie().httpOnly("refresh_token", true));
+                .andExpect(cookie().httpOnly("refresh_token", true))
+                .andExpect(cookie().path("refresh_token", "/auth"));
     }
 
     @Test
@@ -86,7 +88,9 @@ class AuthControllerTest {
                         .cookie(new Cookie("refresh_token", "1:old-uuid")))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("access_token"))
-                .andExpect(cookie().exists("refresh_token"));
+                .andExpect(cookie().path("access_token", "/"))
+                .andExpect(cookie().exists("refresh_token"))
+                .andExpect(cookie().path("refresh_token", "/auth"));
     }
 
     @Test
@@ -103,7 +107,9 @@ class AuthControllerTest {
                         .cookie(new Cookie("refresh_token", "1:some-uuid")))
                 .andExpect(status().isNoContent())
                 .andExpect(cookie().maxAge("access_token", 0))
-                .andExpect(cookie().maxAge("refresh_token", 0));
+                .andExpect(cookie().path("access_token", "/"))
+                .andExpect(cookie().maxAge("refresh_token", 0))
+                .andExpect(cookie().path("refresh_token", "/auth"));
 
         verify(authService).logout("1:some-uuid");
     }

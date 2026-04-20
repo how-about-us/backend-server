@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.howaboutus.backend.auth.service.dto.RotateResult;
 import java.time.Duration;
 import java.util.Set;
 
@@ -58,6 +60,10 @@ class RefreshTokenServiceTest {
                 eq(Duration.ofMillis(1209600000L))
         );
         verify(setOperations).add("refresh:user:1", uuid);
+        verify(redisTemplate).expire(
+                eq("refresh:user:1"),
+                eq(Duration.ofMillis(1209600000L))
+        );
     }
 
     @Test
@@ -65,22 +71,26 @@ class RefreshTokenServiceTest {
     void rotateValidToken() {
         String oldUuid = "old-uuid";
         String oldToken = "1:" + oldUuid;
-        given(valueOperations.get("refresh:token:old-uuid")).willReturn("1");
-        given(redisTemplate.delete("refresh:token:old-uuid")).willReturn(true);
+        given(valueOperations.getAndDelete("refresh:token:old-uuid")).willReturn("1");
 
-        String newToken = refreshTokenService.rotate(oldToken);
+        RotateResult result = refreshTokenService.rotate(oldToken);
 
-        assertThat(newToken).isNotBlank().isNotEqualTo(oldToken).startsWith("1:");
-        verify(redisTemplate).delete("refresh:token:old-uuid");
+        assertThat(result.token()).isNotBlank().isNotEqualTo(oldToken).startsWith("1:");
+        assertThat(result.userId()).isEqualTo(1L);
         verify(setOperations).remove("refresh:user:1", oldUuid);
+        verify(valueOperations).set(
+                eq("refresh:used:old-uuid"),
+                eq("1"),
+                eq(Duration.ofMinutes(5))
+        );
     }
 
     @Test
     @DisplayName("만료된 토큰으로 Rotation하면 REFRESH_TOKEN_NOT_FOUND 예외를 던진다")
     void throwsWhenTokenExpired() {
         String token = "1:expired-uuid";
-        given(valueOperations.get("refresh:token:expired-uuid")).willReturn(null);
-        given(setOperations.isMember("refresh:user:1", "expired-uuid")).willReturn(false);
+        given(valueOperations.getAndDelete("refresh:token:expired-uuid")).willReturn(null);
+        given(redisTemplate.hasKey("refresh:used:expired-uuid")).willReturn(false);
 
         assertThatThrownBy(() -> refreshTokenService.rotate(token))
                 .isInstanceOf(CustomException.class)
@@ -95,8 +105,8 @@ class RefreshTokenServiceTest {
         String activeUuid = "active-uuid";
         String token = "1:" + reusedUuid;
 
-        given(valueOperations.get("refresh:token:reused-uuid")).willReturn(null);
-        given(setOperations.isMember("refresh:user:1", reusedUuid)).willReturn(true);
+        given(valueOperations.getAndDelete("refresh:token:reused-uuid")).willReturn(null);
+        given(valueOperations.get("refresh:used:reused-uuid")).willReturn("1"); // used 마커에 userId 저장
         given(setOperations.members("refresh:user:1")).willReturn(Set.of(reusedUuid, activeUuid));
         given(redisTemplate.delete("refresh:token:reused-uuid")).willReturn(true);
         given(redisTemplate.delete("refresh:token:active-uuid")).willReturn(true);
@@ -110,12 +120,54 @@ class RefreshTokenServiceTest {
         verify(redisTemplate).delete("refresh:token:reused-uuid");
         verify(redisTemplate).delete("refresh:token:active-uuid");
         verify(redisTemplate).delete("refresh:user:1");
+        verify(redisTemplate, never()).delete("refresh:used:reused-uuid");
+    }
+
+    @Test
+    @DisplayName("TTL 만료 후 정상 요청은 REUSE_DETECTED가 아닌 REFRESH_TOKEN_NOT_FOUND를 던진다")
+    void throwsNotFoundWhenTokenTtlExpiredNaturally() {
+        // refresh:token:{uuid} 는 TTL 만료, refresh:used:{uuid} 도 없음 → 정상 만료
+        String token = "1:naturally-expired-uuid";
+        given(valueOperations.getAndDelete("refresh:token:naturally-expired-uuid")).willReturn(null);
+        given(valueOperations.get("refresh:used:naturally-expired-uuid")).willReturn(null);
+
+        assertThatThrownBy(() -> refreshTokenService.rotate(token))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
     }
 
     @Test
     @DisplayName("잘못된 형식의 토큰은 REFRESH_TOKEN_NOT_FOUND 예외를 던진다")
     void throwsWhenTokenFormatInvalid() {
         assertThatThrownBy(() -> refreshTokenService.rotate("invalid-no-colon"))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("userId가 비어있는 토큰은 REFRESH_TOKEN_NOT_FOUND 예외를 던진다")
+    void throwsWhenUserIdEmpty() {
+        assertThatThrownBy(() -> refreshTokenService.rotate(":some-uuid"))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("uuid가 비어있는 토큰은 REFRESH_TOKEN_NOT_FOUND 예외를 던진다")
+    void throwsWhenUuidEmpty() {
+        assertThatThrownBy(() -> refreshTokenService.rotate("1:"))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("userId가 숫자가 아닌 토큰은 REFRESH_TOKEN_NOT_FOUND 예외를 던진다")
+    void throwsWhenUserIdNotNumeric() {
+        assertThatThrownBy(() -> refreshTokenService.rotate("abc:some-uuid"))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);

@@ -75,6 +75,10 @@ src/main/resources/
 └── application-prod.yaml
 ```
 
+## Coding Conventions
+
+- 서비스 레이어 간 또는 외부(컨트롤러 등)로 노출되는 DTO는 해당 도메인의 `service/dto/` 패키지에 별도 파일로 정의한다. 서비스 클래스 내부 `record`로 선언하지 않는다.
+
 ## Gotchas
 
 - Spring Boot 4.0은 Jackson 3.x를 사용한다. Jackson 패키지는 `com.fasterxml.jackson`이 아닌 `tools.jackson`이다. (예: `tools.jackson.databind.ObjectMapper`)

@@ -4,6 +4,7 @@ import com.howaboutus.backend.auth.entity.User;
 import com.howaboutus.backend.auth.repository.UserRepository;
 import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
 import com.howaboutus.backend.auth.service.dto.LoginResult;
+import com.howaboutus.backend.auth.service.dto.RotateResult;
 import com.howaboutus.backend.common.integration.google.GoogleOAuthClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,11 +40,10 @@ public class AuthService {
     }
 
     public LoginResult refresh(String refreshToken) {
-        String newRefreshToken = refreshTokenService.rotate(refreshToken);
-        Long userId = Long.valueOf(newRefreshToken.substring(0, newRefreshToken.indexOf(':')));
-        String accessToken = jwtProvider.generateAccessToken(userId);
+        RotateResult rotated = refreshTokenService.rotate(refreshToken);
+        String accessToken = jwtProvider.generateAccessToken(rotated.userId());
 
-        return new LoginResult(accessToken, newRefreshToken, userId);
+        return new LoginResult(accessToken, rotated.token(), rotated.userId());
     }
 
     public void logout(String refreshToken) {

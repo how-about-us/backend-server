@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 
 import com.howaboutus.backend.common.error.CustomException;
@@ -12,6 +13,7 @@ import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.schedules.entity.Schedule;
 import com.howaboutus.backend.schedules.repository.ScheduleRepository;
+import com.howaboutus.backend.schedules.service.ScheduleItemService;
 import com.howaboutus.backend.schedules.service.dto.ScheduleCreateCommand;
 import com.howaboutus.backend.schedules.service.dto.ScheduleResult;
 import java.time.Instant;
@@ -38,11 +40,14 @@ class ScheduleServiceTest {
     @Mock
     private ScheduleRepository scheduleRepository;
 
+    @Mock
+    private ScheduleItemService scheduleItemService;
+
     private ScheduleService scheduleService;
 
     @BeforeEach
     void setUp() {
-        scheduleService = new ScheduleService(roomRepository, scheduleRepository);
+        scheduleService = new ScheduleService(roomRepository, scheduleRepository, scheduleItemService);
     }
 
     @Test
@@ -270,6 +275,8 @@ class ScheduleServiceTest {
 
         scheduleService.delete(roomId, 10L);
 
-        verify(scheduleRepository).delete(schedule);
+        var order = inOrder(scheduleItemService, scheduleRepository);
+        order.verify(scheduleItemService).deleteAllByScheduleId(10L);
+        order.verify(scheduleRepository).delete(schedule);
     }
 }

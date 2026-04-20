@@ -23,6 +23,7 @@ public class ScheduleService {
 
     private final RoomRepository roomRepository;
     private final ScheduleRepository scheduleRepository;
+    private final ScheduleItemService scheduleItemService;
 
     @Transactional
     public ScheduleResult create(UUID roomId, ScheduleCreateCommand command) {
@@ -54,6 +55,7 @@ public class ScheduleService {
         getRoom(roomId);
         Schedule schedule = scheduleRepository.findByIdAndRoom_Id(scheduleId, roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SCHEDULE_NOT_FOUND));
+        scheduleItemService.deleteAllByScheduleId(scheduleId);
         scheduleRepository.delete(schedule);
     }
 

@@ -14,6 +14,7 @@ import com.howaboutus.backend.schedules.entity.Schedule;
 import com.howaboutus.backend.schedules.repository.ScheduleRepository;
 import com.howaboutus.backend.schedules.service.dto.ScheduleCreateCommand;
 import com.howaboutus.backend.schedules.service.dto.ScheduleResult;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +55,8 @@ class ScheduleServiceTest {
 
         ReflectionTestUtils.setField(room, "id", roomId);
         ReflectionTestUtils.setField(schedule, "id", 10L);
+        Instant createdAt = Instant.parse("2026-04-17T00:00:00Z");
+        ReflectionTestUtils.setField(schedule, "createdAt", createdAt);
 
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.existsByRoom_IdAndDayNumber(roomId, 2)).willReturn(false);
@@ -61,10 +65,15 @@ class ScheduleServiceTest {
 
         ScheduleResult result = scheduleService.create(roomId, command);
 
-        assertThat(result).isEqualTo(ScheduleResult.from(schedule));
+        assertThat(result.scheduleId()).isEqualTo(10L);
+        assertThat(result.roomId()).isEqualTo(roomId);
+        assertThat(result.dayNumber()).isEqualTo(2);
+        assertThat(result.date()).isEqualTo(LocalDate.of(2026, 4, 21));
+        assertThat(result.createdAt()).isEqualTo(createdAt);
 
         ArgumentCaptor<Schedule> scheduleCaptor = ArgumentCaptor.forClass(Schedule.class);
         verify(scheduleRepository).saveAndFlush(scheduleCaptor.capture());
+        assertThat(scheduleCaptor.getValue().getRoom()).isSameAs(room);
         assertThat(scheduleCaptor.getValue().getDayNumber()).isEqualTo(2);
         assertThat(scheduleCaptor.getValue().getDate()).isEqualTo(LocalDate.of(2026, 4, 21));
     }
@@ -166,6 +175,27 @@ class ScheduleServiceTest {
     }
 
     @Test
+    @DisplayName("저장 중 DB 중복이 발생하면 SCHEDULE_ALREADY_EXISTS 예외로 변환한다")
+    void createTranslatesDatabaseDuplicateOnSave() {
+        UUID roomId = UUID.randomUUID();
+        Room room = Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L);
+        ScheduleCreateCommand command = new ScheduleCreateCommand(1, LocalDate.of(2026, 4, 20));
+
+        ReflectionTestUtils.setField(room, "id", roomId);
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(scheduleRepository.existsByRoom_IdAndDayNumber(roomId, 1)).willReturn(false);
+        given(scheduleRepository.existsByRoom_IdAndDate(roomId, LocalDate.of(2026, 4, 20))).willReturn(false);
+        given(scheduleRepository.saveAndFlush(any(Schedule.class)))
+                .willThrow(new DataIntegrityViolationException("duplicate"));
+
+        assertThatThrownBy(() -> scheduleService.create(roomId, command))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.SCHEDULE_ALREADY_EXISTS);
+    }
+
+    @Test
     @DisplayName("방이 있으면 일정 목록 조회 시 dayNumber 오름차순 결과를 반환한다")
     void getSchedulesReturnsOrderedResults() {
         UUID roomId = UUID.randomUUID();
@@ -203,6 +233,7 @@ class ScheduleServiceTest {
     @DisplayName("방 밖의 일정은 삭제 시 SCHEDULE_NOT_FOUND 예외를 던진다")
     void deleteThrowsWhenScheduleOutsideRoom() {
         UUID roomId = UUID.randomUUID();
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L)));
         given(scheduleRepository.findByIdAndRoom_Id(10L, roomId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> scheduleService.delete(roomId, 10L))
@@ -212,14 +243,29 @@ class ScheduleServiceTest {
     }
 
     @Test
+    @DisplayName("방이 없으면 일정 삭제 시 ROOM_NOT_FOUND 예외를 던진다")
+    void deleteThrowsWhenRoomMissing() {
+        UUID roomId = UUID.randomUUID();
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> scheduleService.delete(roomId, 10L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
+    }
+
+    @Test
     @DisplayName("방의 일정을 삭제하면 repository.delete를 호출한다")
     void deleteRemovesSchedule() {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L);
         Schedule schedule = Schedule.create(room, 1, LocalDate.of(2026, 4, 20));
 
+        ReflectionTestUtils.setField(room, "id", roomId);
         ReflectionTestUtils.setField(schedule, "id", 10L);
 
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findByIdAndRoom_Id(10L, roomId)).willReturn(Optional.of(schedule));
 
         scheduleService.delete(roomId, 10L);

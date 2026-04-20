@@ -51,6 +51,7 @@ public class ScheduleService {
 
     @Transactional
     public void delete(UUID roomId, Long scheduleId) {
+        getRoom(roomId);
         Schedule schedule = scheduleRepository.findByIdAndRoom_Id(scheduleId, roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SCHEDULE_NOT_FOUND));
         scheduleRepository.delete(schedule);

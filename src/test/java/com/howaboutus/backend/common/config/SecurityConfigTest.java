@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.howaboutus.backend.auth.controller.AuthController;
 import com.howaboutus.backend.auth.filter.JwtAuthenticationFilter;
+import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.auth.service.AuthService;
 import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.common.config.properties.JwtProperties;
@@ -19,7 +20,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(AuthController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class, GlobalExceptionHandler.class})
 class SecurityConfigTest {
 
     @Autowired

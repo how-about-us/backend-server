@@ -16,7 +16,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.howaboutus.backend.bookmarks.service.BookmarkService;
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkCreateCommand;
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkResult;
+import com.howaboutus.backend.auth.filter.JwtAuthenticationFilter;
+import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.common.config.SecurityConfig;
+import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
@@ -34,11 +37,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(BookmarkController.class)
-@Import({SecurityConfig.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class, GlobalExceptionHandler.class})
 class BookmarkControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private JwtProvider jwtProvider;
 
     @MockitoBean
     private BookmarkService bookmarkService;

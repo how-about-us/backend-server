@@ -4,14 +4,11 @@ import java.util.List;
 
 import com.howaboutus.backend.auth.filter.JwtAuthenticationFilter;
 import com.howaboutus.backend.common.config.properties.CorsProperties;
-import com.howaboutus.backend.common.error.ApiErrorResponse;
-import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -20,7 +17,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @RequiredArgsConstructor
@@ -29,6 +25,7 @@ public class SecurityConfig {
 
     private final CorsProperties corsProperties;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) {
@@ -50,14 +47,9 @@ public class SecurityConfig {
                         .requestMatchers("/users/me").authenticated()
                         // TODO: API가 갖춰지면 .anyRequest().authenticated() 로 전환
                         .anyRequest().permitAll())
+                //인증 실패시 응답 설정
                 .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                            response.setCharacterEncoding("UTF-8");
-                            ApiErrorResponse body = ApiErrorResponse.of(ErrorCode.INVALID_TOKEN);
-                            new ObjectMapper().writeValue(response.getOutputStream(), body);
-                        }))
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .build();

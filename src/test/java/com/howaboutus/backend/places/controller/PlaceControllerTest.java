@@ -1,6 +1,7 @@
 package com.howaboutus.backend.places.controller;
 
 import com.howaboutus.backend.auth.filter.JwtAuthenticationFilter;
+import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.common.config.SecurityConfig;
 import com.howaboutus.backend.common.error.ExternalApiException;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PlaceController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class, GlobalExceptionHandler.class})
 class PlaceControllerTest {
 
     private static final String SEARCH_PATH = "/places/search";

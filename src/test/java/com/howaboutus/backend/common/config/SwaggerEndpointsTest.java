@@ -1,6 +1,7 @@
 package com.howaboutus.backend.common.config;
 
 import com.howaboutus.backend.auth.filter.JwtAuthenticationFilter;
+import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.places.controller.PlaceController;
 import com.howaboutus.backend.places.service.PlaceDetailService;
@@ -28,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PlaceController.class)
-@Import({OpenApiConfig.class, SecurityConfig.class, JwtAuthenticationFilter.class})
+@Import({OpenApiConfig.class, SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class})
 @ImportAutoConfiguration({
         SpringDocConfiguration.class,
         SpringDocConfigProperties.class,

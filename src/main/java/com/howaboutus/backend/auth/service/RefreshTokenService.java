@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.Set;
 import java.util.UUID;
 
+import com.howaboutus.backend.auth.service.dto.RotateResult;
 import com.howaboutus.backend.common.config.properties.RefreshTokenProperties;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
@@ -55,9 +56,6 @@ public class RefreshTokenService {
 
         Long userIdLong = Long.valueOf(userId);
         return new RotateResult(create(userIdLong), userIdLong);
-    }
-
-    public record RotateResult(String token, Long userId) {
     }
 
     public void delete(String token) {

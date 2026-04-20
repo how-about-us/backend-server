@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.howaboutus.backend.auth.service.dto.RotateResult;
 import java.time.Duration;
 import java.util.Set;
 
@@ -72,7 +73,7 @@ class RefreshTokenServiceTest {
         String oldToken = "1:" + oldUuid;
         given(valueOperations.getAndDelete("refresh:token:old-uuid")).willReturn("1");
 
-        RefreshTokenService.RotateResult result = refreshTokenService.rotate(oldToken);
+        RotateResult result = refreshTokenService.rotate(oldToken);
 
         assertThat(result.token()).isNotBlank().isNotEqualTo(oldToken).startsWith("1:");
         assertThat(result.userId()).isEqualTo(1L);

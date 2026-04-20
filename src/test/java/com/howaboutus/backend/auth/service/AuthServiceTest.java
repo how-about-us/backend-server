@@ -9,6 +9,7 @@ import com.howaboutus.backend.auth.entity.User;
 import com.howaboutus.backend.auth.repository.UserRepository;
 import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
 import com.howaboutus.backend.auth.service.dto.LoginResult;
+import com.howaboutus.backend.auth.service.dto.RotateResult;
 import java.util.Optional;
 
 import com.howaboutus.backend.common.integration.google.GoogleOAuthClient;
@@ -72,7 +73,7 @@ class AuthServiceTest {
     @DisplayName("Refresh Token으로 새 토큰 쌍을 발급한다")
     void refreshReturnsNewTokens() {
         given(refreshTokenService.rotate("1:old-uuid"))
-                .willReturn(new RefreshTokenService.RotateResult("1:new-uuid", 1L));
+                .willReturn(new RotateResult("1:new-uuid", 1L));
         given(jwtProvider.generateAccessToken(1L)).willReturn("new-jwt");
 
         LoginResult result = authService.refresh("1:old-uuid");

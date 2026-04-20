@@ -1,5 +1,9 @@
 package com.howaboutus.backend.auth.service;
 
+import com.howaboutus.backend.common.error.CustomException;
+import com.howaboutus.backend.common.error.ErrorCode;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import java.util.Date;
 import javax.crypto.SecretKey;
@@ -16,6 +20,22 @@ public class JwtProvider {
                        @Value("${jwt.access-token-expiration}") long accessTokenExpiration) {
         this.secretKey = secretKey;
         this.accessTokenExpiration = accessTokenExpiration;
+    }
+
+    public Long extractUserId(String token) {
+        try {
+            String subject = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .getSubject();
+            return Long.valueOf(subject);
+        } catch (ExpiredJwtException e) {
+            throw new CustomException(ErrorCode.ACCESS_TOKEN_EXPIRED, e);
+        } catch (JwtException e) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN, e);
+        }
     }
 
     public String generateAccessToken(Long userId) {

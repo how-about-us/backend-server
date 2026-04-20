@@ -1,7 +1,10 @@
 package com.howaboutus.backend.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.howaboutus.backend.common.error.CustomException;
+import com.howaboutus.backend.common.error.ErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -52,5 +55,36 @@ class JwtProviderTest {
         assertThat(claims.getExpiration()).isNotNull();
         assertThat(claims.getExpiration().getTime())
                 .isGreaterThan(System.currentTimeMillis());
+    }
+
+    @Test
+    @DisplayName("유효한 토큰에서 userId를 추출한다")
+    void extractsUserIdFromValidToken() {
+        String token = jwtProvider.generateAccessToken(42L);
+
+        Long userId = jwtProvider.extractUserId(token);
+
+        assertThat(userId).isEqualTo(42L);
+    }
+
+    @Test
+    @DisplayName("만료된 토큰이면 ACCESS_TOKEN_EXPIRED 예외를 던진다")
+    void throwsAccessTokenExpiredForExpiredToken() {
+        JwtProvider shortLivedProvider = new JwtProvider(secretKey, 0L);
+        String token = shortLivedProvider.generateAccessToken(1L);
+
+        assertThatThrownBy(() -> jwtProvider.extractUserId(token))
+                .isInstanceOf(CustomException.class)
+                .satisfies(e -> assertThat(((CustomException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.ACCESS_TOKEN_EXPIRED));
+    }
+
+    @Test
+    @DisplayName("위변조된 토큰이면 INVALID_TOKEN 예외를 던진다")
+    void throwsInvalidTokenForTamperedToken() {
+        assertThatThrownBy(() -> jwtProvider.extractUserId("invalid.token.value"))
+                .isInstanceOf(CustomException.class)
+                .satisfies(e -> assertThat(((CustomException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.INVALID_TOKEN));
     }
 }

@@ -17,8 +17,6 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     @Query("SELECT new com.howaboutus.backend.bookmarks.repository.dto.CategoryBookmarkCount(b.category.id, COUNT(b)) FROM Bookmark b WHERE b.room.id = :roomId GROUP BY b.category.id")
     List<CategoryBookmarkCount> countGroupedByCategoryId(@Param("roomId") UUID roomId);
 
-    List<Bookmark> findAllByRoom_IdOrderByCreatedAtDesc(UUID roomId);
-
     @EntityGraph(attributePaths = {"category", "room"})
     List<Bookmark> findAllByRoom_IdAndCategory_IdOrderByCreatedAtDesc(UUID roomId, Long categoryId);
 

@@ -13,6 +13,7 @@ import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryCreateComman
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryRenameCommand;
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryResult;
 import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
+import com.howaboutus.backend.bookmarks.repository.dto.CategoryBookmarkCount;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
@@ -121,13 +122,18 @@ class BookmarkCategoryServiceTest {
         ReflectionTestUtils.setField(second, "createdAt", Instant.parse("2026-04-18T00:00:00Z"));
 
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(bookmarkRepository.countGroupedByCategoryId(roomId))
+                .willReturn(List.of(
+                        new CategoryBookmarkCount(10L, 2L),
+                        new CategoryBookmarkCount(11L, 1L)
+                ));
         given(bookmarkCategoryRepository.findAllByRoom_IdOrderByCreatedAtAsc(roomId)).willReturn(List.of(first, second));
 
         List<BookmarkCategoryResult> results = bookmarkCategoryService.getCategories(roomId);
 
         assertThat(results).containsExactly(
-                BookmarkCategoryResult.from(first),
-                BookmarkCategoryResult.from(second)
+                BookmarkCategoryResult.from(first, 2L),
+                BookmarkCategoryResult.from(second, 1L)
         );
     }
 

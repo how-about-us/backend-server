@@ -180,10 +180,10 @@ class BookmarkCategoryControllerTest {
     }
 
     @Test
-    @DisplayName("서비스가 BOOKMARK_CATEGORY_NOT_FOUND를 던지면 404를 반환한다")
-    void returnsNotFoundWhenServiceThrowsCategoryNotFound() throws Exception {
+    @DisplayName("서비스가 ROOM_NOT_FOUND를 던지면 404를 반환한다")
+    void returnsNotFoundWhenServiceThrowsRoomNotFound() throws Exception {
         given(bookmarkCategoryService.create(eq(ROOM_ID), any()))
-                .willThrow(new CustomException(ErrorCode.BOOKMARK_CATEGORY_NOT_FOUND));
+                .willThrow(new CustomException(ErrorCode.ROOM_NOT_FOUND));
 
         mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -191,7 +191,7 @@ class BookmarkCategoryControllerTest {
                                 {"name": "맛집", "colorCode": "#FF8800"}
                                 """))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("BOOKMARK_CATEGORY_NOT_FOUND"));
+                .andExpect(jsonPath("$.code").value("ROOM_NOT_FOUND"));
     }
 
     private static final UUID ROOM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");

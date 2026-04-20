@@ -76,7 +76,7 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.categoryId").value(foodCategory.getId()))
                 .andExpect(jsonPath("$.category").value("맛집"));
 
-        Bookmark bookmark = bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(room.getId()).getFirst();
+        Bookmark bookmark = bookmarkRepository.findAll().getFirst();
 
         mockMvc.perform(patch("/rooms/{roomId}/bookmarks/{bookmarkId}/category", room.getId(), bookmark.getId())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -104,7 +104,7 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(delete("/rooms/{roomId}/bookmark-categories/{categoryId}", room.getId(), cafeCategory.getId()))
                 .andExpect(status().isNoContent());
 
-        assertThat(bookmarkRepository.findAllByRoom_IdOrderByCreatedAtDesc(room.getId())).isEmpty();
+        assertThat(bookmarkRepository.findAll()).isEmpty();
     }
 
     @Test

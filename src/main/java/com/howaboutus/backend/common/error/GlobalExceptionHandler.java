@@ -18,8 +18,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiErrorResponse> handleCustomException(CustomException e) {
-        log.error("Custom exception: {}", e.getErrorCode(), e);
         ErrorCode errorCode = e.getErrorCode();
+        if (errorCode.getStatus().is4xxClientError()) {
+            log.warn("Custom exception: {}", errorCode, e);
+        } else {
+            log.error("Custom exception: {}", errorCode, e);
+        }
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiErrorResponse.of(errorCode));
     }

@@ -42,6 +42,16 @@
 - PR 본문에 변경 이유와 테스트 방법을 간략히 적는다.
 - 리뷰 전 로컬에서 `./gradlew build`가 통과해야 한다.
 
+### SonarQube 확인 방법
+
+- PR에 SonarQube Cloud 봇 코멘트가 달리면, 코멘트 안의 `14 New issues` 같은 이슈 링크를 눌러 상세 목록을 확인한다.
+- 봇 코멘트가 보이지 않으면 PR 상단의 `Checks` 탭에서 `SonarCloud Code Analysis` 체크 실행 결과를 열고, Summary에 있는 이슈 링크를 따라간다.
+- 개별 이슈를 볼 때는 `TODO` 관련 항목인지 먼저 구분하고, 실제 수정 대상과 단순 메모성 항목을 섞지 않는다.
+- 수정이 필요한 항목은 파일 경로, 라인, 규칙 제목을 함께 확인한 뒤 대응한다.
+- SonarQube 링크 예시:
+  - 대시보드: `https://sonarcloud.io/dashboard?id=<project-key>&pullRequest=<pr-number>`
+  - 이슈 목록: `https://sonarcloud.io/project/issues?id=<project-key>&pullRequest=<pr-number>&issueStatuses=OPEN,CONFIRMED&sinceLeakPeriod=true`
+
 ## Code Convention
 
 - Lombok을 적극적으로 활용한다.
@@ -69,11 +79,26 @@ com.howaboutus.backend.
     └── entity/       ← JPA Entity
 ```
 
+### 문서 구조
+
+- Markdown 문서를 새로 추가하거나 디렉토리를 정리할 때는 도메인 기준이 아니라 aggregate 기준으로 나눈다.
+- 하나의 aggregate에서 함께 변경되고 함께 이해해야 하는 문서들은 같은 디렉토리 아래에 둔다.
+- aggregate 경계가 명확하지 않으면 임의로 디렉토리를 만들거나 이동하지 말고, 사용자에게 어떤 기준으로 디렉토리를 구성할지 먼저 물어본다.
+- aggregate와 무관한 공통 규칙, 인덱스, 결정 기록 가이드는 최상위 공통 문서나 `docs/ai/decisions/`처럼 목적이 분명한 공용 디렉토리에 둔다.
+
 ### 예외 처리
 
 - 비즈니스 예외는 커스텀 예외 클래스로 정의하고 `GlobalExceptionHandler`에서 처리한다.
 - 별도의 상태 코드와 에러 메시지가 필요한 경우 `CustomException` 클래스를 정의하고, 에러 스펙은 enum으로 관리한다.
 - 임의로 `try-catch`를 추가하지 않는다. 처리 방식이 불명확하면 먼저 보고한다.
+
+### 입력값 검증
+
+- API 요청의 기본 형식 검증은 컨트롤러 요청 DTO에서 `@Valid`와 Bean Validation 어노테이션으로 처리한다.
+- 서비스 레이어에서는 `null`, blank, 문자열 패턴 같은 기본 형식 검증을 중복해서 수행하지 않는다.
+- 서비스 레이어는 비즈니스 규칙 검증에 집중한다. 예를 들어 소속 확인, 중복 여부, 상태 전이 가능 여부처럼 도메인 의미가 있는 검증만 둔다.
+- 컨트롤러를 거치지 않는 별도 진입점이 생기면 그 경계에서 같은 수준의 입력값 검증 책임을 명시적으로 추가한다.
+- 서비스가 REST 컨트롤러 외부에서도 직접 재사용된다면, 그 서비스는 "컨트롤러 전용 서비스"로 가정하지 말고 각 호출 경계 또는 서비스 자체 중 한 곳을 검증 경계로 명확히 정한다.
 
 ### 테스트
 

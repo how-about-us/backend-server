@@ -59,6 +59,23 @@ public class RoomService {
         return RoomDetailResult.of(room, member.getRole(), memberCount);
     }
 
+    @Transactional
+    public RoomDetailResult update(UUID roomId, RoomUpdateCommand command, Long userId) {
+        validateDateRange(command.startDate(), command.endDate());
+        Room room = getActiveRoom(roomId);
+        getHostMember(roomId, userId);
+        room.update(command.title(), command.destination(), command.startDate(), command.endDate());
+        long memberCount = roomMemberRepository.countByRoom_IdAndRoleIn(roomId, ACTIVE_ROLES);
+        return RoomDetailResult.of(room, RoomRole.HOST, memberCount);
+    }
+
+    @Transactional
+    public void delete(UUID roomId, Long userId) {
+        Room room = getActiveRoom(roomId);
+        getHostMember(roomId, userId);
+        room.delete();
+    }
+
     private void validateDateRange(LocalDate startDate, LocalDate endDate) {
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new CustomException(ErrorCode.INVALID_DATE_RANGE);

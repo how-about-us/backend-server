@@ -17,6 +17,7 @@ import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.rooms.service.dto.RoomCreateCommand;
 import com.howaboutus.backend.rooms.service.dto.RoomDetailResult;
+import com.howaboutus.backend.rooms.service.dto.RoomUpdateCommand;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -164,5 +165,99 @@ class RoomServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.INVALID_DATE_RANGE);
+    }
+
+    @Test
+    @DisplayName("HOST가 방 정보를 수정하면 변경된 결과를 반환한다")
+    void updateRoomReturnsUpdatedResult() {
+        UUID roomId = UUID.randomUUID();
+        Long userId = 1L;
+        Room room = Room.create("부산 여행", "부산",
+                LocalDate.of(2026, 5, 1), LocalDate.of(2026, 5, 3), "aB3xK9mQ2w", userId);
+        ReflectionTestUtils.setField(room, "id", roomId);
+        ReflectionTestUtils.setField(room, "createdAt", Instant.now());
+
+        User user = User.ofGoogle("google-id", "test@test.com", "테스터", null);
+        ReflectionTestUtils.setField(user, "id", userId);
+        RoomMember hostMember = RoomMember.of(room, user, RoomRole.HOST);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(hostMember));
+        given(roomMemberRepository.countByRoom_IdAndRoleIn(roomId, List.of(RoomRole.HOST, RoomRole.MEMBER)))
+                .willReturn(2L);
+
+        RoomUpdateCommand command = new RoomUpdateCommand("제주 여행", "제주",
+                LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 5));
+
+        RoomDetailResult result = roomService.update(roomId, command, userId);
+
+        assertThat(result.title()).isEqualTo("제주 여행");
+        assertThat(result.destination()).isEqualTo("제주");
+        assertThat(result.startDate()).isEqualTo(LocalDate.of(2026, 6, 1));
+        assertThat(result.endDate()).isEqualTo(LocalDate.of(2026, 6, 5));
+    }
+
+    @Test
+    @DisplayName("MEMBER가 방 정보를 수정하면 NOT_ROOM_HOST 예외")
+    void updateRoomThrowsWhenNotHost() {
+        UUID roomId = UUID.randomUUID();
+        Long userId = 2L;
+        Room room = Room.create("부산 여행", "부산", null, null, "aB3xK9mQ2w", 1L);
+        ReflectionTestUtils.setField(room, "id", roomId);
+
+        User user = User.ofGoogle("google-id", "member@test.com", "멤버", null);
+        ReflectionTestUtils.setField(user, "id", userId);
+        RoomMember memberRole = RoomMember.of(room, user, RoomRole.MEMBER);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(memberRole));
+
+        RoomUpdateCommand command = new RoomUpdateCommand("제주 여행", "제주", null, null);
+
+        assertThatThrownBy(() -> roomService.update(roomId, command, userId))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.NOT_ROOM_HOST);
+    }
+
+    @Test
+    @DisplayName("HOST가 방을 삭제하면 성공한다")
+    void deleteRoomSucceeds() {
+        UUID roomId = UUID.randomUUID();
+        Long userId = 1L;
+        Room room = Room.create("부산 여행", "부산", null, null, "aB3xK9mQ2w", userId);
+        ReflectionTestUtils.setField(room, "id", roomId);
+
+        User user = User.ofGoogle("google-id", "test@test.com", "테스터", null);
+        ReflectionTestUtils.setField(user, "id", userId);
+        RoomMember hostMember = RoomMember.of(room, user, RoomRole.HOST);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(hostMember));
+
+        roomService.delete(roomId, userId);
+
+        assertThat(room.isDeleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("MEMBER가 방을 삭제하면 NOT_ROOM_HOST 예외")
+    void deleteRoomThrowsWhenNotHost() {
+        UUID roomId = UUID.randomUUID();
+        Long userId = 2L;
+        Room room = Room.create("부산 여행", "부산", null, null, "aB3xK9mQ2w", 1L);
+        ReflectionTestUtils.setField(room, "id", roomId);
+
+        User user = User.ofGoogle("google-id", "member@test.com", "멤버", null);
+        ReflectionTestUtils.setField(user, "id", userId);
+        RoomMember memberRole = RoomMember.of(room, user, RoomRole.MEMBER);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(memberRole));
+
+        assertThatThrownBy(() -> roomService.delete(roomId, userId))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.NOT_ROOM_HOST);
     }
 }

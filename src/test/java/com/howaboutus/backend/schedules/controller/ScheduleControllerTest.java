@@ -24,6 +24,7 @@ import com.howaboutus.backend.schedules.service.dto.ScheduleCreateCommand;
 import com.howaboutus.backend.schedules.service.dto.ScheduleResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -57,6 +58,36 @@ class ScheduleControllerTest {
     }
 
     @Test
+    @DisplayName("dayNumber가 1보다 작으면 400을 반환하고 서비스는 호출하지 않는다")
+    void returnsBadRequestWhenDayNumberIsLessThanOne() throws Exception {
+        mockMvc.perform(post("/rooms/{roomId}/schedules", ROOM_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"dayNumber": 0, "date": "2025-01-02"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("dayNumber는 1 이상이어야 합니다"));
+
+        verifyNoInteractions(scheduleService);
+    }
+
+    @Test
+    @DisplayName("date가 없으면 400을 반환하고 서비스는 호출하지 않는다")
+    void returnsBadRequestWhenDateIsMissing() throws Exception {
+        mockMvc.perform(post("/rooms/{roomId}/schedules", ROOM_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"dayNumber": 2}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("date는 필수입니다"));
+
+        verifyNoInteractions(scheduleService);
+    }
+
+    @Test
     @DisplayName("일정 생성 성공 시 201을 반환한다")
     void createsScheduleSuccessfully() throws Exception {
         given(scheduleService.create(eq(ROOM_ID), any(ScheduleCreateCommand.class))).willReturn(SCHEDULE_RESULT);
@@ -73,7 +104,10 @@ class ScheduleControllerTest {
                 .andExpect(jsonPath("$.date").value(SCHEDULE_RESULT.date().toString()))
                 .andExpect(jsonPath("$.createdAt").value(SCHEDULE_RESULT.createdAt().toString()));
 
-        then(scheduleService).should().create(eq(ROOM_ID), any(ScheduleCreateCommand.class));
+        ArgumentCaptor<ScheduleCreateCommand> captor = ArgumentCaptor.forClass(ScheduleCreateCommand.class);
+        then(scheduleService).should().create(eq(ROOM_ID), captor.capture());
+        assertThat(captor.getValue().dayNumber()).isEqualTo(2);
+        assertThat(captor.getValue().date()).isEqualTo(LocalDate.of(2025, 1, 2));
     }
 
     @Test

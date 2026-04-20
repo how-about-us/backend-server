@@ -9,9 +9,9 @@ public record PlaceSearchResult(
         Location location,
         String primaryType,
         Double rating,
-        String photoUrl
+        String photoName
 ) {
-    public static PlaceSearchResult from(GoogleTextSearchResponse.PlaceItem place, String photoUrl) {
+    public static PlaceSearchResult from(GoogleTextSearchResponse.PlaceItem place) {
         String name = null;
         if (place.displayName() != null) {
             name = place.displayName().text();
@@ -22,6 +22,11 @@ public record PlaceSearchResult(
             location = new Location(place.location().latitude(), place.location().longitude());
         }
 
+        String photoName = null;
+        if (place.photos() != null && !place.photos().isEmpty()) {
+            photoName = place.photos().getFirst().name();
+        }
+
         return new PlaceSearchResult(
                 place.id(),
                 name,
@@ -29,7 +34,7 @@ public record PlaceSearchResult(
                 location,
                 place.primaryType(),
                 place.rating(),
-                photoUrl
+                photoName
         );
     }
 

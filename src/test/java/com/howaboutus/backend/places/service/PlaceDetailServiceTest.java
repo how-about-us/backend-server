@@ -1,7 +1,6 @@
 package com.howaboutus.backend.places.service;
 
 import com.howaboutus.backend.common.integration.google.GooglePlaceDetailClient;
-import com.howaboutus.backend.common.integration.google.GooglePlacePhotoClient;
 import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDetailResponse;
 import com.howaboutus.backend.places.service.dto.PlaceDetailResult;
 import java.util.List;
@@ -16,11 +15,10 @@ import static org.mockito.Mockito.mock;
 class PlaceDetailServiceTest {
 
     private final GooglePlaceDetailClient googlePlaceDetailClient = mock(GooglePlaceDetailClient.class);
-    private final GooglePlacePhotoClient googlePlacePhotoClient = mock(GooglePlacePhotoClient.class);
-    private final PlaceDetailService placeDetailService = new PlaceDetailService(googlePlaceDetailClient, googlePlacePhotoClient);
+    private final PlaceDetailService placeDetailService = new PlaceDetailService(googlePlaceDetailClient);
 
     @Test
-    @DisplayName("상세 조회 클라이언트 응답을 서비스 결과로 변환하고 사진 URL을 포함한다")
+    @DisplayName("상세 조회 클라이언트 응답을 서비스 결과로 변환한다")
     void returnsMappedPlaceDetail() {
         GooglePlaceDetailResponse response = new GooglePlaceDetailResponse(
                 "places/ChIJ123",
@@ -36,14 +34,10 @@ class PlaceDetailServiceTest {
                 List.of(new GooglePlaceDetailResponse.Photo("places/ChIJ123/photos/a"))
         );
         given(googlePlaceDetailClient.getDetail("ChIJ123")).willReturn(response);
-        given(googlePlacePhotoClient.getPhotoUri("places/ChIJ123/photos/a"))
-                .willReturn("https://cdn.example.com/a.jpg");
 
         PlaceDetailResult result = placeDetailService.getDetail("ChIJ123");
 
-        assertThat(result).isEqualTo(
-                PlaceDetailResult.from(response, List.of("https://cdn.example.com/a.jpg")));
+        assertThat(result).isEqualTo(PlaceDetailResult.from(response));
         then(googlePlaceDetailClient).should().getDetail("ChIJ123");
-        then(googlePlacePhotoClient).should().getPhotoUri("places/ChIJ123/photos/a");
     }
 }

@@ -2,7 +2,6 @@ package com.howaboutus.backend.places.service;
 
 import com.howaboutus.backend.common.config.CachePolicy;
 import com.howaboutus.backend.common.integration.google.GooglePlaceDetailClient;
-import com.howaboutus.backend.common.integration.google.GooglePlacePhotoClient;
 import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDetailResponse;
 import com.howaboutus.backend.places.service.dto.PlaceDetailResult;
 import com.howaboutus.backend.support.BaseIntegrationTest;
@@ -29,18 +28,13 @@ class PlaceDetailCachingTest extends BaseIntegrationTest {
     @MockitoBean
     private GooglePlaceDetailClient googlePlaceDetailClient;
 
-    @MockitoBean
-    private GooglePlacePhotoClient googlePlacePhotoClient;
-
     @Autowired
     private CacheManager cacheManager;
 
     @BeforeEach
     void setUp() {
-        reset(googlePlaceDetailClient, googlePlacePhotoClient);
+        reset(googlePlaceDetailClient);
         Objects.requireNonNull(cacheManager.getCache(CachePolicy.Keys.PLACE_DETAIL)).clear();
-        given(googlePlacePhotoClient.getPhotoUri("places/ChIJ123/photos/a"))
-                .willReturn("https://cdn.example.com/a.jpg");
     }
 
     @Test
@@ -53,7 +47,6 @@ class PlaceDetailCachingTest extends BaseIntegrationTest {
 
         assertThat(first).isEqualTo(second);
         then(googlePlaceDetailClient).should(times(1)).getDetail("ChIJ123");
-        then(googlePlacePhotoClient).should(times(1)).getPhotoUri("places/ChIJ123/photos/a");
     }
 
     private GooglePlaceDetailResponse detailResponse() {

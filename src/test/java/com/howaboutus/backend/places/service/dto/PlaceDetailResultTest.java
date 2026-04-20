@@ -28,12 +28,8 @@ class PlaceDetailResultTest {
                         new GooglePlaceDetailResponse.Photo("places/ChIJ123/photos/b")
                 )
         );
-        List<String> photoUrls = List.of(
-                "https://cdn.example.com/a.jpg",
-                "https://cdn.example.com/b.jpg"
-        );
 
-        PlaceDetailResult result = PlaceDetailResult.from(place, photoUrls);
+        PlaceDetailResult result = PlaceDetailResult.from(place);
 
         assertThat(result.googlePlaceId()).isEqualTo("ChIJ123");
         assertThat(result.name()).isEqualTo("Cafe Layered");
@@ -45,7 +41,10 @@ class PlaceDetailResultTest {
         assertThat(result.websiteUri()).isEqualTo("https://layered.example");
         assertThat(result.googleMapsUri()).isEqualTo("https://maps.google.com/?cid=123");
         assertThat(result.weekdayDescriptions()).containsExactly("월요일: 09:00~18:00");
-        assertThat(result.photoUrls()).containsExactlyElementsOf(photoUrls);
+        assertThat(result.photoNames()).containsExactly(
+                "places/ChIJ123/photos/a",
+                "places/ChIJ123/photos/b"
+        );
     }
 
     @Test
@@ -65,7 +64,7 @@ class PlaceDetailResultTest {
                 null
         );
 
-        PlaceDetailResult result = PlaceDetailResult.from(place, List.of());
+        PlaceDetailResult result = PlaceDetailResult.from(place);
 
         assertThat(result.googlePlaceId()).isEqualTo("ChIJ999");
         assertThat(result.name()).isNull();
@@ -76,6 +75,6 @@ class PlaceDetailResultTest {
         assertThat(result.websiteUri()).isNull();
         assertThat(result.googleMapsUri()).isNull();
         assertThat(result.weekdayDescriptions()).isEmpty();
-        assertThat(result.photoUrls()).isEmpty();
+        assertThat(result.photoNames()).isEmpty();
     }
 }

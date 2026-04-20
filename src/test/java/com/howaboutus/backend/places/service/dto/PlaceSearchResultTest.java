@@ -22,7 +22,7 @@ class PlaceSearchResultTest {
                 List.of(new GoogleTextSearchResponse.Photo("places/ChIJ123/photos/abc"))
         );
 
-        PlaceSearchResult result = PlaceSearchResult.from(placeItem, "https://cdn.example.com/photo.jpg");
+        PlaceSearchResult result = PlaceSearchResult.from(placeItem);
 
         assertThat(result.googlePlaceId()).isEqualTo("ChIJ123");
         assertThat(result.name()).isEqualTo("Cafe Layered");
@@ -30,7 +30,7 @@ class PlaceSearchResultTest {
         assertThat(result.location()).isEqualTo(new PlaceSearchResult.Location(37.57, 126.98));
         assertThat(result.primaryType()).isEqualTo("cafe");
         assertThat(result.rating()).isEqualTo(4.5);
-        assertThat(result.photoUrl()).isEqualTo("https://cdn.example.com/photo.jpg");
+        assertThat(result.photoName()).isEqualTo("places/ChIJ123/photos/abc");
     }
 
     @Test
@@ -46,12 +46,12 @@ class PlaceSearchResultTest {
                 null
         );
 
-        PlaceSearchResult result = PlaceSearchResult.from(placeItem, null);
+        PlaceSearchResult result = PlaceSearchResult.from(placeItem);
 
         assertThat(result.googlePlaceId()).isEqualTo("ChIJ123");
         assertThat(result.name()).isNull();
         assertThat(result.location()).isNull();
         assertThat(result.rating()).isNull();
-        assertThat(result.photoUrl()).isNull();
+        assertThat(result.photoName()).isNull();
     }
 }

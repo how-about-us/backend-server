@@ -1,6 +1,5 @@
 package com.howaboutus.backend.places.service;
 
-import com.howaboutus.backend.common.integration.google.GooglePlacePhotoClient;
 import com.howaboutus.backend.common.integration.google.GooglePlaceSearchClient;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
@@ -17,11 +16,10 @@ import static org.mockito.Mockito.mock;
 class PlaceSearchServiceTest {
 
     private final GooglePlaceSearchClient googlePlaceSearchClient = mock(GooglePlaceSearchClient.class);
-    private final GooglePlacePhotoClient googlePlacePhotoClient = mock(GooglePlacePhotoClient.class);
-    private final PlaceSearchService placeSearchService = new PlaceSearchService(googlePlaceSearchClient, googlePlacePhotoClient);
+    private final PlaceSearchService placeSearchService = new PlaceSearchService(googlePlaceSearchClient);
 
     @Test
-    @DisplayName("Google 장소 응답을 검색 결과 목록으로 변환하고 사진 URL을 포함한다")
+    @DisplayName("Google 장소 응답을 검색 결과 목록으로 변환한다")
     void returnsMappedSearchResults() {
         GoogleTextSearchResponse.PlaceItem placeItem = new GoogleTextSearchResponse.PlaceItem(
                 "ChIJ123",
@@ -34,15 +32,11 @@ class PlaceSearchServiceTest {
         );
         given(googlePlaceSearchClient.search("seoul cafe", 37.5, 127.0, 5000.0))
                 .willReturn(List.of(placeItem));
-        given(googlePlacePhotoClient.getPhotoUri("places/ChIJ123/photos/abc"))
-                .willReturn("https://cdn.example.com/photo.jpg");
 
         List<PlaceSearchResult> results = placeSearchService.search("seoul cafe", 37.5, 127.0, 5000.0);
 
-        assertThat(results).containsExactly(
-                PlaceSearchResult.from(placeItem, "https://cdn.example.com/photo.jpg"));
+        assertThat(results).containsExactly(PlaceSearchResult.from(placeItem));
         then(googlePlaceSearchClient).should().search("seoul cafe", 37.5, 127.0, 5000.0);
-        then(googlePlacePhotoClient).should().getPhotoUri("places/ChIJ123/photos/abc");
     }
 
     @Test

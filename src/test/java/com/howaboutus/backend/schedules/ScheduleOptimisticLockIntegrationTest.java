@@ -5,17 +5,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.schedules.entity.Schedule;
-import com.howaboutus.backend.schedules.entity.ScheduleItem;
 import com.howaboutus.backend.schedules.repository.ScheduleItemRepository;
 import com.howaboutus.backend.schedules.repository.ScheduleRepository;
+import com.howaboutus.backend.schedules.service.ScheduleItemService;
+import com.howaboutus.backend.schedules.service.dto.ScheduleItemCreateCommand;
+import com.howaboutus.backend.schedules.service.dto.ScheduleItemResult;
 import com.howaboutus.backend.support.BaseIntegrationTest;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -23,12 +26,17 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+@Import(ScheduleOptimisticLockIntegrationTest.TestConfig.class)
 class ScheduleOptimisticLockIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
@@ -41,7 +49,10 @@ class ScheduleOptimisticLockIntegrationTest extends BaseIntegrationTest {
     private ScheduleItemRepository scheduleItemRepository;
 
     @Autowired
-    private PlatformTransactionManager transactionManager;
+    private ScheduleItemService scheduleItemService;
+
+    @Autowired
+    private RepositoryLookupBarrier repositoryLookupBarrier;
 
     @AfterEach
     void tearDown() {
@@ -52,7 +63,7 @@ class ScheduleOptimisticLockIntegrationTest extends BaseIntegrationTest {
 
     @Test
     @DisplayName("같은 일정에 대한 동시 쓰기 중 하나는 낙관적 락 충돌로 실패한다")
-    void concurrentWritesOnSameScheduleCauseOptimisticLockConflict() throws Exception {
+    void concurrentCreatesOnSameScheduleCauseOptimisticLockConflict() throws Exception {
         Room room = roomRepository.save(Room.create(
                 "서울 여행",
                 "서울",
@@ -62,80 +73,69 @@ class ScheduleOptimisticLockIntegrationTest extends BaseIntegrationTest {
                 1L
         ));
         Schedule schedule = scheduleRepository.saveAndFlush(Schedule.create(room, 1, LocalDate.of(2026, 5, 1)));
-
-        CountDownLatch loadedLatch = new CountDownLatch(2);
-        CountDownLatch startLatch = new CountDownLatch(1);
+        Long initialVersion = scheduleRepository.findById(schedule.getId())
+                .map(Schedule::getVersion)
+                .orElseThrow();
 
         try (ExecutorService executorService = Executors.newFixedThreadPool(2)) {
-            Future<Throwable> firstWrite = executorService.submit(
-                    concurrentWriteTask(room.getId(), schedule.getId(), loadedLatch, startLatch, "place-a", 0)
-            );
-            Future<Throwable> secondWrite = executorService.submit(
-                    concurrentWriteTask(room.getId(), schedule.getId(), loadedLatch, startLatch, "place-b", 1)
-            );
+            repositoryLookupBarrier.activate(new CyclicBarrier(2));
+            try {
+                Future<WorkerResult> firstCreate = executorService.submit(
+                        createItemTask(room.getId(), schedule.getId(), "place-a", LocalTime.of(10, 0))
+                );
+                Future<WorkerResult> secondCreate = executorService.submit(
+                        createItemTask(room.getId(), schedule.getId(), "place-b", LocalTime.of(11, 0))
+                );
 
-            assertThat(loadedLatch.await(5, TimeUnit.SECONDS)).isTrue();
-            startLatch.countDown();
+                List<WorkerResult> results = Arrays.asList(
+                        firstCreate.get(10, TimeUnit.SECONDS),
+                        secondCreate.get(10, TimeUnit.SECONDS)
+                );
 
-            List<Throwable> failures = Arrays.asList(firstWrite.get(5, TimeUnit.SECONDS), secondWrite.get(5, TimeUnit.SECONDS))
-                    .stream()
-                    .filter(Objects::nonNull)
-                    .toList();
+                List<WorkerResult> successes = results.stream()
+                        .filter(WorkerResult::isSuccess)
+                        .toList();
+                List<WorkerResult> failures = results.stream()
+                        .filter(result -> !result.isSuccess())
+                        .toList();
 
-            assertThat(failures).hasSize(1);
-            assertThat(isOptimisticLockFailure(failures.getFirst())).isTrue();
+                assertThat(successes)
+                        .withFailMessage("Worker results: %s", summarize(results))
+                        .hasSize(1);
+                assertThat(failures)
+                        .withFailMessage("Worker results: %s", summarize(results))
+                        .hasSize(1);
+                assertThat(isOptimisticLockFailure(failures.getFirst().error())).isTrue();
+            } finally {
+                repositoryLookupBarrier.deactivate();
+            }
         }
 
-        assertThat(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(schedule.getId())).hasSize(1);
+        List<String> persistedPlaceIds = scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(schedule.getId())
+                .stream()
+                .map(scheduleItem -> scheduleItem.getGooglePlaceId())
+                .toList();
+
+        assertThat(persistedPlaceIds).hasSize(1);
+        assertThat(persistedPlaceIds).containsAnyOf("place-a", "place-b");
         assertThat(scheduleRepository.findById(schedule.getId()))
                 .map(Schedule::getVersion)
-                .hasValue(1L);
+                .hasValueSatisfying(version -> assertThat(version).isGreaterThan(initialVersion));
     }
 
-    private Callable<Throwable> concurrentWriteTask(
-            java.util.UUID roomId,
-            Long scheduleId,
-            CountDownLatch loadedLatch,
-            CountDownLatch startLatch,
-            String googlePlaceId,
-            int orderIndex
-    ) {
+    private Callable<WorkerResult> createItemTask(UUID roomId, Long scheduleId, String googlePlaceId, LocalTime startTime) {
         return () -> {
-            TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
-            transactionTemplate.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
-
             try {
-                transactionTemplate.executeWithoutResult(status -> {
-                    Schedule lockedSchedule = scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(scheduleId, roomId)
-                            .orElseThrow();
-
-                    loadedLatch.countDown();
-                    await(startLatch);
-
-                    scheduleItemRepository.saveAndFlush(ScheduleItem.create(
-                            lockedSchedule,
-                            googlePlaceId,
-                            LocalTime.of(10 + orderIndex, 0),
-                            60,
-                            orderIndex
-                    ));
-                });
-                return null;
+                ScheduleItemResult result = scheduleItemService.create(
+                        roomId,
+                        scheduleId,
+                        new ScheduleItemCreateCommand(googlePlaceId, startTime, 60)
+                );
+                return WorkerResult.success(result);
             } catch (Throwable throwable) {
-                return throwable;
+                return WorkerResult.failure(throwable);
             }
         };
-    }
-
-    private void await(CountDownLatch latch) {
-        try {
-            if (!latch.await(5, TimeUnit.SECONDS)) {
-                throw new IllegalStateException("Concurrent test did not start in time");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Concurrent test interrupted", e);
-        }
     }
 
     private boolean isOptimisticLockFailure(Throwable throwable) {
@@ -147,5 +147,92 @@ class ScheduleOptimisticLockIntegrationTest extends BaseIntegrationTest {
             current = current.getCause();
         }
         return false;
+    }
+
+    private String summarize(List<WorkerResult> results) {
+        return results.stream()
+                .map(result -> result.isSuccess()
+                        ? "SUCCESS:" + result.result().itemId()
+                        : "FAILURE:" + result.error().getClass().getName() + ":" + result.error().getMessage())
+                .toList()
+                .toString();
+    }
+
+    @TestConfiguration
+    static class TestConfig {
+
+        @Bean
+        RepositoryLookupBarrier repositoryLookupBarrier() {
+            return new RepositoryLookupBarrier();
+        }
+
+        @Bean
+        RepositoryLookupBarrierAspect repositoryLookupBarrierAspect(RepositoryLookupBarrier repositoryLookupBarrier) {
+            return new RepositoryLookupBarrierAspect(repositoryLookupBarrier);
+        }
+    }
+
+    static class RepositoryLookupBarrier {
+
+        private volatile CyclicBarrier barrier;
+
+        void activate(CyclicBarrier barrier) {
+            this.barrier = barrier;
+        }
+
+        void deactivate() {
+            this.barrier = null;
+        }
+
+        void awaitIfActive() {
+            CyclicBarrier currentBarrier = barrier;
+            if (currentBarrier != null) {
+                awaitBarrier(currentBarrier);
+            }
+        }
+    }
+
+    @Aspect
+    static class RepositoryLookupBarrierAspect {
+
+        private final RepositoryLookupBarrier repositoryLookupBarrier;
+
+        RepositoryLookupBarrierAspect(RepositoryLookupBarrier repositoryLookupBarrier) {
+            this.repositoryLookupBarrier = repositoryLookupBarrier;
+        }
+
+        @Around("execution(* com.howaboutus.backend.schedules.repository.ScheduleRepository.findByIdAndRoom_IdWithOptimisticLock(..))")
+        Object awaitConcurrentLookup(ProceedingJoinPoint joinPoint) throws Throwable {
+            repositoryLookupBarrier.awaitIfActive();
+            return joinPoint.proceed();
+        }
+    }
+
+    private static void awaitBarrier(CyclicBarrier barrier) {
+        try {
+            barrier.await(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Concurrent test interrupted", e);
+        } catch (BrokenBarrierException e) {
+            throw new IllegalStateException("Concurrent test barrier broken", e);
+        } catch (java.util.concurrent.TimeoutException e) {
+            throw new IllegalStateException("Concurrent test barrier timed out", e);
+        }
+    }
+
+    private record WorkerResult(ScheduleItemResult result, Throwable error) {
+
+        private static WorkerResult success(ScheduleItemResult result) {
+            return new WorkerResult(result, null);
+        }
+
+        private static WorkerResult failure(Throwable error) {
+            return new WorkerResult(null, error);
+        }
+
+        private boolean isSuccess() {
+            return error == null;
+        }
     }
 }

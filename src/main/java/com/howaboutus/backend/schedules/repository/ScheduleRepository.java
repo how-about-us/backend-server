@@ -8,6 +8,8 @@ import java.util.UUID;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
@@ -20,5 +22,12 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     Optional<Schedule> findByIdAndRoom_Id(Long scheduleId, UUID roomId);
 
     @Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
-    Optional<Schedule> findByIdAndRoom_IdWithOptimisticLock(Long scheduleId, UUID roomId);
+    @Query("""
+            select schedule
+            from Schedule schedule
+            where schedule.id = :scheduleId
+              and schedule.room.id = :roomId
+            """)
+    Optional<Schedule> findByIdAndRoom_IdWithOptimisticLock(@Param("scheduleId") Long scheduleId,
+                                                            @Param("roomId") UUID roomId);
 }

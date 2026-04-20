@@ -74,6 +74,42 @@ class ScheduleItemControllerTest {
     }
 
     @Test
+    @DisplayName("startTime과 durationMinutes가 없어도 일정 항목 생성 요청은 허용한다")
+    void allowsCreateWithoutOptionalTimeFields() throws Exception {
+        ScheduleItemResult resultWithoutTime = new ScheduleItemResult(
+                ITEM_ID,
+                SCHEDULE_ID,
+                "place-optional",
+                null,
+                null,
+                1,
+                Instant.parse("2025-01-01T01:00:00Z")
+        );
+        given(scheduleItemService.create(eq(ROOM_ID), eq(SCHEDULE_ID), any(ScheduleItemCreateCommand.class)))
+                .willReturn(resultWithoutTime);
+
+        mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"googlePlaceId": "place-optional"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.itemId").value(resultWithoutTime.itemId()))
+                .andExpect(jsonPath("$.scheduleId").value(resultWithoutTime.scheduleId()))
+                .andExpect(jsonPath("$.googlePlaceId").value(resultWithoutTime.googlePlaceId()))
+                .andExpect(jsonPath("$.startTime").doesNotExist())
+                .andExpect(jsonPath("$.durationMinutes").doesNotExist())
+                .andExpect(jsonPath("$.orderIndex").value(resultWithoutTime.orderIndex()))
+                .andExpect(jsonPath("$.createdAt").value(resultWithoutTime.createdAt().toString()));
+
+        ArgumentCaptor<ScheduleItemCreateCommand> captor = ArgumentCaptor.forClass(ScheduleItemCreateCommand.class);
+        then(scheduleItemService).should().create(eq(ROOM_ID), eq(SCHEDULE_ID), captor.capture());
+        assertThat(captor.getValue().googlePlaceId()).isEqualTo("place-optional");
+        assertThat(captor.getValue().startTime()).isNull();
+        assertThat(captor.getValue().durationMinutes()).isNull();
+    }
+
+    @Test
     @DisplayName("일정 항목 생성 성공 시 201을 반환하고 명령값을 전달한다")
     void createsScheduleItemSuccessfully() throws Exception {
         given(scheduleItemService.create(eq(ROOM_ID), eq(SCHEDULE_ID), any(ScheduleItemCreateCommand.class)))
@@ -120,7 +156,10 @@ class ScheduleItemControllerTest {
                 .andExpect(jsonPath("$.orderIndex").value(SCHEDULE_ITEM_RESULT.orderIndex()))
                 .andExpect(jsonPath("$.createdAt").value(SCHEDULE_ITEM_RESULT.createdAt().toString()));
 
-        then(scheduleItemService).should().update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), any(ScheduleItemUpdateCommand.class));
+        ArgumentCaptor<ScheduleItemUpdateCommand> captor = ArgumentCaptor.forClass(ScheduleItemUpdateCommand.class);
+        then(scheduleItemService).should().update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), captor.capture());
+        assertThat(captor.getValue().startTime()).isEqualTo(LocalTime.of(10, 30));
+        assertThat(captor.getValue().durationMinutes()).isEqualTo(45);
     }
 
     @Test

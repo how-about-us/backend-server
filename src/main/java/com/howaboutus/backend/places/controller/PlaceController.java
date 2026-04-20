@@ -1,8 +1,10 @@
 package com.howaboutus.backend.places.controller;
 
 import com.howaboutus.backend.places.controller.dto.PlaceDetailResponse;
+import com.howaboutus.backend.places.controller.dto.PlacePhotoResponse;
 import com.howaboutus.backend.places.controller.dto.PlaceSearchResponse;
 import com.howaboutus.backend.places.service.PlaceDetailService;
+import com.howaboutus.backend.places.service.PlacePhotoService;
 import com.howaboutus.backend.places.service.PlaceSearchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,6 +29,7 @@ public class PlaceController {
 
     private final PlaceDetailService placeDetailService;
     private final PlaceSearchService placeSearchService;
+    private final PlacePhotoService placePhotoService;
 
     @Operation(
             summary = "장소 검색",
@@ -70,5 +73,18 @@ public class PlaceController {
             @NotBlank(message = "googlePlaceId는 공백일 수 없습니다")
             String googlePlaceId) {
         return PlaceDetailResponse.from(placeDetailService.getDetail(googlePlaceId));
+    }
+
+    @Operation(
+            summary = "장소 사진 URL 조회",
+            description = "photoName을 기반으로 Google 장소 사진 URL을 조회합니다."
+    )
+    @GetMapping("/places/photos")
+    public PlacePhotoResponse getPhotoUrl(
+            @Parameter(description = "Google 장소 사진 리소스 이름", example = "places/ChIJ123/photos/abc")
+            @RequestParam
+            @NotBlank(message = "name은 공백일 수 없습니다")
+            String name) {
+        return new PlacePhotoResponse(placePhotoService.getPhotoUrl(name));
     }
 }

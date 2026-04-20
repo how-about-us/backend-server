@@ -22,7 +22,9 @@
 | 방 목록 정렬 | 참여 시간 역순 + 커서 기반 페이지네이션 | `room_members.joinedAt` 활용, 추가 컬럼 불필요 |
 | 권한 체크 | 서비스 레이어 직접 체크 | HOST 권한 필요한 API가 6개뿐, 추상화는 과도 |
 | 역할 명칭 | HOST / MEMBER / PENDING | ADMIN은 서비스 관리자와 혼동. HOST가 방 맥락에 적합 |
-| Room PK | BIGINT `id` (내부) + UUID `uuid` (외부 노출) | UUID PK는 16바이트로 B-tree 인덱싱 비효율, FK도 비대해짐 |
+| Room PK | UUID v7 단일 PK (`id`) | v7은 시간순 정렬이라 B-tree 효율 문제 해소, 멀티키 복잡도 제거 |
+| UUID 생성 | Hibernate `@UuidGenerator(style = TIME)` | Spring Boot 4.x 내장 Hibernate 7 기능, 외부 의존성 불필요 |
+| createdBy | `Long createdBy` (ID 참조) | Room→User 조회 빈도 낮고, RoomMember가 이미 관계 관리. 결합도 최소화 |
 | 승인 대기 방식 | HTTP 상태 조회 (새로고침 버튼) | SSE/Long Polling보다 구현이 단순하고, 클라이언트가 명시적으로 상태를 확인하므로 직관적 |
 
 ---
@@ -60,11 +62,9 @@ room/
 @Table(name = "rooms")
 public class Room extends BaseTimeEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;                        // 내부 PK
-
-    @Column(nullable = false, unique = true, updatable = false)
-    private UUID uuid;                      // 외부 노출용
+    @GeneratedValue
+    @UuidGenerator(style = TIME)
+    private UUID id;                        // UUID v7, 외부 노출 겸용
 
     @Column(nullable = false, length = 100)
     private String title;
@@ -78,9 +78,8 @@ public class Room extends BaseTimeEntity {
     @Column(unique = true, nullable = false, length = 50)
     private String inviteCode;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false)
-    private User createdBy;
+    @Column(name = "created_by", nullable = false)
+    private Long createdBy;                 // User.id 참조
 
     private Instant deletedAt;              // soft delete
 }
@@ -140,20 +139,20 @@ public enum RoomRole {
 |---|--------|-----|------|------|
 | 1 | POST | `/rooms` | 방 생성 | 인증된 사용자 |
 | 2 | GET | `/rooms` | 내 방 목록 조회 | 인증된 사용자 |
-| 3 | GET | `/rooms/{roomUuid}` | 방 상세 조회 | 방 멤버 (MEMBER/HOST) |
-| 4 | PATCH | `/rooms/{roomUuid}` | 방 수정 | HOST |
-| 5 | DELETE | `/rooms/{roomUuid}` | 방 삭제 (soft) | HOST |
+| 3 | GET | `/rooms/{roomId}` | 방 상세 조회 | 방 멤버 (MEMBER/HOST) |
+| 4 | PATCH | `/rooms/{roomId}` | 방 수정 | HOST |
+| 5 | DELETE | `/rooms/{roomId}` | 방 삭제 (soft) | HOST |
 
 ### 5-2. 초대 & 입장
 
 | # | Method | URI | 설명 | 권한 |
 |---|--------|-----|------|------|
-| 6 | POST | `/rooms/{roomUuid}/invite-code` | 초대 코드 재발급 | HOST |
+| 6 | POST | `/rooms/{roomId}/invite-code` | 초대 코드 재발급 | HOST |
 | 7 | POST | `/rooms/join` | 초대 코드로 입장 요청 | 인증된 사용자 |
 | 8 | GET | `/rooms/join/status?inviteCode={code}` | 입장 상태 조회 | 입장 요청한 사용자 |
-| 9 | GET | `/rooms/{roomUuid}/join-requests` | 대기 중인 입장 요청 목록 | HOST |
-| 10 | POST | `/rooms/{roomUuid}/join-requests/{requestId}/approve` | 입장 승인 | HOST |
-| 11 | POST | `/rooms/{roomUuid}/join-requests/{requestId}/reject` | 입장 거절 | HOST |
+| 9 | GET | `/rooms/{roomId}/join-requests` | 대기 중인 입장 요청 목록 | HOST |
+| 10 | POST | `/rooms/{roomId}/join-requests/{requestId}/approve` | 입장 승인 | HOST |
+| 11 | POST | `/rooms/{roomId}/join-requests/{requestId}/reject` | 입장 거절 | HOST |
 
 ### 5-3. 요청/응답 상세
 
@@ -169,7 +168,7 @@ public enum RoomRole {
 
 // Response 201 Created
 {
-  "uuid": "550e8400-e29b-...",
+  "id": "550e8400-e29b-...",
   "title": "부산 여행",
   "destination": "부산",
   "startDate": "2026-05-01",
@@ -186,7 +185,7 @@ public enum RoomRole {
 {
   "rooms": [
     {
-      "uuid": "...",
+      "id": "...",
       "title": "부산 여행",
       "destination": "부산",
       "startDate": "2026-05-01",
@@ -201,11 +200,11 @@ public enum RoomRole {
 }
 ```
 
-**방 상세 (GET /rooms/{roomUuid})**
+**방 상세 (GET /rooms/{roomId})**
 ```json
 // Response 200
 {
-  "uuid": "...",
+  "id": "...",
   "title": "부산 여행",
   "destination": "부산",
   "startDate": "2026-05-01",
@@ -217,7 +216,7 @@ public enum RoomRole {
 }
 ```
 
-**방 수정 (PATCH /rooms/{roomUuid})**
+**방 수정 (PATCH /rooms/{roomId})**
 ```json
 // Request — 변경할 필드만 전송
 {
@@ -236,7 +235,7 @@ public enum RoomRole {
 // Response 200 — 이미 MEMBER/HOST
 {
   "status": "already_member",
-  "uuid": "...",
+  "id": "...",
   "title": "부산 여행",
   "role": "MEMBER"
 }
@@ -259,7 +258,7 @@ public enum RoomRole {
 // Response 200 — 승인됨
 {
   "status": "approved",
-  "uuid": "...",
+  "id": "...",
   "roomTitle": "부산 여행",
   "role": "MEMBER"
 }
@@ -267,7 +266,7 @@ public enum RoomRole {
 // Response 404 — 거절됨 (레코드 삭제되어 조회 불가)
 ```
 
-**입장 요청 목록 (GET /rooms/{roomUuid}/join-requests)**
+**입장 요청 목록 (GET /rooms/{roomId}/join-requests)**
 ```json
 // Response 200
 {
@@ -285,7 +284,7 @@ public enum RoomRole {
 
 ### 5-4. 공통 사항
 
-- 모든 API에서 외부 식별자는 `uuid` 사용, 내부 `id`는 노출하지 않음
+- 모든 API에서 Room 식별자는 UUID v7 `id`를 사용
 - 방 멤버(MEMBER/HOST)가 아닌 사용자가 방 내부 API 접근 시 → 403
 - PENDING 상태 사용자는 방 내부 API 접근 불가
 - 삭제된 방 접근 시 → 404
@@ -312,25 +311,25 @@ public enum RoomRole {
 4. `size + 1`개 조회해서 `hasNext` 판단, 마지막 항목의 `joinedAt`을 `nextCursor`로 반환
 
 **방 상세 조회**
-1. `roomUuid`로 Room 조회 (deletedAt IS NULL)
+1. `roomId`로 Room 조회 (deletedAt IS NULL)
 2. 현재 사용자가 방 멤버인지 확인 (MEMBER/HOST) → 아니면 403
 3. 방 정보 + 요청자의 role + memberCount 반환
 
 **방 수정**
-1. `roomUuid`로 Room 조회
+1. `roomId`로 Room 조회
 2. 현재 사용자가 HOST인지 확인 → 아니면 403
 3. 전달된 필드만 업데이트 (null인 필드는 무시)
 4. startDate ≤ endDate 검증
 
 **방 삭제**
-1. `roomUuid`로 Room 조회
+1. `roomId`로 Room 조회
 2. 현재 사용자가 HOST인지 확인 → 아니면 403
 3. `room.delete()` → `deletedAt = Instant.now()`
 
 ### RoomInviteService (초대 + 승인)
 
 **초대 코드 재발급**
-1. `roomUuid`로 Room 조회
+1. `roomId`로 Room 조회
 2. HOST 확인 → 아니면 403
 3. `InviteCodeGenerator`로 새 코드 생성
 4. `room.regenerateInviteCode(newCode)`
@@ -379,7 +378,7 @@ private RoomMember getHostMember(Room room, Long userId) {
 
 | ErrorCode | HttpStatus | 메시지 | 발생 상황 |
 |-----------|-----------|--------|-----------|
-| `ROOM_NOT_FOUND` | 404 | 존재하지 않는 방입니다 | roomUuid/inviteCode로 조회 실패 또는 삭제된 방 |
+| `ROOM_NOT_FOUND` | 404 | 존재하지 않는 방입니다 | roomId/inviteCode로 조회 실패 또는 삭제된 방 |
 | `NOT_ROOM_MEMBER` | 403 | 방의 멤버가 아닙니다 | 멤버가 아닌 사용자가 방 내부 API 접근 |
 | `NOT_ROOM_HOST` | 403 | 호스트 권한이 필요합니다 | MEMBER가 수정/삭제/초대코드 재발급/승인/거절 시도 |
 | `JOIN_REQUEST_NOT_FOUND` | 404 | 존재하지 않는 입장 요청입니다 | 승인/거절 시 해당 요청이 없음 |
@@ -414,11 +413,12 @@ private RoomMember getHostMember(Room room, Long userId) {
 
 ## 9. ERD 변경 사항
 
-기존 ERD에서 `rooms.id`가 UUID로 정의되어 있으나, 다음과 같이 변경한다:
+기존 ERD의 rooms 테이블 정의를 다음과 같이 유지/확인한다:
 
-- `rooms.id` → `BIGINT GENERATED ALWAYS AS IDENTITY` (내부 PK)
-- `rooms.uuid` → `UUID NOT NULL UNIQUE` (외부 노출용, 추가 컬럼)
-- `room_members.room_id` → `BIGINT FK` (기존 UUID FK에서 변경)
-- `room_members.role` → DEFAULT 값을 `'MEMBER'`에서 `'PENDING'`으로 변경하지 않음 (명시적 지정)
+- `rooms.id` → `UUID` PK (UUID v7, Hibernate `@UuidGenerator(style = TIME)`으로 생성)
+- `rooms.created_by` → `BIGINT` (User.id 참조, FK 제약조건 없음)
+- `room_members.room_id` → `UUID FK` (Room.id 참조)
+- `room_members.role` → DEFAULT 값 없이 명시적 지정
+- `deletedAt` → `TIMESTAMP` nullable (soft delete용, 기존 ERD에 없으면 추가)
 
 이 변경은 구현 시 `docs/ai/erd.md`에 함께 반영한다.

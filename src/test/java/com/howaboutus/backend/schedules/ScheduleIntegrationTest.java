@@ -81,7 +81,8 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
                 .findFirst();
 
         assertThat(savedSchedule).isPresent();
-        assertThat(savedSchedule.orElseThrow().getCreatedAt()).isNotNull();
+        String persistedCreatedAt = savedSchedule.orElseThrow().getCreatedAt().toString();
+        assertThat(createdAt).isEqualTo(persistedCreatedAt);
 
         mockMvc.perform(get("/rooms/{roomId}/schedules", room.getId()))
                 .andExpect(status().isOk())
@@ -90,7 +91,7 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$[0].roomId").value(room.getId().toString()))
                 .andExpect(jsonPath("$[0].dayNumber").value(1))
                 .andExpect(jsonPath("$[0].date").value("2026-05-01"))
-                .andExpect(jsonPath("$[0].createdAt").value(createdAt));
+                .andExpect(jsonPath("$[0].createdAt").value(persistedCreatedAt));
 
         mockMvc.perform(delete("/rooms/{roomId}/schedules/{scheduleId}", room.getId(), scheduleId))
                 .andExpect(status().isNoContent());

@@ -5,6 +5,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.mongodb.MongoDBContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -27,7 +28,8 @@ public abstract class BaseIntegrationTest {
 
         //noinspection resource
         REDIS = new GenericContainer<>(DockerImageName.parse("redis:8-alpine"))
-                .withExposedPorts(6379);
+                .withExposedPorts(6379)
+                .waitingFor(Wait.forLogMessage(".*Ready to accept connections.*\\n", 1));
 
         MONGO = new MongoDBContainer(DockerImageName.parse("mongo:8"));
 

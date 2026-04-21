@@ -117,7 +117,7 @@ class RoomControllerTest {
                 List.of(new RoomListResult.RoomSummary(
                         ROOM_ID, "부산 여행", "부산",
                         LocalDate.of(2026, 5, 1), LocalDate.of(2026, 5, 3),
-                        4, "HOST", Instant.parse("2026-04-20T00:00:00Z"))),
+                        "HOST", Instant.parse("2026-04-20T00:00:00Z"))),
                 null, false);
         given(roomService.getMyRooms(eq(USER_ID), eq(null), eq(20))).willReturn(listResult);
 

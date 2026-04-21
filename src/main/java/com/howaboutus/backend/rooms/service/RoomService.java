@@ -105,9 +105,8 @@ public class RoomService {
 
         List<RoomSummary> summaries = page.stream().map(m -> {
             Room room = m.getRoom();
-            long memberCount = roomMemberRepository.countByRoom_IdAndRoleIn(room.getId(), ACTIVE_ROLES);
             return new RoomSummary(room.getId(), room.getTitle(), room.getDestination(),
-                    room.getStartDate(), room.getEndDate(), memberCount,
+                    room.getStartDate(), room.getEndDate(),
                     m.getRole().name(), m.getJoinedAt());
         }).toList();
 

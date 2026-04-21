@@ -17,7 +17,6 @@ public record RoomListResponse(
             String destination,
             LocalDate startDate,
             LocalDate endDate,
-            long memberCount,
             String role,
             Instant joinedAt
     ) {
@@ -28,7 +27,7 @@ public record RoomListResponse(
                 .map(r -> new RoomSummary(
                         r.id(), r.title(), r.destination(),
                         r.startDate(), r.endDate(),
-                        r.memberCount(), r.role(), r.joinedAt()))
+                        r.role(), r.joinedAt()))
                 .toList();
         return new RoomListResponse(rooms, result.nextCursor(), result.hasNext());
     }

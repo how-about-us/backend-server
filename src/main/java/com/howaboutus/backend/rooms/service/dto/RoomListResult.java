@@ -16,7 +16,6 @@ public record RoomListResult(
             String destination,
             LocalDate startDate,
             LocalDate endDate,
-            long memberCount,
             String role,
             Instant joinedAt
     ) {

@@ -316,6 +316,15 @@ class RoomServiceTest {
     }
 
     @Test
+    @DisplayName("size가 0이면 INVALID_PAGE_SIZE 예외")
+    void getMyRoomsThrowsWhenSizeIsZero() {
+        assertThatThrownBy(() -> roomService.getMyRooms(1L, null, 0))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_PAGE_SIZE);
+    }
+
+    @Test
     @DisplayName("커서 없이 내 방 목록을 조회하면 최신순으로 반환한다")
     void getMyRoomsWithoutCursorReturnsLatest() {
         Long userId = 1L;

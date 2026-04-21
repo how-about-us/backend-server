@@ -80,6 +80,9 @@ public class RoomService {
     }
 
     public RoomListResult getMyRooms(Long userId, Instant cursor, int size) {
+        if (size < 1) {
+            throw new CustomException(ErrorCode.INVALID_PAGE_SIZE);
+        }
         PageRequest pageable = PageRequest.of(0, size + 1);
         List<RoomMember> members;
         if (cursor == null) {

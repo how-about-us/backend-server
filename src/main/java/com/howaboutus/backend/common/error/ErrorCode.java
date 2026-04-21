@@ -10,6 +10,7 @@ public enum ErrorCode {
 
     // 400 BAD REQUEST
     INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "시작일이 종료일보다 늦을 수 없습니다"),
+    INVALID_PAGE_SIZE(HttpStatus.BAD_REQUEST, "size는 1 이상이어야 합니다"),
 
     // 401 UNAUTHORIZED
     GOOGLE_AUTH_FAILED(HttpStatus.UNAUTHORIZED, "Google 인증에 실패했습니다"),

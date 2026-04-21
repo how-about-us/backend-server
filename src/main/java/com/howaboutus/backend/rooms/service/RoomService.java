@@ -62,9 +62,11 @@ public class RoomService {
 
     @Transactional
     public RoomDetailResult update(UUID roomId, RoomUpdateCommand command, Long userId) {
-        validateDateRange(command.startDate(), command.endDate());
         Room room = getActiveRoom(roomId);
         getHostMember(roomId, userId);
+        LocalDate effectiveStart = command.startDate() != null ? command.startDate() : room.getStartDate();
+        LocalDate effectiveEnd = command.endDate() != null ? command.endDate() : room.getEndDate();
+        validateDateRange(effectiveStart, effectiveEnd);
         room.update(command.title(), command.destination(), command.startDate(), command.endDate());
         long memberCount = roomMemberRepository.countByRoom_IdAndRoleIn(roomId, ACTIVE_ROLES);
         return RoomDetailResult.of(room, RoomRole.HOST, memberCount);

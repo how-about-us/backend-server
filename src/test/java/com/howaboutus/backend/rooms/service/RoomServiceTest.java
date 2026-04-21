@@ -202,6 +202,56 @@ class RoomServiceTest {
     }
 
     @Test
+    @DisplayName("endDate만 변경할 때 기존 startDate와 조합이 역전되면 INVALID_DATE_RANGE 예외")
+    void updateRoomThrowsWhenPartialDateMakesRangeInvalid() {
+        UUID roomId = UUID.randomUUID();
+        Long userId = 1L;
+        Room room = Room.create("부산 여행", "부산",
+                LocalDate.of(2026, 5, 10), LocalDate.of(2026, 5, 20), "aB3xK9mQ2w", userId);
+        ReflectionTestUtils.setField(room, "id", roomId);
+
+        User user = User.ofGoogle("google-id", "test@test.com", "테스터", null);
+        ReflectionTestUtils.setField(user, "id", userId);
+        RoomMember hostMember = RoomMember.of(room, user, RoomRole.HOST);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(hostMember));
+
+        // startDate는 null(기존 5/10 유지), endDate만 5/05로 변경 → 5/10 > 5/05 이므로 예외
+        RoomUpdateCommand command = new RoomUpdateCommand(null, null, null, LocalDate.of(2026, 5, 5));
+
+        assertThatThrownBy(() -> roomService.update(roomId, command, userId))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_DATE_RANGE);
+    }
+
+    @Test
+    @DisplayName("startDate만 변경할 때 기존 endDate와 조합이 역전되면 INVALID_DATE_RANGE 예외")
+    void updateRoomThrowsWhenPartialStartDateMakesRangeInvalid() {
+        UUID roomId = UUID.randomUUID();
+        Long userId = 1L;
+        Room room = Room.create("부산 여행", "부산",
+                LocalDate.of(2026, 5, 10), LocalDate.of(2026, 5, 20), "aB3xK9mQ2w", userId);
+        ReflectionTestUtils.setField(room, "id", roomId);
+
+        User user = User.ofGoogle("google-id", "test@test.com", "테스터", null);
+        ReflectionTestUtils.setField(user, "id", userId);
+        RoomMember hostMember = RoomMember.of(room, user, RoomRole.HOST);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(hostMember));
+
+        // endDate는 null(기존 5/20 유지), startDate만 5/25로 변경 → 5/25 > 5/20 이므로 예외
+        RoomUpdateCommand command = new RoomUpdateCommand(null, null, LocalDate.of(2026, 5, 25), null);
+
+        assertThatThrownBy(() -> roomService.update(roomId, command, userId))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_DATE_RANGE);
+    }
+
+    @Test
     @DisplayName("MEMBER가 방 정보를 수정하면 NOT_ROOM_HOST 예외")
     void updateRoomThrowsWhenNotHost() {
         UUID roomId = UUID.randomUUID();

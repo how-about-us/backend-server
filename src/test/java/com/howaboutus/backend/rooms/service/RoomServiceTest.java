@@ -19,6 +19,7 @@ import com.howaboutus.backend.rooms.service.dto.RoomCreateCommand;
 import com.howaboutus.backend.rooms.service.dto.RoomDetailResult;
 import com.howaboutus.backend.rooms.service.dto.RoomListResult;
 import com.howaboutus.backend.rooms.service.dto.RoomUpdateCommand;
+import org.springframework.data.domain.PageRequest;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -340,7 +341,7 @@ class RoomServiceTest {
         }
 
         given(roomMemberRepository.findByUser_IdAndRoleInAndRoom_DeletedAtIsNullOrderByJoinedAtDesc(
-                userId, ACTIVE_ROLES, org.springframework.data.domain.PageRequest.of(0, 11)))
+                userId, ACTIVE_ROLES, PageRequest.of(0, 11)))
                 .willReturn(members);
 
         RoomListResult result = roomService.getMyRooms(userId, null, 10);
@@ -366,7 +367,7 @@ class RoomServiceTest {
         }
 
         given(roomMemberRepository.findByUser_IdAndRoleInAndRoom_DeletedAtIsNullAndJoinedAtBeforeOrderByJoinedAtDesc(
-                userId, ACTIVE_ROLES, cursor, org.springframework.data.domain.PageRequest.of(0, 11)))
+                userId, ACTIVE_ROLES, cursor, PageRequest.of(0, 11)))
                 .willReturn(members);
 
         RoomListResult result = roomService.getMyRooms(userId, cursor, 10);
@@ -391,7 +392,7 @@ class RoomServiceTest {
         }
 
         given(roomMemberRepository.findByUser_IdAndRoleInAndRoom_DeletedAtIsNullOrderByJoinedAtDesc(
-                userId, ACTIVE_ROLES, org.springframework.data.domain.PageRequest.of(0, 11)))
+                userId, ACTIVE_ROLES, PageRequest.of(0, 11)))
                 .willReturn(members);
 
         RoomListResult result = roomService.getMyRooms(userId, null, 10);

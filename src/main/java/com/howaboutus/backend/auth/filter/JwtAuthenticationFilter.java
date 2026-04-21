@@ -1,6 +1,7 @@
 package com.howaboutus.backend.auth.filter;
 
 import com.howaboutus.backend.auth.service.JwtProvider;
+import com.howaboutus.backend.common.error.CustomException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -35,11 +36,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 var authentication = new UsernamePasswordAuthenticationToken(
                         userId, null, Collections.emptyList());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-            } catch (Exception e) {
-                // 토큰 검증에 실패하더라도 익명 사용자로 처리하여 다음 필터로 넘깁니다.
-                // 실제로 인증이 필요한 경로인지, 검증 실패 시 어떤 응답(401 등)을 줄지는
-                // SecurityConfig의 설정에 따라 결정됩니다.
+            } catch (CustomException e) {
                 log.debug("JWT validation failed: {}", e.getMessage());
+                request.setAttribute("JWT_ERROR_CODE", e.getErrorCode());
             }
         }
 

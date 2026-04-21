@@ -20,10 +20,13 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
+        ErrorCode errorCode = (ErrorCode) request.getAttribute("JWT_ERROR_CODE");
+        if (errorCode == null) {
+            errorCode = ErrorCode.INVALID_TOKEN;
+        }
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        ApiErrorResponse body = ApiErrorResponse.of(ErrorCode.INVALID_TOKEN);
-        objectMapper.writeValue(response.getOutputStream(), body);
+        objectMapper.writeValue(response.getOutputStream(), ApiErrorResponse.of(errorCode));
     }
 }

@@ -61,6 +61,18 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("만료된 토큰으로 GET /users/me 요청 시 401과 ACCESS_TOKEN_EXPIRED를 반환한다")
+    void returns401WithExpiredToken() throws Exception {
+        given(jwtProvider.extractUserId("expired-jwt"))
+                .willThrow(new CustomException(ErrorCode.ACCESS_TOKEN_EXPIRED));
+
+        mockMvc.perform(get("/users/me")
+                        .cookie(new Cookie("access_token", "expired-jwt")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("ACCESS_TOKEN_EXPIRED"));
+    }
+
+    @Test
     @DisplayName("존재하지 않는 사용자면 404를 반환한다")
     void returns404ForUnknownUser() throws Exception {
         given(jwtProvider.extractUserId("valid-jwt")).willReturn(999L);

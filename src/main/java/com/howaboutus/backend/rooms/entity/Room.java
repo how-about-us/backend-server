@@ -4,14 +4,15 @@ import com.howaboutus.backend.common.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "rooms")
@@ -20,7 +21,8 @@ import lombok.NoArgsConstructor;
 public class Room extends BaseTimeEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue
+    @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
     @Column(nullable = false, length = 100)
@@ -41,14 +43,11 @@ public class Room extends BaseTimeEntity {
     @Column(name = "created_by", nullable = false)
     private Long createdBy;
 
-    private Room(
-            String title,
-            String destination,
-            LocalDate startDate,
-            LocalDate endDate,
-            String inviteCode,
-            Long createdBy
-    ) {
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    private Room(String title, String destination, LocalDate startDate,
+                 LocalDate endDate, String inviteCode, Long createdBy) {
         this.title = title;
         this.destination = destination;
         this.startDate = startDate;
@@ -57,14 +56,35 @@ public class Room extends BaseTimeEntity {
         this.createdBy = createdBy;
     }
 
-    public static Room create(
-            String title,
-            String destination,
-            LocalDate startDate,
-            LocalDate endDate,
-            String inviteCode,
-            Long createdBy
-    ) {
+    public static Room create(String title, String destination, LocalDate startDate,
+                              LocalDate endDate, String inviteCode, Long createdBy) {
         return new Room(title, destination, startDate, endDate, inviteCode, createdBy);
+    }
+
+    public void update(String title, String destination, LocalDate startDate, LocalDate endDate) {
+        if (title != null) {
+            this.title = title;
+        }
+        if (destination != null) {
+            this.destination = destination;
+        }
+        if (startDate != null) {
+            this.startDate = startDate;
+        }
+        if (endDate != null) {
+            this.endDate = endDate;
+        }
+    }
+
+    public void delete() {
+        this.deletedAt = Instant.now();
+    }
+
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
+
+    public void regenerateInviteCode(String newCode) {
+        this.inviteCode = newCode;
     }
 }

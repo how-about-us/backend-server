@@ -212,7 +212,7 @@ Google OAuth 기반 사용자 정보
 5. **장소 상세 캐시:** 자유도가 높은 검색어는 캐시 히트율이 낮을 수 있으므로 검색 결과는 캐시하지 않는다. 대신 Google Place 상세 조회 응답은 `google_place_id` 기준으로 Redis에 3시간 TTL로 저장한다.
 6. **schedule_items.order_index:** D&D UI를 위한 정렬 인덱스. 재정렬 시 해당 컬럼만 업데이트.
 7. **이동 정보 비동기 갱신:** travel_mode, distance_meters, duration_seconds는 "현재 장소 → 다음 장소" 구간 이동 정보 저장. 마지막 장소의 이동 정보는 NULL.
-8. **Soft Delete 미적용 (초안):** 방 삭제 시 CASCADE 또는 별도 정책은 추후 논의.
+8. **Soft Delete 적용:** `rooms.deleted_at` 컬럼을 사용하여 방 삭제 시 soft delete를 수행한다. 하위 데이터(room_members 등) CASCADE 정책은 추후 논의.
 
 ---
 

@@ -6,8 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
-import com.howaboutus.backend.auth.entity.User;
-import com.howaboutus.backend.auth.repository.UserRepository;
+import com.howaboutus.backend.user.entity.User;
+import com.howaboutus.backend.user.repository.UserRepository;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;

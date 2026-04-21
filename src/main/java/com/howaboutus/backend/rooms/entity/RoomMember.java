@@ -1,6 +1,6 @@
 package com.howaboutus.backend.rooms.entity;
 
-import com.howaboutus.backend.auth.entity.User;
+import com.howaboutus.backend.user.entity.User;
 import com.howaboutus.backend.common.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

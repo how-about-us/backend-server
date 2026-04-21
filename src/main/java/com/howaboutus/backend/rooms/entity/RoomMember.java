@@ -57,6 +57,9 @@ public class RoomMember extends BaseTimeEntity {
     }
 
     public void approve() {
+        if (this.role != RoomRole.PENDING) {
+            throw new IllegalStateException("PENDING 상태의 멤버만 승인할 수 있습니다. 현재 상태: " + this.role);
+        }
         this.role = RoomRole.MEMBER;
     }
 }

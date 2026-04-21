@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+// TODO: X-User-Id 헤더 → @AuthenticationPrincipal로 교체 (JWT 필터 SecurityFilterChain 연결 후)
 @Tag(name = "Rooms", description = "여행 방 API")
 @RestController
 @RequiredArgsConstructor

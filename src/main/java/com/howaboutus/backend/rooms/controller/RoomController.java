@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +50,7 @@ public class RoomController {
     public RoomListResponse getMyRooms(
             @RequestHeader("X-User-Id") Long userId,
             @Parameter(description = "커서 (joinedAt)") @RequestParam(required = false) Instant cursor,
-            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") int size
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") @Max(100) int size
     ) {
         return RoomListResponse.from(roomService.getMyRooms(userId, cursor, size));
     }

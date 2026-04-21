@@ -7,15 +7,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
 
     Optional<RoomMember> findByRoom_IdAndUser_Id(UUID roomId, Long userId);
 
+    @EntityGraph(attributePaths = "room")
     List<RoomMember> findByUser_IdAndRoleInAndRoom_DeletedAtIsNullOrderByJoinedAtDesc(
             Long userId, List<RoomRole> roles, Pageable pageable);
 
+    @EntityGraph(attributePaths = "room")
     List<RoomMember> findByUser_IdAndRoleInAndRoom_DeletedAtIsNullAndJoinedAtBeforeOrderByJoinedAtDesc(
             Long userId, List<RoomRole> roles, Instant cursor, Pageable pageable);
 

@@ -120,6 +120,7 @@ src/main/resources/
 
 ## Before You Finish
 
+- PR 생성 전 `.github/pull_request_template.md`를 반드시 읽고, 해당 양식을 그대로 사용하여 PR 본문을 작성한다.
 - PR 생성 전 `/review-code-against-docs` 스킬로 변경 코드가 문서 스펙과 일치하는지 검증한다.
 - 코드 변경 내용이 관련 문서에 반영되었는지 확인한다.
 - 새로 생긴 미결 사항은 관련 문서에 `미결` 또는 결정 기록으로 남긴다.

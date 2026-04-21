@@ -2,7 +2,10 @@ package com.howaboutus.backend.bookmarks.controller;
 
 import com.howaboutus.backend.bookmarks.service.BookmarkCategoryService;
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkCategoryResult;
+import com.howaboutus.backend.auth.filter.JwtAuthenticationFilter;
+import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.common.config.SecurityConfig;
+import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
@@ -31,11 +34,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(BookmarkCategoryController.class)
-@Import({SecurityConfig.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class, GlobalExceptionHandler.class})
 class BookmarkCategoryControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private JwtProvider jwtProvider;
 
     @MockitoBean
     private BookmarkCategoryService bookmarkCategoryService;

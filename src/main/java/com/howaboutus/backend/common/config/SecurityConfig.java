@@ -2,7 +2,9 @@ package com.howaboutus.backend.common.config;
 
 import java.util.List;
 
+import com.howaboutus.backend.auth.filter.JwtAuthenticationFilter;
 import com.howaboutus.backend.common.config.properties.CorsProperties;
+import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -11,16 +13,19 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @RequiredArgsConstructor
-@EnableConfigurationProperties(CorsProperties.class)    // 단위 테스트 시 정상 동작을 위해 추가
+@EnableConfigurationProperties(CorsProperties.class)
 public class SecurityConfig {
 
     private final CorsProperties corsProperties;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) {
@@ -39,9 +44,13 @@ public class SecurityConfig {
                                 "/auth/refresh",
                                 "/auth/logout")
                         .permitAll()
-                        // 일단 임시로 인증 열어 놓음
+                        .requestMatchers("/users/me").authenticated()
+                        // TODO: API가 갖춰지면 .anyRequest().authenticated() 로 전환
                         .anyRequest().permitAll())
-                //cors 설정
+                //인증 실패시 응답 설정
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .build();
     }

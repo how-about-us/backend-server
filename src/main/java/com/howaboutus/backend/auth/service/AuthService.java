@@ -1,7 +1,7 @@
 package com.howaboutus.backend.auth.service;
 
-import com.howaboutus.backend.auth.entity.User;
-import com.howaboutus.backend.auth.repository.UserRepository;
+import com.howaboutus.backend.user.entity.User;
+import com.howaboutus.backend.user.repository.UserRepository;
 import com.howaboutus.backend.auth.service.dto.GoogleUserInfo;
 import com.howaboutus.backend.auth.service.dto.LoginResult;
 import com.howaboutus.backend.auth.service.dto.RotateResult;

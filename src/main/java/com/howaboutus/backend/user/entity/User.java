@@ -1,4 +1,4 @@
-package com.howaboutus.backend.auth.entity;
+package com.howaboutus.backend.user.entity;
 
 import com.howaboutus.backend.common.entity.BaseTimeEntity;
 import jakarta.persistence.Column;

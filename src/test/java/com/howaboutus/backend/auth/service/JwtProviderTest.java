@@ -70,7 +70,7 @@ class JwtProviderTest {
     @Test
     @DisplayName("만료된 토큰이면 ACCESS_TOKEN_EXPIRED 예외를 던진다")
     void throwsAccessTokenExpiredForExpiredToken() {
-        JwtProvider shortLivedProvider = new JwtProvider(secretKey, 0L);
+        JwtProvider shortLivedProvider = new JwtProvider(secretKey, -1L);
         String token = shortLivedProvider.generateAccessToken(1L);
 
         assertThatThrownBy(() -> jwtProvider.extractUserId(token))

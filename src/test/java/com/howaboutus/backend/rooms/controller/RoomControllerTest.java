@@ -20,7 +20,11 @@ import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
 import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.rooms.entity.RoomRole;
+import com.howaboutus.backend.rooms.service.RoomInviteService;
 import com.howaboutus.backend.rooms.service.RoomService;
+import com.howaboutus.backend.rooms.service.dto.JoinRequestResult;
+import com.howaboutus.backend.rooms.service.dto.JoinResult;
+import com.howaboutus.backend.rooms.service.dto.JoinStatusResult;
 import com.howaboutus.backend.rooms.service.dto.RoomCreateCommand;
 import com.howaboutus.backend.rooms.service.dto.RoomDetailResult;
 import com.howaboutus.backend.rooms.service.dto.RoomListResult;
@@ -50,6 +54,9 @@ class RoomControllerTest {
 
     @MockitoBean
     private RoomService roomService;
+
+    @MockitoBean
+    private RoomInviteService roomInviteService;
 
     private static final UUID ROOM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final Long USER_ID = 1L;
@@ -174,5 +181,99 @@ class RoomControllerTest {
                 .andExpect(status().isNoContent());
 
         then(roomService).should().delete(ROOM_ID, USER_ID);
+    }
+
+    @Test
+    @DisplayName("초대 코드 재발급 성공 시 200을 반환한다")
+    void regenerateInviteCodeReturns200() throws Exception {
+        given(roomInviteService.regenerateInviteCode(ROOM_ID, USER_ID))
+                .willReturn("newCode1234");
+
+        mockMvc.perform(post("/rooms/{roomId}/invite-code", ROOM_ID)
+                        .header("X-User-Id", USER_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.inviteCode").value("newCode1234"));
+    }
+
+    @Test
+    @DisplayName("입장 요청 성공 시 202를 반환한다")
+    void requestJoinReturns202() throws Exception {
+        given(roomInviteService.requestJoin("aB3xK9mQ2w", USER_ID))
+                .willReturn(JoinResult.pending("부산 여행"));
+
+        mockMvc.perform(post("/rooms/join")
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"inviteCode":"aB3xK9mQ2w"}
+                                """))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.status").value("pending"))
+                .andExpect(jsonPath("$.roomTitle").value("부산 여행"));
+    }
+
+    @Test
+    @DisplayName("이미 멤버인 사용자가 입장 요청하면 200을 반환한다")
+    void requestJoinReturns200WhenAlreadyMember() throws Exception {
+        given(roomInviteService.requestJoin("aB3xK9mQ2w", USER_ID))
+                .willReturn(JoinResult.alreadyMember(ROOM_ID, "부산 여행", RoomRole.MEMBER));
+
+        mockMvc.perform(post("/rooms/join")
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"inviteCode":"aB3xK9mQ2w"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("already_member"))
+                .andExpect(jsonPath("$.role").value("MEMBER"));
+    }
+
+    @Test
+    @DisplayName("입장 상태 조회 시 200을 반환한다")
+    void getJoinStatusReturns200() throws Exception {
+        given(roomInviteService.getJoinStatus("aB3xK9mQ2w", USER_ID))
+                .willReturn(JoinStatusResult.pending("부산 여행"));
+
+        mockMvc.perform(get("/rooms/join/status")
+                        .header("X-User-Id", USER_ID)
+                        .param("inviteCode", "aB3xK9mQ2w"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("pending"));
+    }
+
+    @Test
+    @DisplayName("대기 요청 목록 조회 시 200을 반환한다")
+    void getJoinRequestsReturns200() throws Exception {
+        given(roomInviteService.getJoinRequests(ROOM_ID, USER_ID))
+                .willReturn(List.of(new JoinRequestResult(
+                        42L, 3L, "김철수", "http://img.png",
+                        Instant.parse("2026-04-20T00:00:00Z"))));
+
+        mockMvc.perform(get("/rooms/{roomId}/join-requests", ROOM_ID)
+                        .header("X-User-Id", USER_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requests[0].requestId").value(42))
+                .andExpect(jsonPath("$.requests[0].nickname").value("김철수"));
+    }
+
+    @Test
+    @DisplayName("입장 승인 성공 시 200을 반환한다")
+    void approveJoinRequestReturns200() throws Exception {
+        mockMvc.perform(post("/rooms/{roomId}/join-requests/{requestId}/approve", ROOM_ID, 42)
+                        .header("X-User-Id", USER_ID))
+                .andExpect(status().isOk());
+
+        then(roomInviteService).should().approve(ROOM_ID, 42L, USER_ID);
+    }
+
+    @Test
+    @DisplayName("입장 거절 성공 시 200을 반환한다")
+    void rejectJoinRequestReturns200() throws Exception {
+        mockMvc.perform(post("/rooms/{roomId}/join-requests/{requestId}/reject", ROOM_ID, 42)
+                        .header("X-User-Id", USER_ID))
+                .andExpect(status().isOk());
+
+        then(roomInviteService).should().reject(ROOM_ID, 42L, USER_ID);
     }
 }

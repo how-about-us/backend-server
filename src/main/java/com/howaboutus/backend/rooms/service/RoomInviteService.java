@@ -7,9 +7,12 @@ import com.howaboutus.backend.rooms.entity.RoomMember;
 import com.howaboutus.backend.rooms.entity.RoomRole;
 import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
+import com.howaboutus.backend.rooms.service.dto.JoinRequestResult;
 import com.howaboutus.backend.rooms.service.dto.JoinResult;
+import com.howaboutus.backend.rooms.service.dto.JoinStatusResult;
 import com.howaboutus.backend.user.entity.User;
 import com.howaboutus.backend.user.repository.UserRepository;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +57,61 @@ public class RoomInviteService {
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         roomMemberRepository.save(RoomMember.of(room, user, RoomRole.PENDING));
         return JoinResult.pending(room.getTitle());
+    }
+
+    public JoinStatusResult getJoinStatus(String inviteCode, Long userId) {
+        Room room = roomRepository.findByInviteCodeAndDeletedAtIsNull(inviteCode)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
+
+        RoomMember member = roomMemberRepository.findByRoom_IdAndUser_Id(room.getId(), userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.JOIN_REQUEST_NOT_FOUND));
+
+        if (member.getRole() == RoomRole.PENDING) {
+            return JoinStatusResult.pending(room.getTitle());
+        }
+        return JoinStatusResult.approved(room.getId(), room.getTitle(), member.getRole());
+    }
+
+    public List<JoinRequestResult> getJoinRequests(UUID roomId, Long userId) {
+        getActiveRoom(roomId);
+        getHostMember(roomId, userId);
+
+        List<RoomMember> pendingMembers = roomMemberRepository.findByRoom_IdAndRole(roomId, RoomRole.PENDING);
+
+        return pendingMembers.stream()
+                .map(m -> new JoinRequestResult(
+                        m.getId(),
+                        m.getUser().getId(),
+                        m.getUser().getNickname(),
+                        m.getUser().getProfileImageUrl(),
+                        m.getJoinedAt()))
+                .toList();
+    }
+
+    @Transactional
+    public void approve(UUID roomId, Long requestId, Long userId) {
+        getActiveRoom(roomId);
+        getHostMember(roomId, userId);
+
+        RoomMember target = roomMemberRepository.findByIdAndRoom_Id(requestId, roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.JOIN_REQUEST_NOT_FOUND));
+
+        target.approve();
+    }
+
+    @Transactional
+    public void reject(UUID roomId, Long requestId, Long userId) {
+        getActiveRoom(roomId);
+        getHostMember(roomId, userId);
+
+        RoomMember target = roomMemberRepository.findByIdAndRoom_Id(requestId, roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.JOIN_REQUEST_NOT_FOUND));
+
+        if (target.getRole() != RoomRole.PENDING) {
+            throw new CustomException(ErrorCode.JOIN_REQUEST_NOT_FOUND);
+        }
+
+        roomMemberRepository.delete(target);
     }
 
     private Room getActiveRoom(UUID roomId) {

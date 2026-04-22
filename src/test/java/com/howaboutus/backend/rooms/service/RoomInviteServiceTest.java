@@ -3,6 +3,7 @@ package com.howaboutus.backend.rooms.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
@@ -11,9 +12,12 @@ import com.howaboutus.backend.rooms.entity.RoomMember;
 import com.howaboutus.backend.rooms.entity.RoomRole;
 import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
+import com.howaboutus.backend.rooms.service.dto.JoinRequestResult;
 import com.howaboutus.backend.rooms.service.dto.JoinResult;
+import com.howaboutus.backend.rooms.service.dto.JoinStatusResult;
 import com.howaboutus.backend.user.entity.User;
 import com.howaboutus.backend.user.repository.UserRepository;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -148,5 +152,143 @@ class RoomInviteServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
+    }
+
+    // --- getJoinStatus ---
+
+    @Test
+    @DisplayName("PENDING 상태 사용자가 상태 조회하면 pending을 반환한다")
+    void getJoinStatusReturnsPending() {
+        User pendingUser = User.ofGoogle("google-pending", "pending@test.com", "대기자", null);
+        ReflectionTestUtils.setField(pendingUser, "id", 3L);
+        RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
+
+        given(roomRepository.findByInviteCodeAndDeletedAtIsNull("aB3xK9mQ2w"))
+                .willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, 3L))
+                .willReturn(Optional.of(pendingMember));
+
+        JoinStatusResult result = roomInviteService.getJoinStatus("aB3xK9mQ2w", 3L);
+
+        assertThat(result.status()).isEqualTo("pending");
+    }
+
+    @Test
+    @DisplayName("승인된 사용자가 상태 조회하면 approved를 반환한다")
+    void getJoinStatusReturnsApproved() {
+        given(roomRepository.findByInviteCodeAndDeletedAtIsNull("aB3xK9mQ2w"))
+                .willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, MEMBER_ID))
+                .willReturn(Optional.of(regularMember));
+
+        JoinStatusResult result = roomInviteService.getJoinStatus("aB3xK9mQ2w", MEMBER_ID);
+
+        assertThat(result.status()).isEqualTo("approved");
+        assertThat(result.roomId()).isEqualTo(ROOM_ID);
+    }
+
+    @Test
+    @DisplayName("거절된(레코드 없는) 사용자가 상태 조회하면 JOIN_REQUEST_NOT_FOUND 예외")
+    void getJoinStatusThrowsWhenRejected() {
+        given(roomRepository.findByInviteCodeAndDeletedAtIsNull("aB3xK9mQ2w"))
+                .willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, STRANGER_ID))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> roomInviteService.getJoinStatus("aB3xK9mQ2w", STRANGER_ID))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.JOIN_REQUEST_NOT_FOUND);
+    }
+
+    // --- approve / reject ---
+
+    @Test
+    @DisplayName("HOST가 입장 요청을 승인하면 PENDING → MEMBER로 변경된다")
+    void approveChangesRoleToMember() {
+        User pendingUser = User.ofGoogle("google-pending", "pending@test.com", "대기자", null);
+        ReflectionTestUtils.setField(pendingUser, "id", 3L);
+        RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
+        ReflectionTestUtils.setField(pendingMember, "id", 42L);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
+                .willReturn(Optional.of(hostMember));
+        given(roomMemberRepository.findByIdAndRoom_Id(42L, ROOM_ID))
+                .willReturn(Optional.of(pendingMember));
+
+        roomInviteService.approve(ROOM_ID, 42L, HOST_ID);
+
+        assertThat(pendingMember.getRole()).isEqualTo(RoomRole.MEMBER);
+    }
+
+    @Test
+    @DisplayName("HOST가 입장 요청을 거절하면 레코드가 삭제된다")
+    void rejectDeletesMember() {
+        User pendingUser = User.ofGoogle("google-pending", "pending@test.com", "대기자", null);
+        ReflectionTestUtils.setField(pendingUser, "id", 3L);
+        RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
+        ReflectionTestUtils.setField(pendingMember, "id", 42L);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
+                .willReturn(Optional.of(hostMember));
+        given(roomMemberRepository.findByIdAndRoom_Id(42L, ROOM_ID))
+                .willReturn(Optional.of(pendingMember));
+
+        roomInviteService.reject(ROOM_ID, 42L, HOST_ID);
+
+        verify(roomMemberRepository).delete(pendingMember);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 요청을 승인하면 JOIN_REQUEST_NOT_FOUND 예외")
+    void approveThrowsWhenRequestNotFound() {
+        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
+                .willReturn(Optional.of(hostMember));
+        given(roomMemberRepository.findByIdAndRoom_Id(999L, ROOM_ID))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> roomInviteService.approve(ROOM_ID, 999L, HOST_ID))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.JOIN_REQUEST_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("MEMBER가 승인을 시도하면 NOT_ROOM_HOST 예외")
+    void approveThrowsWhenNotHost() {
+        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, MEMBER_ID))
+                .willReturn(Optional.of(regularMember));
+
+        assertThatThrownBy(() -> roomInviteService.approve(ROOM_ID, 42L, MEMBER_ID))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.NOT_ROOM_HOST);
+    }
+
+    // --- getJoinRequests ---
+
+    @Test
+    @DisplayName("HOST가 대기 요청 목록을 조회하면 PENDING 멤버 목록을 반환한다")
+    void getJoinRequestsReturnsPendingMembers() {
+        User pendingUser = User.ofGoogle("google-pending", "pending@test.com", "대기자", "http://img.png");
+        ReflectionTestUtils.setField(pendingUser, "id", 3L);
+        RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
+        ReflectionTestUtils.setField(pendingMember, "id", 42L);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
+                .willReturn(Optional.of(hostMember));
+        given(roomMemberRepository.findByRoom_IdAndRole(ROOM_ID, RoomRole.PENDING))
+                .willReturn(List.of(pendingMember));
+
+        List<JoinRequestResult> results = roomInviteService.getJoinRequests(ROOM_ID, HOST_ID);
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).requestId()).isEqualTo(42L);
+        assertThat(results.get(0).nickname()).isEqualTo("대기자");
     }
 }

@@ -7,6 +7,10 @@ import com.howaboutus.backend.rooms.entity.RoomMember;
 import com.howaboutus.backend.rooms.entity.RoomRole;
 import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
+import com.howaboutus.backend.rooms.service.dto.JoinResult;
+import com.howaboutus.backend.user.entity.User;
+import com.howaboutus.backend.user.repository.UserRepository;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +23,7 @@ public class RoomInviteService {
 
     private final RoomRepository roomRepository;
     private final RoomMemberRepository roomMemberRepository;
+    private final UserRepository userRepository;
     private final InviteCodeGenerator inviteCodeGenerator;
 
     @Transactional
@@ -28,6 +33,27 @@ public class RoomInviteService {
         String newCode = inviteCodeGenerator.generate();
         room.regenerateInviteCode(newCode);
         return newCode;
+    }
+
+    @Transactional
+    public JoinResult requestJoin(String inviteCode, Long userId) {
+        Room room = roomRepository.findByInviteCodeAndDeletedAtIsNull(inviteCode)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
+
+        Optional<RoomMember> existing = roomMemberRepository.findByRoom_IdAndUser_Id(room.getId(), userId);
+
+        if (existing.isPresent()) {
+            RoomMember member = existing.get();
+            if (member.getRole() == RoomRole.PENDING) {
+                return JoinResult.pending(room.getTitle());
+            }
+            return JoinResult.alreadyMember(room.getId(), room.getTitle(), member.getRole());
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        roomMemberRepository.save(RoomMember.of(room, user, RoomRole.PENDING));
+        return JoinResult.pending(room.getTitle());
     }
 
     private Room getActiveRoom(UUID roomId) {

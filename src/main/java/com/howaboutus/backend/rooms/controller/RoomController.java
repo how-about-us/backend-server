@@ -12,6 +12,7 @@ import com.howaboutus.backend.rooms.controller.dto.UpdateRoomRequest;
 import com.howaboutus.backend.rooms.service.RoomInviteService;
 import com.howaboutus.backend.rooms.service.RoomService;
 import com.howaboutus.backend.rooms.service.dto.JoinResult;
+import com.howaboutus.backend.rooms.service.dto.JoinStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -108,7 +109,7 @@ public class RoomController {
             @RequestBody @Valid JoinRequest request
     ) {
         JoinResult result = roomInviteService.requestJoin(request.inviteCode(), userId);
-        HttpStatus status = "already_member".equals(result.status()) ? HttpStatus.OK : HttpStatus.ACCEPTED;
+        HttpStatus status = result.status() == JoinStatus.ALREADY_MEMBER ? HttpStatus.OK : HttpStatus.ACCEPTED;
         return ResponseEntity.status(status).body(JoinResponse.from(result));
     }
 

@@ -1,5 +1,6 @@
 package com.howaboutus.backend.rooms.controller.dto;
 
+import com.howaboutus.backend.rooms.service.dto.JoinStatus;
 import com.howaboutus.backend.rooms.service.dto.JoinStatusResult;
 import java.util.UUID;
 
@@ -11,7 +12,7 @@ public record JoinStatusResponse(
 ) {
     public static JoinStatusResponse from(JoinStatusResult result) {
         return new JoinStatusResponse(
-                result.status(),
+                result.status().name().toLowerCase(),
                 result.roomId(),
                 result.roomTitle(),
                 result.role() != null ? result.role().name() : null);

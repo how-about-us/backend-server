@@ -14,6 +14,7 @@ import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.rooms.service.dto.JoinRequestResult;
 import com.howaboutus.backend.rooms.service.dto.JoinResult;
+import com.howaboutus.backend.rooms.service.dto.JoinStatus;
 import com.howaboutus.backend.rooms.service.dto.JoinStatusResult;
 import com.howaboutus.backend.user.entity.User;
 import com.howaboutus.backend.user.repository.UserRepository;
@@ -105,12 +106,12 @@ class RoomInviteServiceTest {
 
         JoinResult result = roomInviteService.requestJoin("aB3xK9mQ2w", STRANGER_ID);
 
-        assertThat(result.status()).isEqualTo("pending");
+        assertThat(result.status()).isEqualTo(JoinStatus.PENDING);
         assertThat(result.roomTitle()).isEqualTo("부산 여행");
     }
 
     @Test
-    @DisplayName("이미 MEMBER인 사용자가 입장 요청하면 already_member를 반환한다")
+    @DisplayName("이미 MEMBER인 사용자가 입장 요청하면 ALREADY_MEMBER를 반환한다")
     void requestJoinReturnsAlreadyMemberWhenMember() {
         given(roomRepository.findByInviteCodeAndDeletedAtIsNull("aB3xK9mQ2w"))
                 .willReturn(Optional.of(room));
@@ -119,7 +120,7 @@ class RoomInviteServiceTest {
 
         JoinResult result = roomInviteService.requestJoin("aB3xK9mQ2w", MEMBER_ID);
 
-        assertThat(result.status()).isEqualTo("already_member");
+        assertThat(result.status()).isEqualTo(JoinStatus.ALREADY_MEMBER);
         assertThat(result.roomId()).isEqualTo(ROOM_ID);
         assertThat(result.role()).isEqualTo(RoomRole.MEMBER);
     }
@@ -138,7 +139,7 @@ class RoomInviteServiceTest {
 
         JoinResult result = roomInviteService.requestJoin("aB3xK9mQ2w", 3L);
 
-        assertThat(result.status()).isEqualTo("pending");
+        assertThat(result.status()).isEqualTo(JoinStatus.PENDING);
         assertThat(result.roomTitle()).isEqualTo("부산 여행");
     }
 
@@ -170,7 +171,7 @@ class RoomInviteServiceTest {
 
         JoinStatusResult result = roomInviteService.getJoinStatus("aB3xK9mQ2w", 3L);
 
-        assertThat(result.status()).isEqualTo("pending");
+        assertThat(result.status()).isEqualTo(JoinStatus.PENDING);
     }
 
     @Test
@@ -183,7 +184,7 @@ class RoomInviteServiceTest {
 
         JoinStatusResult result = roomInviteService.getJoinStatus("aB3xK9mQ2w", MEMBER_ID);
 
-        assertThat(result.status()).isEqualTo("approved");
+        assertThat(result.status()).isEqualTo(JoinStatus.APPROVED);
         assertThat(result.roomId()).isEqualTo(ROOM_ID);
     }
 

@@ -47,8 +47,7 @@ room/
 ├── controller/
 │   ├── RoomController.java
 │   └── dto/                        (요청/응답 DTO)
-└── util/
-    └── InviteCodeGenerator.java
+│   └── InviteCodeGenerator.java   (Spring Bean, service 패키지에 위치)
 ```
 
 ---
@@ -154,6 +153,12 @@ public enum RoomRole {
 | 10 | POST | `/rooms/{roomId}/join-requests/{requestId}/approve` | 입장 승인 | HOST |
 | 11 | POST | `/rooms/{roomId}/join-requests/{requestId}/reject` | 입장 거절 | HOST |
 
+### 5-2-1. 멤버 관리
+
+| # | Method | URI | 설명 | 권한 |
+|---|--------|-----|------|------|
+| 12 | DELETE | `/rooms/{roomId}/members/{memberId}` | 멤버 추방 | HOST |
+
 ### 5-3. 요청/응답 상세
 
 **방 생성 (POST /rooms)**
@@ -190,7 +195,6 @@ public enum RoomRole {
       "destination": "부산",
       "startDate": "2026-05-01",
       "endDate": "2026-05-03",
-      "memberCount": 4,
       "role": "HOST",
       "joinedAt": "2026-04-19T..."
     }
@@ -356,6 +360,13 @@ public enum RoomRole {
 1. HOST 확인
 2. 해당 `room_member` 레코드 삭제
 
+**멤버 추방 (DELETE /rooms/{roomId}/members/{memberId})**
+1. `roomId`로 Room 조회 (deletedAt IS NULL)
+2. 현재 사용자가 HOST인지 확인 → 아니면 403
+3. `memberId`로 대상 RoomMember 조회 → 없으면 404
+4. 대상이 HOST면 추방 불가 → 400
+5. 대상 `room_member` 레코드 삭제 (hard delete)
+
 ### 권한 체크 공통 패턴
 
 ```java
@@ -384,6 +395,8 @@ private RoomMember getHostMember(Room room, Long userId) {
 | `JOIN_REQUEST_NOT_FOUND` | 404 | 존재하지 않는 입장 요청입니다 | 승인/거절 시 해당 요청이 없음 |
 | `INVALID_DATE_RANGE` | 400 | 시작일이 종료일보다 늦을 수 없습니다 | startDate > endDate |
 | `ROOM_TITLE_REQUIRED` | 400 | 방 제목은 필수입니다 | title 누락 |
+| `CANNOT_KICK_HOST` | 400 | 호스트는 추방할 수 없습니다 | HOST를 추방하려고 시도 |
+| `MEMBER_NOT_FOUND` | 404 | 존재하지 않는 멤버입니다 | 추방 대상 멤버가 없음 |
 
 ### 멱등 처리 (예외가 아닌 경우)
 

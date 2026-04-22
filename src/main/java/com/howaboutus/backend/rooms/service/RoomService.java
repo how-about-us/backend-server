@@ -102,7 +102,8 @@ public class RoomService {
         if (hasNext) {
             nextCursor = page.get(page.size() - 1).getJoinedAt();
         }
-
+        //DB에서 가져온 List<RoomMember>를 Room Summary로 바꿈.
+        //m.get -> @EntityGraph로 이미 로드된, room정보를 가져와서, 정보를 조합해서 summary를 만들고, List에 추가함.
         List<RoomSummary> summaries = page.stream().map(m -> {
             Room room = m.getRoom();
             return new RoomSummary(room.getId(), room.getTitle(), room.getDestination(),

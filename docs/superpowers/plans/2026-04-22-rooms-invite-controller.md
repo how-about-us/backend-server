@@ -70,7 +70,7 @@ import java.util.UUID;
 public record JoinResponse(
         String status,
         UUID id,
-        String title,
+        String roomTitle,
         String role
 ) {
     public static JoinResponse from(JoinResult result) {
@@ -303,7 +303,7 @@ void requestJoinReturns202() throws Exception {
                             """))
             .andExpect(status().isAccepted())
             .andExpect(jsonPath("$.status").value("pending"))
-            .andExpect(jsonPath("$.title").value("부산 여행"));
+            .andExpect(jsonPath("$.roomTitle").value("부산 여행"));
 }
 
 @Test

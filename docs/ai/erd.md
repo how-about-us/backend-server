@@ -56,7 +56,7 @@ Google OAuth 기반 사용자 정보
 | id | BIGINT | PK, AUTO_INCREMENT | |
 | room_id | UUID | FK → rooms.id, NOT NULL | |
 | user_id | BIGINT | FK → users.id, NOT NULL | |
-| role | VARCHAR(20) | NOT NULL, DEFAULT 'MEMBER' | HOST / MEMBER / PENDING |
+| role | VARCHAR(20) | NOT NULL | HOST / MEMBER / PENDING (DEFAULT 없이 명시적 지정) |
 | joined_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 참여 일시 |
 | last_read_message_id | BIGINT | NULLABLE | 마지막으로 읽은 메시지 ID |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |

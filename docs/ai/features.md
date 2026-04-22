@@ -42,7 +42,11 @@
 | `[x]` | 방 수정 | 방 제목, 여행지, 날짜 수정 (HOST만) | rooms |
 | `[x]` | 방 삭제 | 방 삭제 (HOST만, soft delete) | rooms |
 | `[ ]` | 초대 코드 재발급 | 기존 invite_code 폐기 후 신규 발급 (HOST만) | rooms |
-| `[ ]` | 초대 링크로 방 입장 | invite_code로 room_members에 등록 | rooms, room_members |
+| `[ ]` | 초대 코드로 입장 요청 | invite_code로 PENDING 멤버 등록. 이미 멤버면 멱등 처리(200), 이미 PENDING이면 대기 상태 반환(202) | rooms, room_members |
+| `[ ]` | 입장 상태 조회 | 입장 요청자가 자신의 승인 상태 확인 (pending / approved / 404=거절) | room_members |
+| `[ ]` | 대기 입장 요청 목록 조회 | HOST가 PENDING 상태 멤버 목록 조회 | room_members |
+| `[ ]` | 입장 승인 | HOST가 PENDING → MEMBER로 변경 | room_members |
+| `[ ]` | 입장 거절 | HOST가 PENDING 멤버 레코드 삭제 | room_members |
 
 ---
 
@@ -51,7 +55,7 @@
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
 | `[ ]` | 방 멤버 목록 조회 | 방 참여자 목록 + 역할(HOST/MEMBER) + 접속 상태 | room_members |
-| `[ ]` | 멤버 강퇴 | HOST가 특정 멤버 내보내기 | room_members |
+| `[ ]` | 멤버 추방 | HOST가 특정 멤버 추방 (HOST는 추방 불가) | room_members |
 | `[ ]` | 방 나가기 | 본인이 방에서 탈퇴 | room_members |
 | `[ ]` | 현재 접속 중인 유저 조회 | 실시간 접속 유저 목록 | Redis (connected_users) |
 | `[-]` | 방장 위임 | 권한 이전 | room_members |

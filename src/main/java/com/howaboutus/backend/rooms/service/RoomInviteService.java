@@ -29,6 +29,7 @@ public class RoomInviteService {
     private final UserRepository userRepository;
     private final InviteCodeGenerator inviteCodeGenerator;
 
+    // 초대 코드 재생성
     @Transactional
     public String regenerateInviteCode(UUID roomId, Long userId) {
         Room room = getActiveRoom(roomId);
@@ -38,6 +39,7 @@ public class RoomInviteService {
         return newCode;
     }
 
+    // 입장 요청
     @Transactional
     public JoinResult requestJoin(String inviteCode, Long userId) {
         Room room = roomRepository.findByInviteCodeAndDeletedAtIsNull(inviteCode)
@@ -59,6 +61,7 @@ public class RoomInviteService {
         return JoinResult.pending(room.getTitle());
     }
 
+    // 입장 요청 상태 조회
     public JoinStatusResult getJoinStatus(String inviteCode, Long userId) {
         Room room = roomRepository.findByInviteCodeAndDeletedAtIsNull(inviteCode)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
@@ -72,6 +75,7 @@ public class RoomInviteService {
         return JoinStatusResult.approved(room.getId(), room.getTitle(), member.getRole());
     }
 
+    // 대기 목록 조회
     public List<JoinRequestResult> getJoinRequests(UUID roomId, Long userId) {
         getActiveRoom(roomId);
         getHostMember(roomId, userId);
@@ -88,6 +92,7 @@ public class RoomInviteService {
                 .toList();
     }
 
+    // 입장 승인
     @Transactional
     public void approve(UUID roomId, Long requestId, Long userId) {
         getActiveRoom(roomId);
@@ -103,6 +108,7 @@ public class RoomInviteService {
         target.approve();
     }
 
+    // 입장 거절
     @Transactional
     public void reject(UUID roomId, Long requestId, Long userId) {
         getActiveRoom(roomId);
@@ -118,11 +124,14 @@ public class RoomInviteService {
         roomMemberRepository.delete(target);
     }
 
+    // 활성 방 조회
+    // 다른 메서드 호출전에, 해당 방이 존재하는지 확인하는 용도
     private Room getActiveRoom(UUID roomId) {
         return roomRepository.findByIdAndDeletedAtIsNull(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
     }
 
+    // 활성 멤버 검증
     private RoomMember getActiveMember(UUID roomId, Long userId) {
         RoomMember member = roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.NOT_ROOM_MEMBER));
@@ -132,6 +141,7 @@ public class RoomInviteService {
         return member;
     }
 
+    // 방장 검증
     private RoomMember getHostMember(UUID roomId, Long userId) {
         RoomMember member = getActiveMember(roomId, userId);
         if (member.getRole() != RoomRole.HOST) {

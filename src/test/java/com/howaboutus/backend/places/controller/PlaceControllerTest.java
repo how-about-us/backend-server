@@ -312,7 +312,7 @@ class PlaceControllerTest {
                 .willReturn("https://lh3.googleusercontent.com/photo.jpg");
 
         mockMvc.perform(get("/places/photos")
-                        .param("name", "places/ChIJ123/photos/abc"))
+                        .param("photoName", "places/ChIJ123/photos/abc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.photoUrl").value("https://lh3.googleusercontent.com/photo.jpg"));
 
@@ -323,7 +323,7 @@ class PlaceControllerTest {
     @DisplayName("유효하지 않은 형식의 name으로 요청하면 400을 반환한다")
     void returnsBadRequestWhenNameIsBlank() throws Exception {
         mockMvc.perform(get("/places/photos")
-                        .param("name", "   "))
+                        .param("photoName", "   "))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.message").value("유효하지 않은 photoName 형식입니다"));
@@ -337,7 +337,7 @@ class PlaceControllerTest {
         mockMvc.perform(get("/places/photos"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
-                .andExpect(jsonPath("$.message").value("필수 요청 파라미터가 누락되었습니다: name"));
+                .andExpect(jsonPath("$.message").value("필수 요청 파라미터가 누락되었습니다: photoName"));
 
         verifyNoInteractions(placePhotoService);
     }
@@ -349,7 +349,7 @@ class PlaceControllerTest {
                 .willThrow(new ExternalApiException(new RuntimeException("connection timeout")));
 
         mockMvc.perform(get("/places/photos")
-                        .param("name", "places/ChIJ123/photos/abc"))
+                        .param("photoName", "places/ChIJ123/photos/abc"))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.code").value("EXTERNAL_API_ERROR"))
                 .andExpect(jsonPath("$.message").value("외부 API 호출 중 오류가 발생했습니다"));
@@ -359,7 +359,7 @@ class PlaceControllerTest {
     @DisplayName("유효하지 않은 photoName 형식으로 요청하면 400을 반환한다")
     void returnsBadRequestWhenPhotoNameFormatIsInvalid() throws Exception {
         mockMvc.perform(get("/places/photos")
-                        .param("name", "../../admin"))
+                        .param("photoName", "../../admin"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.message").value("유효하지 않은 photoName 형식입니다"));

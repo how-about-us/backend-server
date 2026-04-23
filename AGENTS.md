@@ -82,7 +82,7 @@ src/main/resources/
 
 ## Gotchas
 
-- Spring Boot 4.0은 Jackson 3.x를 사용한다. Jackson 패키지는 `com.fasterxml.jackson`이 아닌 `tools.jackson`이다. (예: `tools.jackson.databind.ObjectMapper`)
+- Spring Boot 4.0은 Jackson 3.x를 사용한다. `ObjectMapper` 등 core 클래스는 `tools.jackson.databind`로 이동했지만, `@JsonFormat` 등 annotation은 기존 `com.fasterxml.jackson.annotation` 패키지를 그대로 사용한다.
 - PostgreSQL 이미지는 `postgis/postgis:17-3.5`를 사용한다.
 - 공간 데이터 엔티티에는 `hibernate-spatial` 타입을 사용한다.
 - dev 환경의 PostgreSQL 포트는 `5433`이다.

@@ -107,6 +107,7 @@ class RoomInviteServiceTest {
         JoinResult result = roomInviteService.requestJoin("aB3xK9mQ2w", STRANGER_ID);
 
         assertThat(result.status()).isEqualTo(JoinStatus.PENDING);
+        assertThat(result.roomId()).isEqualTo(ROOM_ID);
         assertThat(result.roomTitle()).isEqualTo("부산 여행");
     }
 
@@ -140,6 +141,7 @@ class RoomInviteServiceTest {
         JoinResult result = roomInviteService.requestJoin("aB3xK9mQ2w", 3L);
 
         assertThat(result.status()).isEqualTo(JoinStatus.PENDING);
+        assertThat(result.roomId()).isEqualTo(ROOM_ID);
         assertThat(result.roomTitle()).isEqualTo("부산 여행");
     }
 
@@ -164,25 +166,26 @@ class RoomInviteServiceTest {
         ReflectionTestUtils.setField(pendingUser, "id", 3L);
         RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
 
-        given(roomRepository.findByInviteCodeAndDeletedAtIsNull("aB3xK9mQ2w"))
+        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID))
                 .willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, 3L))
                 .willReturn(Optional.of(pendingMember));
 
-        JoinStatusResult result = roomInviteService.getJoinStatus("aB3xK9mQ2w", 3L);
+        JoinStatusResult result = roomInviteService.getJoinStatus(ROOM_ID, 3L);
 
         assertThat(result.status()).isEqualTo(JoinStatus.PENDING);
+        assertThat(result.roomId()).isEqualTo(ROOM_ID);
     }
 
     @Test
     @DisplayName("승인된 사용자가 상태 조회하면 approved를 반환한다")
     void getJoinStatusReturnsApproved() {
-        given(roomRepository.findByInviteCodeAndDeletedAtIsNull("aB3xK9mQ2w"))
+        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID))
                 .willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, MEMBER_ID))
                 .willReturn(Optional.of(regularMember));
 
-        JoinStatusResult result = roomInviteService.getJoinStatus("aB3xK9mQ2w", MEMBER_ID);
+        JoinStatusResult result = roomInviteService.getJoinStatus(ROOM_ID, MEMBER_ID);
 
         assertThat(result.status()).isEqualTo(JoinStatus.APPROVED);
         assertThat(result.roomId()).isEqualTo(ROOM_ID);
@@ -191,12 +194,12 @@ class RoomInviteServiceTest {
     @Test
     @DisplayName("거절된(레코드 없는) 사용자가 상태 조회하면 JOIN_REQUEST_NOT_FOUND 예외")
     void getJoinStatusThrowsWhenRejected() {
-        given(roomRepository.findByInviteCodeAndDeletedAtIsNull("aB3xK9mQ2w"))
+        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID))
                 .willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, STRANGER_ID))
                 .willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> roomInviteService.getJoinStatus("aB3xK9mQ2w", STRANGER_ID))
+        assertThatThrownBy(() -> roomInviteService.getJoinStatus(ROOM_ID, STRANGER_ID))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.JOIN_REQUEST_NOT_FOUND);

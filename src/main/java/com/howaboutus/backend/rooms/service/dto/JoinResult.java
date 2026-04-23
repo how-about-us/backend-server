@@ -13,7 +13,7 @@ public record JoinResult(
         return new JoinResult(JoinStatus.ALREADY_MEMBER, roomId, title, role);
     }
 
-    public static JoinResult pending(String title) {
-        return new JoinResult(JoinStatus.PENDING, null, title, null);
+    public static JoinResult pending(UUID roomId, String title) {
+        return new JoinResult(JoinStatus.PENDING, roomId, title, null);
     }
 }

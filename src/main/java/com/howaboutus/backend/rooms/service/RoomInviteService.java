@@ -51,7 +51,7 @@ public class RoomInviteService {
         if (existing.isPresent()) {
             RoomMember member = existing.get();
             if (member.getRole() == RoomRole.PENDING) {
-                return JoinResult.pending(room.getTitle());
+                return JoinResult.pending(room.getId(), room.getTitle());
             }
             return JoinResult.alreadyMember(room.getId(), room.getTitle(), member.getRole());
         }
@@ -64,23 +64,22 @@ public class RoomInviteService {
             RoomMember member = roomMemberRepository.findByRoom_IdAndUser_Id(room.getId(), userId)
                     .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
             if (member.getRole() == RoomRole.PENDING) {
-                return JoinResult.pending(room.getTitle());
+                return JoinResult.pending(room.getId(), room.getTitle());
             }
             return JoinResult.alreadyMember(room.getId(), room.getTitle(), member.getRole());
         }
-        return JoinResult.pending(room.getTitle());
+        return JoinResult.pending(room.getId(), room.getTitle());
     }
 
     // 입장 요청 상태 조회
-    public JoinStatusResult getJoinStatus(String inviteCode, Long userId) {
-        Room room = roomRepository.findByInviteCodeAndDeletedAtIsNull(inviteCode)
-                .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
+    public JoinStatusResult getJoinStatus(UUID roomId, Long userId) {
+        Room room = getActiveRoom(roomId);
 
-        RoomMember member = roomMemberRepository.findByRoom_IdAndUser_Id(room.getId(), userId)
+        RoomMember member = roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.JOIN_REQUEST_NOT_FOUND));
 
         if (member.getRole() == RoomRole.PENDING) {
-            return JoinStatusResult.pending(room.getTitle());
+            return JoinStatusResult.pending(room.getId(), room.getTitle());
         }
         return JoinStatusResult.approved(room.getId(), room.getTitle(), member.getRole());
     }

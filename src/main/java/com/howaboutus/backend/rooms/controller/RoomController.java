@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.NotBlank;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -116,13 +115,13 @@ public class RoomController {
         return ResponseEntity.status(status).body(JoinResponse.from(result));
     }
 
-    @Operation(summary = "입장 상태 조회", description = "초대 코드로 요청한 입장의 현재 상태를 확인합니다.")
-    @GetMapping("/join/status")
+    @Operation(summary = "입장 상태 조회", description = "입장 요청의 현재 상태를 확인합니다.")
+    @GetMapping("/{roomId}/join/status")
     public JoinStatusResponse getJoinStatus(
             @RequestHeader("X-User-Id") Long userId,
-            @RequestParam @NotBlank(message = "초대 코드는 필수입니다") String inviteCode
+            @PathVariable UUID roomId
     ) {
-        return JoinStatusResponse.from(roomInviteService.getJoinStatus(inviteCode, userId));
+        return JoinStatusResponse.from(roomInviteService.getJoinStatus(roomId, userId));
     }
 
     @Operation(summary = "대기 중인 입장 요청 목록", description = "방의 입장 대기 요청 목록을 조회합니다. HOST만 가능합니다.")

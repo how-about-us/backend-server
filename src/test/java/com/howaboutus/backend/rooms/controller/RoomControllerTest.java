@@ -199,7 +199,7 @@ class RoomControllerTest {
     @DisplayName("입장 요청 성공 시 202를 반환한다")
     void requestJoinReturns202() throws Exception {
         given(roomInviteService.requestJoin("aB3xK9mQ2w", USER_ID))
-                .willReturn(JoinResult.pending("부산 여행"));
+                .willReturn(JoinResult.pending(ROOM_ID, "부산 여행"));
 
         mockMvc.perform(post("/rooms/join")
                         .header("X-User-Id", USER_ID)
@@ -232,12 +232,11 @@ class RoomControllerTest {
     @Test
     @DisplayName("입장 상태 조회 시 200을 반환한다")
     void getJoinStatusReturns200() throws Exception {
-        given(roomInviteService.getJoinStatus("aB3xK9mQ2w", USER_ID))
-                .willReturn(JoinStatusResult.pending("부산 여행"));
+        given(roomInviteService.getJoinStatus(ROOM_ID, USER_ID))
+                .willReturn(JoinStatusResult.pending(ROOM_ID, "부산 여행"));
 
-        mockMvc.perform(get("/rooms/join/status")
-                        .header("X-User-Id", USER_ID)
-                        .param("inviteCode", "aB3xK9mQ2w"))
+        mockMvc.perform(get("/rooms/{roomId}/join/status", ROOM_ID)
+                        .header("X-User-Id", USER_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("pending"));
     }

@@ -13,7 +13,7 @@ public record JoinStatusResult(
         return new JoinStatusResult(JoinStatus.APPROVED, roomId, title, role);
     }
 
-    public static JoinStatusResult pending(String title) {
-        return new JoinStatusResult(JoinStatus.PENDING, null, title, null);
+    public static JoinStatusResult pending(UUID roomId, String title) {
+        return new JoinStatusResult(JoinStatus.PENDING, roomId, title, null);
     }
 }

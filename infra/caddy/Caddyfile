@@ -2,7 +2,8 @@
     encode zstd gzip
 
     @probes {
-        path_regexp ^\.(env|git|htaccess|htpasswd|bash_history|ssh)
+        path_regexp ^/\.(env|git|htaccess|htpasswd|bash_history|ssh)
+        path /wp-admin* /wp-login.php /phpinfo.php /phpmyadmin* /adminer* /console*
     }
     respond @probes 444
 

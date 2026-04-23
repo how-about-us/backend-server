@@ -39,6 +39,7 @@ Google OAuth 기반 사용자 정보
 | end_date | DATE | NULLABLE | 여행 종료일 |
 | invite_code | VARCHAR(50) | UNIQUE, NOT NULL | 초대 링크용 고정 코드 (방 생성 시 자동 발급) |
 | created_by | BIGINT | 사용자 ID 참조, NOT NULL | 방 생성자 (현재 구현은 users.id 값을 보관하지만 DB FK 제약은 두지 않음) |
+| deleted_at | TIMESTAMP | NULLABLE | Soft delete 시각 |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
 
@@ -213,7 +214,7 @@ Google OAuth 기반 사용자 정보
 5. **장소 상세 캐시:** 자유도가 높은 검색어는 캐시 히트율이 낮을 수 있으므로 검색 결과는 캐시하지 않는다. 대신 Google Place 상세 조회 응답은 `google_place_id` 기준으로 Redis에 3시간 TTL로 저장한다.
 6. **schedule_items.order_index:** 현재 구현에서는 항목 추가 순서를 저장하고, 삭제 후에는 0부터 연속된 값으로 재배치한다. D&D 기반 재정렬 API는 후속 범위다.
 7. **이동 정보 비동기 갱신:** travel_mode, distance_meters, duration_seconds는 "현재 장소 → 다음 장소" 구간 이동 정보 저장. 마지막 장소의 이동 정보는 NULL.
-8. **Soft Delete 미적용 (초안):** 방 삭제 시 CASCADE 또는 별도 정책은 추후 논의.
+8. **방 Soft Delete:** `rooms.deleted_at`으로 논리 삭제를 표현하고, active room 조회는 soft delete 된 방을 제외한다. 하위 데이터 정리 정책(CASCADE, 비동기 정리 등)은 추후 논의한다.
 
 ---
 

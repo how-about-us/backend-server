@@ -4,6 +4,8 @@ import java.time.LocalTime;
 
 public record ScheduleItemUpdateCommand(
         LocalTime startTime,
-        Integer durationMinutes
+        Integer durationMinutes,
+        boolean startTimeProvided,
+        boolean durationMinutesProvided
 ) {
 }

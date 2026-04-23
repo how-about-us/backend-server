@@ -88,6 +88,21 @@ class ScheduleControllerTest {
     }
 
     @Test
+    @DisplayName("date 형식이 잘못되면 400을 반환하고 서비스는 호출하지 않는다")
+    void returnsBadRequestWhenDateFormatIsInvalid() throws Exception {
+        mockMvc.perform(post("/rooms/{roomId}/schedules", ROOM_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"dayNumber": 2, "date": "2025-13-40"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("요청 본문 형식이 올바르지 않습니다"));
+
+        verifyNoInteractions(scheduleService);
+    }
+
+    @Test
     @DisplayName("일정 생성 성공 시 201을 반환한다")
     void createsScheduleSuccessfully() throws Exception {
         given(scheduleService.create(eq(ROOM_ID), any(ScheduleCreateCommand.class))).willReturn(SCHEDULE_RESULT);

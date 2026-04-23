@@ -160,6 +160,44 @@ class ScheduleItemControllerTest {
         then(scheduleItemService).should().update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), captor.capture());
         assertThat(captor.getValue().startTime()).isEqualTo(LocalTime.of(10, 30));
         assertThat(captor.getValue().durationMinutes()).isEqualTo(45);
+        assertThat(captor.getValue().startTimeProvided()).isTrue();
+        assertThat(captor.getValue().durationMinutesProvided()).isTrue();
+    }
+
+    @Test
+    @DisplayName("일정 항목 부분 수정 시 전달하지 않은 필드는 미전달로 유지한다")
+    void preservesMissingFieldsDuringScheduleItemPatch() throws Exception {
+        given(scheduleItemService.update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), any(ScheduleItemUpdateCommand.class)))
+                .willReturn(SCHEDULE_ITEM_RESULT);
+
+        mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"durationMinutes": 45}
+                                """))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<ScheduleItemUpdateCommand> captor = ArgumentCaptor.forClass(ScheduleItemUpdateCommand.class);
+        then(scheduleItemService).should().update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), captor.capture());
+        assertThat(captor.getValue().startTime()).isNull();
+        assertThat(captor.getValue().durationMinutes()).isEqualTo(45);
+        assertThat(captor.getValue().startTimeProvided()).isFalse();
+        assertThat(captor.getValue().durationMinutesProvided()).isTrue();
+    }
+
+    @Test
+    @DisplayName("잘못된 시간 형식이면 400을 반환하고 서비스는 호출하지 않는다")
+    void returnsBadRequestWhenStartTimeFormatIsInvalid() throws Exception {
+        mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"googlePlaceId": "place-1", "startTime": "25:99"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("요청 본문 형식이 올바르지 않습니다"));
+
+        verifyNoInteractions(scheduleItemService);
     }
 
     @Test

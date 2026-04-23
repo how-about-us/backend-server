@@ -13,6 +13,7 @@ import com.howaboutus.backend.schedules.service.dto.ScheduleItemResult;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemUpdateCommand;
 import java.util.List;
 import java.util.UUID;
+import java.time.LocalTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,7 +60,11 @@ public class ScheduleItemService {
         getScheduleForWrite(roomId, scheduleId);
         ScheduleItem scheduleItem = getScheduleItem(scheduleId, itemId);
 
-        scheduleItem.updateTimeInfo(command.startTime(), command.durationMinutes());
+        LocalTime startTime = command.startTimeProvided() ? command.startTime() : scheduleItem.getStartTime();
+        Integer durationMinutes = command.durationMinutesProvided()
+                ? command.durationMinutes()
+                : scheduleItem.getDurationMinutes();
+        scheduleItem.updateTimeInfo(startTime, durationMinutes);
         return ScheduleItemResult.from(scheduleItemRepository.saveAndFlush(scheduleItem));
     }
 
@@ -90,7 +95,7 @@ public class ScheduleItemService {
     }
 
     private Room getRoom(UUID roomId) {
-        return roomRepository.findById(roomId)
+        return roomRepository.findByIdAndDeletedAtIsNull(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
     }
 

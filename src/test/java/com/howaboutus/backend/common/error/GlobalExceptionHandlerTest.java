@@ -8,6 +8,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpInputMessage;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -48,5 +50,17 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode().value()).isEqualTo(400);
         assertThat(response.getBody()).isEqualTo(ApiErrorResponse.of(HttpStatus.BAD_REQUEST, "googlePlaceId는 공백일 수 없습니다"));
+    }
+
+    @Test
+    @DisplayName("HttpMessageNotReadableException 처리 시 400 응답을 반환한다")
+    void handleHttpMessageNotReadableReturnsBadRequestResponse() {
+        HttpInputMessage httpInputMessage = Mockito.mock(HttpInputMessage.class);
+        HttpMessageNotReadableException exception = new HttpMessageNotReadableException("invalid body", httpInputMessage);
+
+        var response = globalExceptionHandler.handleHttpMessageNotReadableException(exception);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody()).isEqualTo(ApiErrorResponse.of(HttpStatus.BAD_REQUEST, "요청 본문 형식이 올바르지 않습니다"));
     }
 }

@@ -60,7 +60,7 @@ public class ScheduleService {
     }
 
     private Room getRoom(UUID roomId) {
-        return roomRepository.findById(roomId)
+        return roomRepository.findByIdAndDeletedAtIsNull(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
     }
 

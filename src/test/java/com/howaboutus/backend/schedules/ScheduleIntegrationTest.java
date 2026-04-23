@@ -17,6 +17,7 @@ import com.howaboutus.backend.schedules.repository.ScheduleRepository;
 import com.howaboutus.backend.support.BaseIntegrationTest;
 import com.jayway.jsonpath.JsonPath;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -142,11 +143,15 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
                         firstItem.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"startTime": "10:00", "durationMinutes": 120}
+                                {"durationMinutes": 120}
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.startTime").value("10:00"))
+                .andExpect(jsonPath("$.startTime").value("09:00"))
                 .andExpect(jsonPath("$.durationMinutes").value(120));
+
+        ScheduleItem updatedFirstItem = scheduleItemRepository.findById(firstItem.getId()).orElseThrow();
+        assertThat(updatedFirstItem.getStartTime()).isEqualTo(LocalTime.of(9, 0));
+        assertThat(updatedFirstItem.getDurationMinutes()).isEqualTo(120);
 
         mockMvc.perform(delete("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", room.getId(), schedule.getId(),
                         firstItem.getId()))
@@ -156,5 +161,31 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].orderIndex").value(0))
                 .andExpect(jsonPath("$[0].googlePlaceId").value("place-2"));
+    }
+
+    @Test
+    @DisplayName("soft delete 된 방에는 일정 API로 접근할 수 없다")
+    void scheduleEndpointsRejectSoftDeletedRoom() throws Exception {
+        Room room = roomRepository.save(Room.create(
+                "부산 여행",
+                "부산",
+                LocalDate.of(2026, 6, 1),
+                LocalDate.of(2026, 6, 2),
+                "BUSAN-DELETED-ROOM",
+                1L
+        ));
+        room.delete();
+        roomRepository.saveAndFlush(room);
+
+        mockMvc.perform(post("/rooms/{roomId}/schedules", room.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "dayNumber": 1,
+                                  "date": "2026-06-01"
+                                }
+                                """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ROOM_NOT_FOUND"));
     }
 }

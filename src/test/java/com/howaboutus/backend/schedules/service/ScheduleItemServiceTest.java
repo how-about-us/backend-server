@@ -70,7 +70,7 @@ class ScheduleItemServiceTest {
         ReflectionTestUtils.setField(savedItem, "id", 200L);
         ReflectionTestUtils.setField(savedItem, "createdAt", createdAt);
 
-        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.of(schedule));
         given(scheduleItemRepository.findMaxOrderIndexBySchedule_Id(100L)).willReturn(Optional.of(2));
         given(scheduleItemRepository.saveAndFlush(any(ScheduleItem.class))).willReturn(savedItem);
@@ -104,7 +104,7 @@ class ScheduleItemServiceTest {
         ScheduleItem second = createScheduleItem(schedule, 11L, "place-2", 1);
         ScheduleItem third = createScheduleItem(schedule, 12L, "place-3", 2);
 
-        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.of(schedule));
         given(scheduleItemRepository.findByIdAndSchedule_Id(11L, 100L)).willReturn(Optional.of(second));
         given(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(100L))
@@ -120,8 +120,8 @@ class ScheduleItemServiceTest {
     }
 
     @Test
-    @DisplayName("일정 항목 수정 시 시간 정보를 덮어쓴 결과를 반환한다")
-    void updateOverwritesTimeInfo() {
+    @DisplayName("일정 항목 수정 시 전달하지 않은 필드는 기존 값을 유지한다")
+    void updatePreservesExistingFieldsWhenNotProvided() {
         UUID roomId = UUID.randomUUID();
         Room room = createRoom(roomId);
         Schedule schedule = createSchedule(room, 100L);
@@ -137,7 +137,7 @@ class ScheduleItemServiceTest {
         ReflectionTestUtils.setField(item, "id", 10L);
         ReflectionTestUtils.setField(item, "createdAt", createdAt);
 
-        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.of(schedule));
         given(scheduleItemRepository.findByIdAndSchedule_Id(10L, 100L)).willReturn(Optional.of(item));
         given(scheduleItemRepository.saveAndFlush(item)).willReturn(item);
@@ -146,15 +146,49 @@ class ScheduleItemServiceTest {
                 roomId,
                 100L,
                 10L,
-                new ScheduleItemUpdateCommand(LocalTime.of(11, 30), 90)
+                new ScheduleItemUpdateCommand(null, 90, false, true)
         );
 
-        assertThat(result.startTime()).isEqualTo(LocalTime.of(11, 30));
+        assertThat(result.startTime()).isEqualTo(LocalTime.of(9, 0));
         assertThat(result.durationMinutes()).isEqualTo(90);
         verify(scheduleRepository).findByIdAndRoom_IdWithOptimisticLock(100L, roomId);
         verify(scheduleRepository, never()).findByIdAndRoom_Id(100L, roomId);
-        assertThat(item.getStartTime()).isEqualTo(LocalTime.of(11, 30));
+        assertThat(item.getStartTime()).isEqualTo(LocalTime.of(9, 0));
         assertThat(item.getDurationMinutes()).isEqualTo(90);
+    }
+
+    @Test
+    @DisplayName("일정 항목 수정 시 null로 명시한 필드는 제거한다")
+    void updateClearsFieldWhenExplicitNullProvided() {
+        UUID roomId = UUID.randomUUID();
+        Room room = createRoom(roomId);
+        Schedule schedule = createSchedule(room, 100L);
+        ScheduleItem item = ScheduleItem.create(
+                schedule,
+                "place-1",
+                LocalTime.of(9, 0),
+                120,
+                0
+        );
+
+        ReflectionTestUtils.setField(item, "id", 10L);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.of(schedule));
+        given(scheduleItemRepository.findByIdAndSchedule_Id(10L, 100L)).willReturn(Optional.of(item));
+        given(scheduleItemRepository.saveAndFlush(item)).willReturn(item);
+
+        ScheduleItemResult result = scheduleItemService.update(
+                roomId,
+                100L,
+                10L,
+                new ScheduleItemUpdateCommand(null, 120, true, false)
+        );
+
+        assertThat(result.startTime()).isNull();
+        assertThat(result.durationMinutes()).isEqualTo(120);
+        assertThat(item.getStartTime()).isNull();
+        assertThat(item.getDurationMinutes()).isEqualTo(120);
     }
 
     @Test
@@ -171,7 +205,7 @@ class ScheduleItemServiceTest {
         ReflectionTestUtils.setField(first, "createdAt", firstCreatedAt);
         ReflectionTestUtils.setField(second, "createdAt", secondCreatedAt);
 
-        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findByIdAndRoom_Id(100L, roomId)).willReturn(Optional.of(schedule));
         given(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(100L))
                 .willReturn(List.of(first, second));
@@ -195,7 +229,7 @@ class ScheduleItemServiceTest {
     void getItemsThrowsWhenRoomMissing() {
         UUID roomId = UUID.randomUUID();
 
-        given(roomRepository.findById(roomId)).willReturn(Optional.empty());
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> scheduleItemService.getItems(roomId, 100L))
                 .isInstanceOf(CustomException.class)
@@ -209,14 +243,14 @@ class ScheduleItemServiceTest {
         UUID roomId = UUID.randomUUID();
         Room room = createRoom(roomId);
 
-        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> scheduleItemService.update(
                 roomId,
                 100L,
                 10L,
-                new ScheduleItemUpdateCommand(LocalTime.of(11, 30), 90)
+                new ScheduleItemUpdateCommand(LocalTime.of(11, 30), 90, true, true)
         ))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
@@ -230,7 +264,7 @@ class ScheduleItemServiceTest {
         Room room = createRoom(roomId);
         Schedule schedule = createSchedule(room, 100L);
 
-        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.of(schedule));
         given(scheduleItemRepository.findByIdAndSchedule_Id(10L, 100L)).willReturn(Optional.empty());
 
@@ -238,6 +272,23 @@ class ScheduleItemServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_ITEM_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("soft delete 된 방이면 일정 항목 생성 시 ROOM_NOT_FOUND 예외를 던진다")
+    void createThrowsWhenRoomDeleted() {
+        UUID roomId = UUID.randomUUID();
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> scheduleItemService.create(
+                roomId,
+                100L,
+                new ScheduleItemCreateCommand("place-1", LocalTime.of(9, 0), 120)
+        ))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
     }
 
     private Room createRoom(UUID roomId) {

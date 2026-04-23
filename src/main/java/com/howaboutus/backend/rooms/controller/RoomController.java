@@ -18,11 +18,13 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.NotBlank;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -36,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 // TODO: X-User-Id 헤더 → @AuthenticationPrincipal로 교체 (JWT 필터 SecurityFilterChain 연결 후)
 @Tag(name = "Rooms", description = "여행 방 API")
+@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/rooms")
@@ -117,7 +120,7 @@ public class RoomController {
     @GetMapping("/join/status")
     public JoinStatusResponse getJoinStatus(
             @RequestHeader("X-User-Id") Long userId,
-            @RequestParam String inviteCode
+            @RequestParam @NotBlank(message = "초대 코드는 필수입니다") String inviteCode
     ) {
         return JoinStatusResponse.from(roomInviteService.getJoinStatus(inviteCode, userId));
     }

@@ -15,6 +15,7 @@ import com.howaboutus.backend.user.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,7 +58,16 @@ public class RoomInviteService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        roomMemberRepository.save(RoomMember.of(room, user, RoomRole.PENDING));
+        try {
+            roomMemberRepository.saveAndFlush(RoomMember.of(room, user, RoomRole.PENDING));
+        } catch (DataIntegrityViolationException e) {
+            RoomMember member = roomMemberRepository.findByRoom_IdAndUser_Id(room.getId(), userId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
+            if (member.getRole() == RoomRole.PENDING) {
+                return JoinResult.pending(room.getTitle());
+            }
+            return JoinResult.alreadyMember(room.getId(), room.getTitle(), member.getRole());
+        }
         return JoinResult.pending(room.getTitle());
     }
 

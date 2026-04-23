@@ -15,11 +15,13 @@ import com.howaboutus.backend.user.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.dao.DataIntegrityViolationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -61,12 +63,8 @@ public class RoomInviteService {
         try {
             roomMemberRepository.saveAndFlush(RoomMember.of(room, user, RoomRole.PENDING));
         } catch (DataIntegrityViolationException e) {
-            RoomMember member = roomMemberRepository.findByRoom_IdAndUser_Id(room.getId(), userId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
-            if (member.getRole() == RoomRole.PENDING) {
-                return JoinResult.pending(room.getId(), room.getTitle());
-            }
-            return JoinResult.alreadyMember(room.getId(), room.getTitle(), member.getRole());
+            log.warn("입장 요청 동시 요청 감지: roomId={}, userId={}", room.getId(), userId, e);
+            return JoinResult.pending(room.getId(), room.getTitle());
         }
         return JoinResult.pending(room.getId(), room.getTitle());
     }

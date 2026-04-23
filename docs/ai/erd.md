@@ -56,7 +56,7 @@ Google OAuth 기반 사용자 정보
 | id | BIGINT | PK, AUTO_INCREMENT | |
 | room_id | UUID | FK → rooms.id, NOT NULL | |
 | user_id | BIGINT | FK → users.id, NOT NULL | |
-| role | VARCHAR(20) | NOT NULL, DEFAULT 'MEMBER' | ADMIN / MEMBER |
+| role | VARCHAR(20) | NOT NULL | HOST / MEMBER / PENDING (DEFAULT 없이 명시적 지정) |
 | joined_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 참여 일시 |
 | last_read_message_id | BIGINT | NULLABLE | 마지막으로 읽은 메시지 ID |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
@@ -214,7 +214,7 @@ Google OAuth 기반 사용자 정보
 5. **장소 상세 캐시:** 자유도가 높은 검색어는 캐시 히트율이 낮을 수 있으므로 검색 결과는 캐시하지 않는다. 대신 Google Place 상세 조회 응답은 `google_place_id` 기준으로 Redis에 3시간 TTL로 저장한다.
 6. **schedule_items.order_index:** 현재 구현에서는 항목 추가 순서를 저장하고, 삭제 후에는 0부터 연속된 값으로 재배치한다. D&D 기반 재정렬 API는 후속 범위다.
 7. **이동 정보 비동기 갱신:** travel_mode, distance_meters, duration_seconds는 "현재 장소 → 다음 장소" 구간 이동 정보 저장. 마지막 장소의 이동 정보는 NULL.
-8. **방 Soft Delete:** `rooms.deleted_at`으로 논리 삭제를 표현하고, active room 조회는 soft delete 된 방을 제외한다. 하위 데이터 정리 정책(CASCADE, 비동기 정리 등)은 추후 논의한다.
+8. **방 Soft Delete:** `rooms.deleted_at` 컬럼으로 방 삭제를 논리 삭제로 표현하고, active room 조회는 soft delete 된 방을 제외한다. 하위 데이터(room_members 등) 정리 정책(CASCADE, 비동기 정리 등)은 추후 논의한다.
 
 ---
 

@@ -13,8 +13,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.howaboutus.backend.auth.filter.JwtAuthenticationFilter;
+import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.common.config.SecurityConfig;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
+import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.schedules.service.ScheduleItemService;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemCreateCommand;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemResult;
@@ -34,11 +37,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(ScheduleItemController.class)
-@Import({SecurityConfig.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class, GlobalExceptionHandler.class})
 class ScheduleItemControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private JwtProvider jwtProvider;
 
     @MockitoBean
     private ScheduleItemService scheduleItemService;

@@ -5,6 +5,7 @@ import com.howaboutus.backend.common.error.ExternalApiException;
 import com.howaboutus.backend.common.integration.google.dto.GooglePlacePhotoResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -22,16 +23,16 @@ public class GooglePlacePhotoClient {
         try {
             GooglePlacePhotoResponse response = googlePlacesRestClient.get()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/v1/" + photoName + "/media")
+                            .path("/v1/{photoName}/media")
                             .queryParam("maxWidthPx", MAX_WIDTH_PX)
                             .queryParam("maxHeightPx", MAX_HEIGHT_PX)
                             .queryParam("skipHttpRedirect", true)
-                            .build())
+                            .build(photoName))
                     .header("X-Goog-Api-Key", properties.apiKey())
                     .retrieve()
                     .body(GooglePlacePhotoResponse.class);
-            if (response == null || response.photoUri() == null) {
-                throw new ExternalApiException(new RuntimeException("Google Photo API returned no photoUri"));
+            if (response == null || !StringUtils.hasText(response.photoUri())) {
+                throw new ExternalApiException(new RuntimeException("Google Photo API returned no photoUri for: " + photoName));
             }
             return response.photoUri();
         } catch (RestClientException exception) {

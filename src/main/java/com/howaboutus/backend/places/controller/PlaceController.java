@@ -85,7 +85,7 @@ public class PlaceController {
             @Parameter(description = "Google 장소 사진 리소스 이름", example = "places/ChIJ123/photos/abc")
             @RequestParam
             @Pattern(regexp = "^places/[^/]+/photos/[^/]+$", message = "유효하지 않은 photoName 형식입니다")
-            String name) {
-        return new PlacePhotoResponse(placePhotoService.getPhotoUrl(name));
+            String photoName) {
+        return new PlacePhotoResponse(placePhotoService.getPhotoUrl(photoName));
     }
 }

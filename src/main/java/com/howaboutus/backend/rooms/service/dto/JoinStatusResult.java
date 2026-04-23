@@ -1,0 +1,19 @@
+package com.howaboutus.backend.rooms.service.dto;
+
+import com.howaboutus.backend.rooms.entity.RoomRole;
+import java.util.UUID;
+
+public record JoinStatusResult(
+        JoinStatus status,
+        UUID roomId,
+        String roomTitle,
+        RoomRole role
+) {
+    public static JoinStatusResult approved(UUID roomId, String title, RoomRole role) {
+        return new JoinStatusResult(JoinStatus.APPROVED, roomId, title, role);
+    }
+
+    public static JoinStatusResult pending(UUID roomId, String title) {
+        return new JoinStatusResult(JoinStatus.PENDING, roomId, title, null);
+    }
+}

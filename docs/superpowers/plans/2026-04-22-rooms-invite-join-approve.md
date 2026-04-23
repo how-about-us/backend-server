@@ -252,6 +252,10 @@ public void reject(UUID roomId, Long requestId, Long userId) {
     RoomMember target = roomMemberRepository.findByIdAndRoom_Id(requestId, roomId)
             .orElseThrow(() -> new CustomException(ErrorCode.JOIN_REQUEST_NOT_FOUND));
 
+    if (target.getRole() != RoomRole.PENDING) {
+        throw new CustomException(ErrorCode.JOIN_REQUEST_NOT_FOUND);
+    }
+
     roomMemberRepository.delete(target);
 }
 ```

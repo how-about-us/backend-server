@@ -1,10 +1,18 @@
 package com.howaboutus.backend.rooms.controller;
 
 import com.howaboutus.backend.rooms.controller.dto.CreateRoomRequest;
+import com.howaboutus.backend.rooms.controller.dto.InviteCodeResponse;
+import com.howaboutus.backend.rooms.controller.dto.JoinRequest;
+import com.howaboutus.backend.rooms.controller.dto.JoinRequestListResponse;
+import com.howaboutus.backend.rooms.controller.dto.JoinResponse;
+import com.howaboutus.backend.rooms.controller.dto.JoinStatusResponse;
 import com.howaboutus.backend.rooms.controller.dto.RoomDetailResponse;
 import com.howaboutus.backend.rooms.controller.dto.RoomListResponse;
 import com.howaboutus.backend.rooms.controller.dto.UpdateRoomRequest;
+import com.howaboutus.backend.rooms.service.RoomInviteService;
 import com.howaboutus.backend.rooms.service.RoomService;
+import com.howaboutus.backend.rooms.service.dto.JoinResult;
+import com.howaboutus.backend.rooms.service.dto.JoinStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +23,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -28,12 +37,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 // TODO: X-User-Id 헤더 → @AuthenticationPrincipal로 교체 (JWT 필터 SecurityFilterChain 연결 후)
 @Tag(name = "Rooms", description = "여행 방 API")
+@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/rooms")
 public class RoomController {
 
     private final RoomService roomService;
+    private final RoomInviteService roomInviteService;
 
     @Operation(summary = "방 생성", description = "새 여행 방을 생성합니다. 생성자는 자동으로 HOST가 됩니다.")
     @PostMapping
@@ -82,5 +93,65 @@ public class RoomController {
     ) {
         roomService.delete(roomId, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "초대 코드 재발급", description = "새 초대 코드를 발급합니다. HOST만 가능합니다.")
+    @PostMapping("/{roomId}/invite-code")
+    public InviteCodeResponse regenerateInviteCode(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable UUID roomId
+    ) {
+        return new InviteCodeResponse(roomInviteService.regenerateInviteCode(roomId, userId));
+    }
+
+    @Operation(summary = "초대 코드로 입장 요청", description = "초대 코드를 사용해 방 입장을 요청합니다.")
+    @PostMapping("/join")
+    public ResponseEntity<JoinResponse> requestJoin(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody @Valid JoinRequest request
+    ) {
+        JoinResult result = roomInviteService.requestJoin(request.inviteCode(), userId);
+        HttpStatus status = result.status() == JoinStatus.ALREADY_MEMBER ? HttpStatus.OK : HttpStatus.ACCEPTED;
+        return ResponseEntity.status(status).body(JoinResponse.from(result));
+    }
+
+    @Operation(summary = "입장 상태 조회", description = "입장 요청의 현재 상태를 확인합니다.")
+    @GetMapping("/{roomId}/join/status")
+    public JoinStatusResponse getJoinStatus(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable UUID roomId
+    ) {
+        return JoinStatusResponse.from(roomInviteService.getJoinStatus(roomId, userId));
+    }
+
+    @Operation(summary = "대기 중인 입장 요청 목록", description = "방의 입장 대기 요청 목록을 조회합니다. HOST만 가능합니다.")
+    @GetMapping("/{roomId}/join-requests")
+    public JoinRequestListResponse getJoinRequests(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable UUID roomId
+    ) {
+        return JoinRequestListResponse.from(roomInviteService.getJoinRequests(roomId, userId));
+    }
+
+    @Operation(summary = "입장 승인", description = "대기 중인 입장 요청을 승인합니다. HOST만 가능합니다.")
+    @PostMapping("/{roomId}/join-requests/{requestId}/approve")
+    public ResponseEntity<Void> approveJoinRequest(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable UUID roomId,
+            @PathVariable Long requestId
+    ) {
+        roomInviteService.approve(roomId, requestId, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "입장 거절", description = "대기 중인 입장 요청을 거절합니다. HOST만 가능합니다.")
+    @PostMapping("/{roomId}/join-requests/{requestId}/reject")
+    public ResponseEntity<Void> rejectJoinRequest(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable UUID roomId,
+            @PathVariable Long requestId
+    ) {
+        roomInviteService.reject(roomId, requestId, userId);
+        return ResponseEntity.ok().build();
     }
 }

@@ -76,8 +76,7 @@ public void kickMember(UUID roomId, Long memberId, Long userId) {
     getActiveRoom(roomId);
     getHostMember(roomId, userId);
 
-    RoomMember target = roomMemberRepository.findById(memberId)
-            .filter(m -> m.getRoom().getId().equals(roomId))
+    RoomMember target = roomMemberRepository.findByIdAndRoom_Id(memberId, roomId)
             .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
     if (target.getRole() == RoomRole.HOST) {
@@ -101,7 +100,7 @@ void kickMemberDeletesMember() {
     given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
     given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
             .willReturn(Optional.of(hostMember));
-    given(roomMemberRepository.findById(10L)).willReturn(Optional.of(regularMember));
+    given(roomMemberRepository.findByIdAndRoom_Id(10L, ROOM_ID)).willReturn(Optional.of(regularMember));
 
     roomInviteService.kickMember(ROOM_ID, 10L, HOST_ID);
 
@@ -120,7 +119,7 @@ void kickMemberThrowsWhenTargetIsHost() {
     given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
     given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
             .willReturn(Optional.of(hostMember));
-    given(roomMemberRepository.findById(1L)).willReturn(Optional.of(hostMember));
+    given(roomMemberRepository.findByIdAndRoom_Id(1L, ROOM_ID)).willReturn(Optional.of(hostMember));
 
     assertThatThrownBy(() -> roomInviteService.kickMember(ROOM_ID, 1L, HOST_ID))
             .isInstanceOf(CustomException.class)
@@ -138,7 +137,7 @@ void kickMemberThrowsWhenMemberNotFound() {
     given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
     given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
             .willReturn(Optional.of(hostMember));
-    given(roomMemberRepository.findById(999L)).willReturn(Optional.empty());
+    given(roomMemberRepository.findByIdAndRoom_Id(999L, ROOM_ID)).willReturn(Optional.empty());
 
     assertThatThrownBy(() -> roomInviteService.kickMember(ROOM_ID, 999L, HOST_ID))
             .isInstanceOf(CustomException.class)

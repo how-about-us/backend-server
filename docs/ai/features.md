@@ -41,12 +41,12 @@
 | `[x]` | 방 상세 조회 | 방 메타정보 (제목, 여행지, 날짜, 멤버 수 등) | rooms |
 | `[x]` | 방 수정 | 방 제목, 여행지, 날짜 수정 (HOST만) | rooms |
 | `[x]` | 방 삭제 | 방 삭제 (HOST만, soft delete) | rooms |
-| `[ ]` | 초대 코드 재발급 | 기존 invite_code 폐기 후 신규 발급 (HOST만) | rooms |
-| `[ ]` | 초대 코드로 입장 요청 | invite_code로 PENDING 멤버 등록. 이미 멤버면 멱등 처리(200), 이미 PENDING이면 대기 상태 반환(202) | rooms, room_members |
-| `[ ]` | 입장 상태 조회 | 입장 요청자가 자신의 승인 상태 확인 (pending / approved / 404=거절) | room_members |
-| `[ ]` | 대기 입장 요청 목록 조회 | HOST가 PENDING 상태 멤버 목록 조회 | room_members |
-| `[ ]` | 입장 승인 | HOST가 PENDING → MEMBER로 변경 | room_members |
-| `[ ]` | 입장 거절 | HOST가 PENDING 멤버 레코드 삭제 | room_members |
+| `[x]` | 초대 코드 재발급 | 기존 invite_code 폐기 후 신규 발급 (HOST만) | rooms |
+| `[x]` | 초대 코드로 입장 요청 | invite_code로 PENDING 멤버 등록. 이미 멤버면 멱등 처리(200), 이미 PENDING이면 대기 상태 반환(202) | rooms, room_members |
+| `[x]` | 입장 상태 조회 | 입장 요청자가 자신의 승인 상태 확인 (pending / approved / 404=거절) | room_members |
+| `[x]` | 대기 입장 요청 목록 조회 | HOST가 PENDING 상태 멤버 목록 조회 | room_members |
+| `[x]` | 입장 승인 | HOST가 PENDING → MEMBER로 변경 | room_members |
+| `[x]` | 입장 거절 | HOST가 PENDING 멤버 레코드 삭제 | room_members |
 
 ---
 

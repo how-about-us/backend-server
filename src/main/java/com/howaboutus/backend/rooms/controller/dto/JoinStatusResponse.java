@@ -11,10 +11,14 @@ public record JoinStatusResponse(
         String role
 ) {
     public static JoinStatusResponse from(JoinStatusResult result) {
+        String roleName = null;
+        if (result.role() != null) {
+            roleName = result.role().name();
+        }
         return new JoinStatusResponse(
                 result.status().name().toLowerCase(),
                 result.roomId(),
                 result.roomTitle(),
-                result.role() != null ? result.role().name() : null);
+                roleName);
     }
 }

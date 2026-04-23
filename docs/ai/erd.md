@@ -159,8 +159,8 @@ Google OAuth 기반 사용자 정보
 | google_place_id | VARCHAR(300) | NOT NULL | Google Place ID |
 | start_time | TIME | NULLABLE | 시작 시각 (예: 09:00) |
 | duration_minutes | INT | NULLABLE | 체류 시간(분) |
-| order_index | INT | NOT NULL | 정렬 순서 (D&D용) |
-| memo | TEXT | NULLABLE | 메모 |
+| order_index | INT | NOT NULL | 정렬 순서 (목록 조회 시 0부터 연속 유지) |
+| memo | TEXT | NULLABLE | 방문 메모 (1차 구현 범위 제외, 후속 단계 예정) |
 | travel_mode | VARCHAR(20) | NULLABLE | 다음 장소까지 이동 수단 (DRIVING / WALKING / TRANSIT / BICYCLING) |
 | distance_meters | INT | NULLABLE | 다음 장소까지 이동 거리 (미터) |
 | duration_seconds | INT | NULLABLE | 다음 장소까지 예상 이동 시간 (초) |
@@ -169,7 +169,9 @@ Google OAuth 기반 사용자 정보
 
 **인덱스:** (schedule_id, order_index), (google_place_id)
 
-> **이동 정보 갱신 흐름:** 장소 추가/삭제/순서 변경 시 HTTP 요청으로 order_index를 DB에 반영한 뒤, 변경 사항을 WebSocket으로 브로드캐스트합니다. 이후 @Async로 Routes API(Compute Routes)를 호출하여 영향받는 구간의 distance_meters, duration_seconds를 갱신하고, 결과를 다시 WebSocket으로 브로드캐스트합니다. 마지막 장소는 다음 장소가 없으므로 이동 정보가 NULL입니다.
+> **현재 구현 범위:** 1차 구현에서는 장소 추가/조회/삭제와 시간 설정만 제공합니다. 항목 삭제 시 남은 `order_index`는 0부터 연속되도록 재정렬합니다.
+>
+> **이동 정보 갱신 흐름(후속 범위):** 장소 추가/삭제/순서 변경 시 HTTP 요청으로 order_index를 DB에 반영한 뒤, 변경 사항을 WebSocket으로 브로드캐스트합니다. 이후 @Async로 Routes API(Compute Routes)를 호출하여 영향받는 구간의 distance_meters, duration_seconds를 갱신하고, 결과를 다시 WebSocket으로 브로드캐스트합니다. 마지막 장소는 다음 장소가 없으므로 이동 정보가 NULL입니다.
 
 ---
 
@@ -209,7 +211,7 @@ Google OAuth 기반 사용자 정보
 3. **message.id auto-increment:** WebSocket 재접속 시 마지막 수신 ID 기반 미수신 메시지 조회 패턴에 최적화.
 4. **room.id UUID:** 초대 URL에 노출되므로 추측 불가능한 UUID 사용.
 5. **장소 상세 캐시:** 자유도가 높은 검색어는 캐시 히트율이 낮을 수 있으므로 검색 결과는 캐시하지 않는다. 대신 Google Place 상세 조회 응답은 `google_place_id` 기준으로 Redis에 3시간 TTL로 저장한다.
-6. **schedule_items.order_index:** D&D UI를 위한 정렬 인덱스. 재정렬 시 해당 컬럼만 업데이트.
+6. **schedule_items.order_index:** 현재 구현에서는 항목 추가 순서를 저장하고, 삭제 후에는 0부터 연속된 값으로 재배치한다. D&D 기반 재정렬 API는 후속 범위다.
 7. **이동 정보 비동기 갱신:** travel_mode, distance_meters, duration_seconds는 "현재 장소 → 다음 장소" 구간 이동 정보 저장. 마지막 장소의 이동 정보는 NULL.
 8. **Soft Delete 미적용 (초안):** 방 삭제 시 CASCADE 또는 별도 정책은 추후 논의.
 

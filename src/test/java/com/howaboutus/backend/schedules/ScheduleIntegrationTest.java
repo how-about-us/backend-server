@@ -3,6 +3,7 @@ package com.howaboutus.backend.schedules;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -10,6 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.schedules.entity.Schedule;
+import com.howaboutus.backend.schedules.entity.ScheduleItem;
+import com.howaboutus.backend.schedules.repository.ScheduleItemRepository;
 import com.howaboutus.backend.schedules.repository.ScheduleRepository;
 import com.howaboutus.backend.support.BaseIntegrationTest;
 import com.jayway.jsonpath.JsonPath;
@@ -36,8 +39,12 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private ScheduleRepository scheduleRepository;
 
+    @Autowired
+    private ScheduleItemRepository scheduleItemRepository;
+
     @AfterEach
     void tearDown() {
+        scheduleItemRepository.deleteAll();
         scheduleRepository.deleteAll();
         roomRepository.deleteAll();
     }
@@ -97,5 +104,57 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isNoContent());
 
         assertThat(scheduleRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("일정 항목 생성 후 목록 조회, 시간 수정, 삭제 시 순서 재정렬이 동작한다")
+    void scheduleItemFlowWorksEndToEnd() throws Exception {
+        Room room = roomRepository.save(Room.create(
+                "도쿄 여행",
+                "도쿄",
+                LocalDate.of(2026, 5, 1),
+                LocalDate.of(2026, 5, 3),
+                "TOKYO-ITEM-INTEGRATION",
+                1L
+        ));
+
+        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.create(room, 1, LocalDate.of(2026, 5, 1)));
+
+        mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", room.getId(), schedule.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"googlePlaceId": "place-1", "startTime": "09:00", "durationMinutes": 90}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.orderIndex").value(0));
+
+        mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", room.getId(), schedule.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"googlePlaceId": "place-2"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.orderIndex").value(1));
+
+        ScheduleItem firstItem = scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(schedule.getId()).getFirst();
+
+        mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", room.getId(), schedule.getId(),
+                        firstItem.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"startTime": "10:00", "durationMinutes": 120}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.startTime").value("10:00"))
+                .andExpect(jsonPath("$.durationMinutes").value(120));
+
+        mockMvc.perform(delete("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", room.getId(), schedule.getId(),
+                        firstItem.getId()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items", room.getId(), schedule.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].orderIndex").value(0))
+                .andExpect(jsonPath("$[0].googlePlaceId").value("place-2"));
     }
 }

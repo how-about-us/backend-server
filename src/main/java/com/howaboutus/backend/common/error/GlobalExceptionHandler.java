@@ -2,6 +2,7 @@ package com.howaboutus.backend.common.error;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.util.Comparator;
 import org.springframework.validation.FieldError;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -71,11 +72,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
+                .min(Comparator.comparingInt(this::validationMessagePriority))
                 .map(FieldError::getDefaultMessage)
-                .findFirst()
                 .orElse("요청 본문이 유효하지 않습니다");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiErrorResponse.of(HttpStatus.BAD_REQUEST, message));
+    }
+
+    private int validationMessagePriority(FieldError fieldError) {
+        String code = fieldError.getCode();
+        if ("NotBlank".equals(code) || "NotEmpty".equals(code)) {
+            return 0;
+        }
+        if ("NotNull".equals(code)) {
+            return 1;
+        }
+        return 2;
     }
 
     @ExceptionHandler(OptimisticLockingFailureException.class)

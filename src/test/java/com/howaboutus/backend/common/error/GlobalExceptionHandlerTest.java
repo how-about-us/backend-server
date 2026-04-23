@@ -1,10 +1,17 @@
 package com.howaboutus.backend.common.error;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 class GlobalExceptionHandlerTest {
 
@@ -20,5 +27,26 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode().value()).isEqualTo(409);
         assertThat(response.getBody()).isEqualTo(ApiErrorResponse.of(ErrorCode.SCHEDULE_CONFLICT));
+    }
+
+    @Test
+    @DisplayName("MethodArgumentNotValidException 처리 시 같은 필드의 NotBlank 메시지를 우선한다")
+    void handleMethodArgumentNotValidPrefersNotBlankMessage() {
+        FieldError patternError = Mockito.mock(FieldError.class);
+        given(patternError.getCode()).willReturn("Pattern");
+        given(patternError.getDefaultMessage()).willReturn("googlePlaceId 형식이 올바르지 않습니다");
+        FieldError notBlankError = Mockito.mock(FieldError.class);
+        given(notBlankError.getCode()).willReturn("NotBlank");
+        given(notBlankError.getDefaultMessage()).willReturn("googlePlaceId는 공백일 수 없습니다");
+
+        BindingResult bindingResult = Mockito.mock(BindingResult.class);
+        given(bindingResult.getFieldErrors()).willReturn(List.of(patternError, notBlankError));
+        MethodArgumentNotValidException exception = Mockito.mock(MethodArgumentNotValidException.class);
+        given(exception.getBindingResult()).willReturn(bindingResult);
+
+        var response = globalExceptionHandler.handleMethodArgumentNotValidException(exception);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody()).isEqualTo(ApiErrorResponse.of(HttpStatus.BAD_REQUEST, "googlePlaceId는 공백일 수 없습니다"));
     }
 }

@@ -91,9 +91,9 @@
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[ ]` | 일정 생성 | N일차 + 날짜 등록 | schedules |
-| `[ ]` | 일정 목록 조회 | 방의 전체 일자별 일정 조회 | schedules |
-| `[ ]` | 일정 삭제 | 특정 일자 삭제 (하위 items 포함) | schedules |
+| `[x]` | 일정 생성 | N일차 + 날짜 등록 | schedules |
+| `[x]` | 일정 목록 조회 | 방의 전체 일자별 일정 조회 | schedules |
+| `[x]` | 일정 삭제 | 특정 일자 삭제 (하위 items 포함) | schedules |
 
 ### 6-2. 일정 항목 (Schedule Items — 장소 단위)
 
@@ -101,12 +101,12 @@
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[ ]` | 일정에 장소 추가 | 특정 일자에 장소 추가 (보관함 또는 검색에서 바로) | schedule_items |
-| `[ ]` | 일정 항목 목록 조회 | 특정 일자의 장소 목록 (order_index 순) | schedule_items |
-| `[ ]` | 일정 항목 삭제 | 일자에서 장소 제거 | schedule_items |
+| `[x]` | 일정에 장소 추가 | 특정 일자에 장소 추가 (보관함 또는 검색에서 바로) | schedule_items |
+| `[x]` | 일정 항목 목록 조회 | 특정 일자의 장소 목록 (order_index 순) | schedule_items |
+| `[x]` | 일정 항목 삭제 | 일자에서 장소 제거 | schedule_items |
 | `[ ]` | 일정 순서 변경 (D&D) | order_index 재정렬 → WebSocket 브로드캐스트 | schedule_items |
-| `[ ]` | 일정 항목 메모 수정 | 방문 메모 편집 | schedule_items |
-| `[ ]` | 시간 설정 | start_time, duration_minutes 설정 | schedule_items |
+| `[-]` | 일정 항목 메모 수정 | 1차 구현 범위 제외 | schedule_items |
+| `[x]` | 시간 설정 | start_time, duration_minutes 설정 | schedule_items |
 | `[ ]` | 이동 정보 조회 | 비동기 계산된 distance_meters, duration_seconds, travel_mode 조회 | schedule_items |
 | `[ ]` | 이동 수단 변경 | travel_mode 수동 변경 → 비동기로 Routes API 재호출 | schedule_items |
 

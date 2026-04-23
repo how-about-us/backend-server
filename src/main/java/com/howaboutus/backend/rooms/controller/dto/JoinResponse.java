@@ -1,7 +1,6 @@
 package com.howaboutus.backend.rooms.controller.dto;
 
 import com.howaboutus.backend.rooms.service.dto.JoinResult;
-import com.howaboutus.backend.rooms.service.dto.JoinStatus;
 import java.util.UUID;
 
 public record JoinResponse(

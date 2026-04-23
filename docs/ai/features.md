@@ -64,12 +64,13 @@
 
 ## 4. 장소 (Places)
 
-> `places` 테이블 없이 `google_place_id`를 직접 사용한다. 검색은 캐시하지 않고, 장소 상세 조회 payload는 Redis에 3시간 TTL로 캐시한다.
+> `places` 테이블 없이 `google_place_id`를 직접 사용한다. 검색은 캐시하지 않고, 장소 상세 조회 payload는 Redis에 5분 TTL로 캐시한다.
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
 | `[x]` | 장소 검색 | Google Places API (New)로 장소 검색 | - |
-| `[x]` | 장소 상세 조회 | 장소명, 주소, 평점, 전화번호, 웹사이트, 영업시간, 사진 목록 등, 상세 조회 결과는 Redis에 3시간 TTL 캐시 | Redis |
+| `[x]` | 장소 상세 조회 | 장소명, 주소, 평점, 전화번호, 웹사이트, 영업시간, 사진 목록(`photoNames`) 등, 상세 조회 결과는 Redis에 5분 TTL 캐시 | Redis |
+| `[x]` | 장소 사진 URL 조회 | `photoName`을 받아 Google Photo Media API를 호출, `photoUrl` 반환. 캐시 없음 | - |
 
 ---
 

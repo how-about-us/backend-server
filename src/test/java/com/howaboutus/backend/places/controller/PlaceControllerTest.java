@@ -7,6 +7,7 @@ import com.howaboutus.backend.common.config.SecurityConfig;
 import com.howaboutus.backend.common.error.ExternalApiException;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
 import com.howaboutus.backend.places.service.PlaceDetailService;
+import com.howaboutus.backend.places.service.PlacePhotoService;
 import com.howaboutus.backend.places.service.PlaceSearchService;
 import com.howaboutus.backend.places.service.dto.PlaceDetailResult;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
@@ -50,6 +51,9 @@ class PlaceControllerTest {
 
     @MockitoBean
     private PlaceDetailService placeDetailService;
+
+    @MockitoBean
+    private PlacePhotoService placePhotoService;
 
     private PlaceSearchResult placeSearchResult;
     private PlaceDetailResult placeDetailResult;
@@ -299,6 +303,68 @@ class PlaceControllerTest {
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.code").value("EXTERNAL_API_ERROR"))
                 .andExpect(jsonPath("$.message").value("외부 API 호출 중 오류가 발생했습니다"));
+    }
+
+    @Test
+    @DisplayName("유효한 name으로 요청하면 photoUrl을 반환한다")
+    void returnsPhotoUrlForValidName() throws Exception {
+        given(placePhotoService.getPhotoUrl("places/ChIJ123/photos/abc"))
+                .willReturn("https://lh3.googleusercontent.com/photo.jpg");
+
+        mockMvc.perform(get("/places/photos")
+                        .param("name", "places/ChIJ123/photos/abc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photoUrl").value("https://lh3.googleusercontent.com/photo.jpg"));
+
+        then(placePhotoService).should().getPhotoUrl("places/ChIJ123/photos/abc");
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 형식의 name으로 요청하면 400을 반환한다")
+    void returnsBadRequestWhenNameIsBlank() throws Exception {
+        mockMvc.perform(get("/places/photos")
+                        .param("name", "   "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("유효하지 않은 photoName 형식입니다"));
+
+        verifyNoInteractions(placePhotoService);
+    }
+
+    @Test
+    @DisplayName("name 파라미터가 없으면 400을 반환한다")
+    void returnsBadRequestWhenNameParameterIsMissing() throws Exception {
+        mockMvc.perform(get("/places/photos"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("필수 요청 파라미터가 누락되었습니다: name"));
+
+        verifyNoInteractions(placePhotoService);
+    }
+
+    @Test
+    @DisplayName("사진 URL 조회 중 외부 API 오류 발생 시 502를 반환한다")
+    void returnsBadGatewayWhenPhotoUrlLookupFails() throws Exception {
+        given(placePhotoService.getPhotoUrl("places/ChIJ123/photos/abc"))
+                .willThrow(new ExternalApiException(new RuntimeException("connection timeout")));
+
+        mockMvc.perform(get("/places/photos")
+                        .param("name", "places/ChIJ123/photos/abc"))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.code").value("EXTERNAL_API_ERROR"))
+                .andExpect(jsonPath("$.message").value("외부 API 호출 중 오류가 발생했습니다"));
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 photoName 형식으로 요청하면 400을 반환한다")
+    void returnsBadRequestWhenPhotoNameFormatIsInvalid() throws Exception {
+        mockMvc.perform(get("/places/photos")
+                        .param("name", "../../admin"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("유효하지 않은 photoName 형식입니다"));
+
+        verifyNoInteractions(placePhotoService);
     }
 
     private static MockHttpServletRequestBuilder searchRequest(String query) {

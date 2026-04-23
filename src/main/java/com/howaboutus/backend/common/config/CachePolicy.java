@@ -15,7 +15,7 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public enum CachePolicy {
 
-    PLACE_DETAIL(Keys.PLACE_DETAIL, Duration.ofHours(3));
+    PLACE_DETAIL(Keys.PLACE_DETAIL, Duration.ofMinutes(5));
 
     public static final class Keys {
         private Keys() {

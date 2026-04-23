@@ -13,7 +13,6 @@ import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.schedules.entity.Schedule;
 import com.howaboutus.backend.schedules.repository.ScheduleRepository;
-import com.howaboutus.backend.schedules.service.ScheduleItemService;
 import com.howaboutus.backend.schedules.service.dto.ScheduleCreateCommand;
 import com.howaboutus.backend.schedules.service.dto.ScheduleResult;
 import java.time.Instant;
@@ -25,11 +24,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
+import java.util.stream.Stream;
 
 @ExtendWith(MockitoExtension.class)
 class ScheduleServiceTest {
@@ -83,22 +87,25 @@ class ScheduleServiceTest {
         assertThat(scheduleCaptor.getValue().getDate()).isEqualTo(LocalDate.of(2026, 4, 21));
     }
 
-    @Test
-    @DisplayName("방이 없으면 일정 생성 시 ROOM_NOT_FOUND 예외를 던진다")
-    void createThrowsWhenRoomMissing() {
+    @ParameterizedTest
+    @ValueSource(strings = {"방이 없으면", "soft delete 된 방이면"})
+    @DisplayName("방을 찾을 수 없으면 일정 생성 시 ROOM_NOT_FOUND 예외를 던진다")
+    void createThrowsWhenRoomUnavailable(String ignoredScenario) {
         UUID roomId = UUID.randomUUID();
+        ScheduleCreateCommand command = new ScheduleCreateCommand(1, LocalDate.of(2026, 4, 20));
 
         given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> scheduleService.create(roomId, new ScheduleCreateCommand(1, LocalDate.of(2026, 4, 20))))
+        assertThatThrownBy(() -> scheduleService.create(roomId, command))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
     }
 
-    @Test
-    @DisplayName("일차가 1보다 작으면 일정 생성 시 SCHEDULE_DATE_MISMATCH 예외를 던진다")
-    void createThrowsWhenDayNumberInvalid() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("invalidScheduleCreateCommands")
+    @DisplayName("일정 생성 요청이 여행 날짜 규칙을 어기면 SCHEDULE_DATE_MISMATCH 예외를 던진다")
+    void createThrowsWhenScheduleDateInvalid(String ignoredScenario, ScheduleCreateCommand command) {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L);
 
@@ -106,39 +113,7 @@ class ScheduleServiceTest {
 
         given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
 
-        assertThatThrownBy(() -> scheduleService.create(roomId, new ScheduleCreateCommand(0, LocalDate.of(2026, 4, 20))))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.SCHEDULE_DATE_MISMATCH);
-    }
-
-    @Test
-    @DisplayName("여행 기간 밖의 날짜로 일정 생성 시 SCHEDULE_DATE_MISMATCH 예외를 던진다")
-    void createThrowsWhenDateOutsideTravelPeriod() {
-        UUID roomId = UUID.randomUUID();
-        Room room = Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L);
-
-        ReflectionTestUtils.setField(room, "id", roomId);
-
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
-
-        assertThatThrownBy(() -> scheduleService.create(roomId, new ScheduleCreateCommand(1, LocalDate.of(2026, 4, 24))))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.SCHEDULE_DATE_MISMATCH);
-    }
-
-    @Test
-    @DisplayName("일차와 날짜 조합이 맞지 않으면 일정 생성 시 SCHEDULE_DATE_MISMATCH 예외를 던진다")
-    void createThrowsWhenDateAndDayNumberMismatch() {
-        UUID roomId = UUID.randomUUID();
-        Room room = Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L);
-
-        ReflectionTestUtils.setField(room, "id", roomId);
-
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
-
-        assertThatThrownBy(() -> scheduleService.create(roomId, new ScheduleCreateCommand(2, LocalDate.of(2026, 4, 22))))
+        assertThatThrownBy(() -> scheduleService.create(roomId, command))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_DATE_MISMATCH);
@@ -149,13 +124,14 @@ class ScheduleServiceTest {
     void createThrowsWhenSameDayNumberExists() {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L);
+        ScheduleCreateCommand command = new ScheduleCreateCommand(1, LocalDate.of(2026, 4, 20));
 
         ReflectionTestUtils.setField(room, "id", roomId);
 
         given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.existsByRoom_IdAndDayNumber(roomId, 1)).willReturn(true);
 
-        assertThatThrownBy(() -> scheduleService.create(roomId, new ScheduleCreateCommand(1, LocalDate.of(2026, 4, 20))))
+        assertThatThrownBy(() -> scheduleService.create(roomId, command))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_ALREADY_EXISTS);
@@ -166,6 +142,7 @@ class ScheduleServiceTest {
     void createThrowsWhenSameDateExists() {
         UUID roomId = UUID.randomUUID();
         Room room = Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L);
+        ScheduleCreateCommand command = new ScheduleCreateCommand(1, LocalDate.of(2026, 4, 20));
 
         ReflectionTestUtils.setField(room, "id", roomId);
 
@@ -173,7 +150,7 @@ class ScheduleServiceTest {
         given(scheduleRepository.existsByRoom_IdAndDayNumber(roomId, 1)).willReturn(false);
         given(scheduleRepository.existsByRoom_IdAndDate(roomId, LocalDate.of(2026, 4, 20))).willReturn(true);
 
-        assertThatThrownBy(() -> scheduleService.create(roomId, new ScheduleCreateCommand(1, LocalDate.of(2026, 4, 20))))
+        assertThatThrownBy(() -> scheduleService.create(roomId, command))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_ALREADY_EXISTS);
@@ -281,16 +258,14 @@ class ScheduleServiceTest {
         order.verify(scheduleRepository).delete(schedule);
     }
 
-    @Test
-    @DisplayName("soft delete 된 방이면 일정 생성 시 ROOM_NOT_FOUND 예외를 던진다")
-    void createThrowsWhenRoomDeleted() {
-        UUID roomId = UUID.randomUUID();
-
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> scheduleService.create(roomId, new ScheduleCreateCommand(1, LocalDate.of(2026, 4, 20))))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
+    private static Stream<Arguments> invalidScheduleCreateCommands() {
+        return Stream.of(
+                Arguments.of("일차가 1보다 작으면 일정 생성 시 SCHEDULE_DATE_MISMATCH 예외를 던진다",
+                        new ScheduleCreateCommand(0, LocalDate.of(2026, 4, 20))),
+                Arguments.of("여행 기간 밖의 날짜로 일정 생성 시 SCHEDULE_DATE_MISMATCH 예외를 던진다",
+                        new ScheduleCreateCommand(1, LocalDate.of(2026, 4, 24))),
+                Arguments.of("일차와 날짜 조합이 맞지 않으면 일정 생성 시 SCHEDULE_DATE_MISMATCH 예외를 던진다",
+                        new ScheduleCreateCommand(2, LocalDate.of(2026, 4, 22)))
+        );
     }
 }

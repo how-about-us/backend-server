@@ -115,7 +115,7 @@ class ScheduleItemServiceTest {
         verify(scheduleRepository).findByIdAndRoom_IdWithOptimisticLock(100L, roomId);
         verify(scheduleRepository, never()).findByIdAndRoom_Id(100L, roomId);
         verify(scheduleItemRepository).delete(second);
-        assertThat(first.getOrderIndex()).isEqualTo(0);
+        assertThat(first.getOrderIndex()).isZero();
         assertThat(third.getOrderIndex()).isEqualTo(1);
     }
 
@@ -218,7 +218,7 @@ class ScheduleItemServiceTest {
                 ScheduleItemResult.from(first),
                 ScheduleItemResult.from(second)
         );
-        assertThat(results.get(0).orderIndex()).isEqualTo(0);
+        assertThat(results.getFirst().orderIndex()).isZero();
         assertThat(results.get(0).googlePlaceId()).isEqualTo("place-1");
         assertThat(results.get(1).orderIndex()).isEqualTo(1);
         assertThat(results.get(1).googlePlaceId()).isEqualTo("place-2");
@@ -242,16 +242,12 @@ class ScheduleItemServiceTest {
     void updateThrowsWhenScheduleMissingInRoom() {
         UUID roomId = UUID.randomUUID();
         Room room = createRoom(roomId);
+        ScheduleItemUpdateCommand command = new ScheduleItemUpdateCommand(LocalTime.of(11, 30), 90, true, true);
 
         given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> scheduleItemService.update(
-                roomId,
-                100L,
-                10L,
-                new ScheduleItemUpdateCommand(LocalTime.of(11, 30), 90, true, true)
-        ))
+        assertThatThrownBy(() -> scheduleItemService.update(roomId, 100L, 10L, command))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_NOT_FOUND);
@@ -278,14 +274,11 @@ class ScheduleItemServiceTest {
     @DisplayName("soft delete 된 방이면 일정 항목 생성 시 ROOM_NOT_FOUND 예외를 던진다")
     void createThrowsWhenRoomDeleted() {
         UUID roomId = UUID.randomUUID();
+        ScheduleItemCreateCommand command = new ScheduleItemCreateCommand("place-1", LocalTime.of(9, 0), 120);
 
         given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> scheduleItemService.create(
-                roomId,
-                100L,
-                new ScheduleItemCreateCommand("place-1", LocalTime.of(9, 0), 120)
-        ))
+        assertThatThrownBy(() -> scheduleItemService.create(roomId, 100L, command))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);

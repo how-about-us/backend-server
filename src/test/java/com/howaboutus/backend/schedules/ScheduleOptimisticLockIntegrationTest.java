@@ -116,8 +116,9 @@ class ScheduleOptimisticLockIntegrationTest extends BaseIntegrationTest {
                 .map(scheduleItem -> scheduleItem.getGooglePlaceId())
                 .toList();
 
-        assertThat(persistedPlaceIds).hasSize(1);
-        assertThat(persistedPlaceIds).containsAnyOf("place-a", "place-b");
+        assertThat(persistedPlaceIds)
+                .hasSize(1)
+                .containsAnyOf("place-a", "place-b");
         assertThat(scheduleRepository.findById(schedule.getId()))
                 .map(Schedule::getVersion)
                 .hasValueSatisfying(version -> assertThat(version).isGreaterThan(initialVersion));

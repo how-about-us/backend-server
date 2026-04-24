@@ -31,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,7 +72,7 @@ class ScheduleItemServiceTest {
         ReflectionTestUtils.setField(savedItem, "createdAt", createdAt);
 
         given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
-        given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.of(schedule));
+        givenScheduleForWrite(roomId, schedule);
         given(scheduleItemRepository.findMaxOrderIndexBySchedule_Id(100L)).willReturn(Optional.of(2));
         given(scheduleItemRepository.saveAndFlush(any(ScheduleItem.class))).willReturn(savedItem);
 
@@ -89,6 +90,7 @@ class ScheduleItemServiceTest {
         ArgumentCaptor<ScheduleItem> captor = ArgumentCaptor.forClass(ScheduleItem.class);
         verify(scheduleItemRepository).saveAndFlush(captor.capture());
         verify(scheduleRepository).findByIdAndRoom_IdWithOptimisticLock(100L, roomId);
+        verify(scheduleRepository).incrementVersionIfCurrent(100L, roomId, 0L);
         verify(scheduleRepository, never()).findByIdAndRoom_Id(100L, roomId);
         assertThat(captor.getValue().getSchedule()).isSameAs(schedule);
         assertThat(captor.getValue().getOrderIndex()).isEqualTo(3);
@@ -105,7 +107,7 @@ class ScheduleItemServiceTest {
         ScheduleItem third = createScheduleItem(schedule, 12L, "place-3", 2);
 
         given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
-        given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.of(schedule));
+        givenScheduleForWrite(roomId, schedule);
         given(scheduleItemRepository.findByIdAndSchedule_Id(11L, 100L)).willReturn(Optional.of(second));
         given(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(100L))
                 .willReturn(List.of(first, second, third));
@@ -113,6 +115,7 @@ class ScheduleItemServiceTest {
         scheduleItemService.delete(roomId, 100L, 11L);
 
         verify(scheduleRepository).findByIdAndRoom_IdWithOptimisticLock(100L, roomId);
+        verify(scheduleRepository).incrementVersionIfCurrent(100L, roomId, 0L);
         verify(scheduleRepository, never()).findByIdAndRoom_Id(100L, roomId);
         verify(scheduleItemRepository).delete(second);
         assertThat(first.getOrderIndex()).isZero();
@@ -138,7 +141,7 @@ class ScheduleItemServiceTest {
         ReflectionTestUtils.setField(item, "createdAt", createdAt);
 
         given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
-        given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.of(schedule));
+        givenScheduleForWrite(roomId, schedule);
         given(scheduleItemRepository.findByIdAndSchedule_Id(10L, 100L)).willReturn(Optional.of(item));
         given(scheduleItemRepository.saveAndFlush(item)).willReturn(item);
 
@@ -152,6 +155,7 @@ class ScheduleItemServiceTest {
         assertThat(result.startTime()).isEqualTo(LocalTime.of(9, 0));
         assertThat(result.durationMinutes()).isEqualTo(90);
         verify(scheduleRepository).findByIdAndRoom_IdWithOptimisticLock(100L, roomId);
+        verify(scheduleRepository).incrementVersionIfCurrent(100L, roomId, 0L);
         verify(scheduleRepository, never()).findByIdAndRoom_Id(100L, roomId);
         assertThat(item.getStartTime()).isEqualTo(LocalTime.of(9, 0));
         assertThat(item.getDurationMinutes()).isEqualTo(90);
@@ -174,7 +178,7 @@ class ScheduleItemServiceTest {
         ReflectionTestUtils.setField(item, "id", 10L);
 
         given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
-        given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.of(schedule));
+        givenScheduleForWrite(roomId, schedule);
         given(scheduleItemRepository.findByIdAndSchedule_Id(10L, 100L)).willReturn(Optional.of(item));
         given(scheduleItemRepository.saveAndFlush(item)).willReturn(item);
 
@@ -189,6 +193,24 @@ class ScheduleItemServiceTest {
         assertThat(result.durationMinutes()).isEqualTo(120);
         assertThat(item.getStartTime()).isNull();
         assertThat(item.getDurationMinutes()).isEqualTo(120);
+    }
+
+    @Test
+    @DisplayName("일정 버전 선점에 실패하면 항목 생성 전 낙관적 락 예외를 던진다")
+    void createThrowsOptimisticLockingFailureWhenScheduleVersionAlreadyChanged() {
+        UUID roomId = UUID.randomUUID();
+        Room room = createRoom(roomId);
+        Schedule schedule = createSchedule(room, 100L);
+        ScheduleItemCreateCommand command = new ScheduleItemCreateCommand("place-1", LocalTime.of(9, 0), 120);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.of(schedule));
+        given(scheduleRepository.incrementVersionIfCurrent(100L, roomId, 0L)).willReturn(0);
+
+        assertThatThrownBy(() -> scheduleItemService.create(roomId, 100L, command))
+                .isInstanceOf(ObjectOptimisticLockingFailureException.class);
+
+        verify(scheduleItemRepository, never()).saveAndFlush(any(ScheduleItem.class));
     }
 
     @Test
@@ -261,7 +283,7 @@ class ScheduleItemServiceTest {
         Schedule schedule = createSchedule(room, 100L);
 
         given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
-        given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(100L, roomId)).willReturn(Optional.of(schedule));
+        givenScheduleForWrite(roomId, schedule);
         given(scheduleItemRepository.findByIdAndSchedule_Id(10L, 100L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> scheduleItemService.delete(roomId, 100L, 10L))
@@ -300,7 +322,15 @@ class ScheduleItemServiceTest {
     private Schedule createSchedule(Room room, Long scheduleId) {
         Schedule schedule = Schedule.create(room, 1, LocalDate.of(2026, 4, 20));
         ReflectionTestUtils.setField(schedule, "id", scheduleId);
+        ReflectionTestUtils.setField(schedule, "version", 0L);
         return schedule;
+    }
+
+    private void givenScheduleForWrite(UUID roomId, Schedule schedule) {
+        given(scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(schedule.getId(), roomId))
+                .willReturn(Optional.of(schedule));
+        given(scheduleRepository.incrementVersionIfCurrent(schedule.getId(), roomId, schedule.getVersion()))
+                .willReturn(1);
     }
 
     private ScheduleItem createScheduleItem(Schedule schedule, Long itemId, String googlePlaceId, int orderIndex) {

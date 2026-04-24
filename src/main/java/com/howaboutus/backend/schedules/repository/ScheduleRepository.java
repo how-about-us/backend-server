@@ -5,9 +5,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -21,7 +20,6 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     Optional<Schedule> findByIdAndRoom_Id(Long scheduleId, UUID roomId);
 
-    @Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
     @Query("""
             select schedule
             from Schedule schedule
@@ -30,4 +28,16 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             """)
     Optional<Schedule> findByIdAndRoom_IdWithOptimisticLock(@Param("scheduleId") Long scheduleId,
                                                             @Param("roomId") UUID roomId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = false)
+    @Query("""
+            update Schedule schedule
+            set schedule.version = schedule.version + 1
+            where schedule.id = :scheduleId
+              and schedule.room.id = :roomId
+              and schedule.version = :version
+            """)
+    int incrementVersionIfCurrent(@Param("scheduleId") Long scheduleId,
+                                  @Param("roomId") UUID roomId,
+                                  @Param("version") Long version);
 }

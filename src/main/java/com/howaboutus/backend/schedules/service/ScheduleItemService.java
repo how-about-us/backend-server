@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.UUID;
 import java.time.LocalTime;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -105,8 +106,13 @@ public class ScheduleItemService {
     }
 
     private Schedule getScheduleForWrite(UUID roomId, Long scheduleId) {
-        return scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(scheduleId, roomId)
+        Schedule schedule = scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(scheduleId, roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SCHEDULE_NOT_FOUND));
+        int updatedRows = scheduleRepository.incrementVersionIfCurrent(scheduleId, roomId, schedule.getVersion());
+        if (updatedRows == 0) {
+            throw new ObjectOptimisticLockingFailureException(Schedule.class, scheduleId);
+        }
+        return schedule;
     }
 
     private ScheduleItem getScheduleItem(Long scheduleId, Long itemId) {

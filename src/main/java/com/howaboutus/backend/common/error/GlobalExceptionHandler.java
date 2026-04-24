@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -31,6 +33,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ExternalApiException.class)
     public ResponseEntity<ApiErrorResponse> handleExternalApiException(ExternalApiException e) {
         return handleCustomException(e);
+    }
+
+    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
+    public ResponseEntity<ApiErrorResponse> handleNotFoundException(Exception e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiErrorResponse.of(HttpStatus.NOT_FOUND, "요청한 경로를 찾을 수 없습니다"));
     }
 
     @ExceptionHandler(ResponseStatusException.class)

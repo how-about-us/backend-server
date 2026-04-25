@@ -44,4 +44,11 @@ class SecurityConfigTest {
         mockMvc.perform(get("/users/me"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("인증 없이 허용 목록 외 경로 접근 시 401을 반환한다")
+    void returns401ForUnauthenticatedArbitraryPath() throws Exception {
+        mockMvc.perform(get("/some/protected/path"))
+                .andExpect(status().isUnauthorized());
+    }
 }

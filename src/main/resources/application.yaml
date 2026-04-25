@@ -27,6 +27,7 @@ springdoc:
     enabled: true
   swagger-ui:
     disable-swagger-default-url: true
+    persist-authorization: true
 
 jwt:
   secret: ${JWT_SECRET}

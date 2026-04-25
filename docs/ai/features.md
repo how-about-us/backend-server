@@ -46,7 +46,7 @@
 | `[x]` | 입장 상태 조회 | 입장 요청자가 자신의 승인 상태 확인 (pending / approved / 404=거절) | room_members |
 | `[x]` | 대기 입장 요청 목록 조회 | HOST가 PENDING 상태 멤버 목록 조회 | room_members |
 | `[x]` | 입장 승인 | HOST가 PENDING → MEMBER로 변경 | room_members |
-| `[x]` | 입장 거절 | HOST가 PENDING 멤버 레코드 삭제 | room_members |
+| `[x]` | 입장 거절 | HOST가 PENDING 멤버 레코드 삭제 | room_members 
 
 ---
 

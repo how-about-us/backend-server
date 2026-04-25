@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
 import com.howaboutus.backend.bookmarks.repository.BookmarkCategoryRepository;
 import com.howaboutus.backend.common.error.ErrorCode;
@@ -15,18 +16,28 @@ import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.support.BaseIntegrationTest;
 import com.jayway.jsonpath.JsonPath;
+import jakarta.servlet.http.Cookie;
 import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.BDDMockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @AutoConfigureMockMvc
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
+
+    private static final Long USER_ID = 1L;
+    private static final String VALID_TOKEN = "valid-jwt";
+
+    @MockitoBean
+    private JwtProvider jwtProvider;
 
     @Autowired
     private MockMvc mockMvc;
@@ -39,6 +50,11 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private BookmarkRepository bookmarkRepository;
+
+    @BeforeEach
+    void setUp() {
+        BDDMockito.given(jwtProvider.extractUserId(VALID_TOKEN)).willReturn(USER_ID);
+    }
 
     @AfterEach
     void tearDown() {
@@ -60,6 +76,7 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
         ));
 
         String createResponse = mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", room.getId())
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "맛집", "colorCode": "#FF8800"}
@@ -74,13 +91,15 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
 
         Long categoryId = ((Number) JsonPath.read(createResponse, "$.categoryId")).longValue();
 
-        mockMvc.perform(get("/rooms/{roomId}/bookmark-categories", room.getId()))
+        mockMvc.perform(get("/rooms/{roomId}/bookmark-categories", room.getId())
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].categoryId").value(categoryId))
                 .andExpect(jsonPath("$[0].name").value("맛집"))
                 .andExpect(jsonPath("$[0].colorCode").value("#FF8800"));
 
         mockMvc.perform(patch("/rooms/{roomId}/bookmark-categories/{categoryId}", room.getId(), categoryId)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "카페", "colorCode": "#3366FF"}
@@ -90,7 +109,8 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.name").value("카페"))
                 .andExpect(jsonPath("$.colorCode").value("#3366FF"));
 
-        mockMvc.perform(delete("/rooms/{roomId}/bookmark-categories/{categoryId}", room.getId(), categoryId))
+        mockMvc.perform(delete("/rooms/{roomId}/bookmark-categories/{categoryId}", room.getId(), categoryId)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
         assertThat(bookmarkCategoryRepository.findAll()).isEmpty();
@@ -117,6 +137,7 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
         ));
 
         String createResponse = mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", roomA.getId())
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "맛집", "colorCode": "#FF8800"}
@@ -129,6 +150,7 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
         Long categoryId = ((Number) JsonPath.read(createResponse, "$.categoryId")).longValue();
 
         mockMvc.perform(patch("/rooms/{roomId}/bookmark-categories/{categoryId}", roomB.getId(), categoryId)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "카페", "colorCode": "#3366FF"}

@@ -75,7 +75,6 @@ public class Room extends BaseTimeEntity {
             this.endDate = endDate;
         }
     }
-
     public void delete() {
         this.deletedAt = Instant.now();
     }

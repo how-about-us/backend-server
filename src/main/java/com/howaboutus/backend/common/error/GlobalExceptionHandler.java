@@ -2,11 +2,14 @@ package com.howaboutus.backend.common.error;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.util.Comparator;
 import org.springframework.validation.FieldError;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -78,11 +81,35 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
+                .min(Comparator.comparingInt(this::validationMessagePriority))
                 .map(FieldError::getDefaultMessage)
-                .findFirst()
                 .orElse("요청 본문이 유효하지 않습니다");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiErrorResponse.of(HttpStatus.BAD_REQUEST, message));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(HttpStatus.BAD_REQUEST, "요청 본문 형식이 올바르지 않습니다"));
+    }
+
+    private int validationMessagePriority(FieldError fieldError) {
+        String code = fieldError.getCode();
+        if ("NotBlank".equals(code) || "NotEmpty".equals(code)) {
+            return 0;
+        }
+        if ("NotNull".equals(code)) {
+            return 1;
+        }
+        return 2;
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ApiErrorResponse> handleOptimisticLockingFailure(OptimisticLockingFailureException e) {
+        log.warn("Optimistic locking failure", e);
+        return ResponseEntity.status(ErrorCode.SCHEDULE_CONFLICT.getStatus())
+                .body(ApiErrorResponse.of(ErrorCode.SCHEDULE_CONFLICT));
     }
 
     @ExceptionHandler(Exception.class)

@@ -4,6 +4,7 @@ import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.common.error.CustomException;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
@@ -20,23 +21,25 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
     private final JwtProvider jwtProvider;
 
     @Override
-    public boolean beforeHandshake(ServerHttpRequest request,
-                                   ServerHttpResponse response,
-                                   WebSocketHandler wsHandler,
-                                   Map<String, Object> attributes) {
+    public boolean beforeHandshake(@NonNull ServerHttpRequest request,
+                                   @NonNull ServerHttpResponse response,
+                                   @NonNull WebSocketHandler wsHandler,
+                                   @NonNull Map<String, Object> attributes) {
         extractAccessToken(request).ifPresent(token -> storeUserId(token, attributes));
         return true;
     }
 
     @Override
-    public void afterHandshake(ServerHttpRequest request,
-                               ServerHttpResponse response,
-                               WebSocketHandler wsHandler,
+    public void afterHandshake(@NonNull ServerHttpRequest request,
+                               @NonNull ServerHttpResponse response,
+                               @NonNull WebSocketHandler wsHandler,
                                Exception exception) {
     }
 
     private java.util.Optional<String> extractAccessToken(ServerHttpRequest request) {
-        return request.getHeaders().getOrEmpty(HttpHeaders.COOKIE).stream()
+        return request.getHeaders()
+                .getOrEmpty(HttpHeaders.COOKIE)
+                .stream()
                 .flatMap(header -> java.util.Arrays.stream(header.split(";")))
                 .map(String::trim)
                 .filter(cookie -> cookie.startsWith(ACCESS_TOKEN_COOKIE + "="))

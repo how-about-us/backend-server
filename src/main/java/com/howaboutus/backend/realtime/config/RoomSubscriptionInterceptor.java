@@ -13,6 +13,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -32,7 +33,7 @@ public class RoomSubscriptionInterceptor implements ChannelInterceptor {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    public Message<?> preSend(Message<?> message, MessageChannel channel) {
+    public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
         if (accessor.getCommand() != StompCommand.SUBSCRIBE) {
             return message;

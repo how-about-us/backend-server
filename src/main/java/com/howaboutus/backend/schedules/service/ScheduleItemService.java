@@ -96,7 +96,7 @@ public class ScheduleItemService {
     }
 
     private Room getRoom(UUID roomId) {
-        return roomRepository.findByIdAndDeletedAtIsNull(roomId)
+        return roomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
     }
 
@@ -106,7 +106,7 @@ public class ScheduleItemService {
     }
 
     private Schedule getScheduleForWrite(UUID roomId, Long scheduleId) {
-        Schedule schedule = scheduleRepository.findByIdAndRoom_IdWithOptimisticLock(scheduleId, roomId)
+        Schedule schedule = scheduleRepository.findByIdAndRoom_Id(scheduleId, roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SCHEDULE_NOT_FOUND));
         int updatedRows = scheduleRepository.incrementVersionIfCurrent(scheduleId, roomId, schedule.getVersion());
         if (updatedRows == 0) {

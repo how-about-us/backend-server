@@ -19,6 +19,7 @@ import com.jayway.jsonpath.JsonPath;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -164,20 +165,11 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("soft delete 된 방에는 일정 API로 접근할 수 없다")
-    void scheduleEndpointsRejectSoftDeletedRoom() throws Exception {
-        Room room = roomRepository.save(Room.create(
-                "부산 여행",
-                "부산",
-                LocalDate.of(2026, 6, 1),
-                LocalDate.of(2026, 6, 2),
-                "BUSAN-DELETED-ROOM",
-                1L
-        ));
-        room.delete();
-        roomRepository.saveAndFlush(room);
+    @DisplayName("존재하지 않는 방에는 일정 API로 접근할 수 없다")
+    void scheduleEndpointsRejectMissingRoom() throws Exception {
+        UUID roomId = UUID.randomUUID();
 
-        mockMvc.perform(post("/rooms/{roomId}/schedules", room.getId())
+        mockMvc.perform(post("/rooms/{roomId}/schedules", roomId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {

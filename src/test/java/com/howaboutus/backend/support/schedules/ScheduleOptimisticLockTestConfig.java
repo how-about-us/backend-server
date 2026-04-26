@@ -31,7 +31,7 @@ public class ScheduleOptimisticLockTestConfig {
             this.repositoryLookupBarrier = repositoryLookupBarrier;
         }
 
-        @Around("execution(* com.howaboutus.backend.schedules.repository.ScheduleRepository.findByIdAndRoom_IdWithOptimisticLock(..))")
+        @Around("execution(* com.howaboutus.backend.schedules.repository.ScheduleRepository.findByIdAndRoom_Id(..))")
         Object awaitConcurrentLookup(ProceedingJoinPoint joinPoint) throws Throwable {
             Object result = joinPoint.proceed();
             repositoryLookupBarrier.awaitIfActive();

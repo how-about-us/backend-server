@@ -20,15 +20,6 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     Optional<Schedule> findByIdAndRoom_Id(Long scheduleId, UUID roomId);
 
-    @Query("""
-            select schedule
-            from Schedule schedule
-            where schedule.id = :scheduleId
-              and schedule.room.id = :roomId
-            """)
-    Optional<Schedule> findByIdAndRoom_IdWithOptimisticLock(@Param("scheduleId") Long scheduleId,
-                                                            @Param("roomId") UUID roomId);
-
     @Modifying(flushAutomatically = true, clearAutomatically = false)
     @Query("""
             update Schedule schedule

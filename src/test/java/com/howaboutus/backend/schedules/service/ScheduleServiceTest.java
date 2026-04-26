@@ -27,7 +27,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -67,7 +66,7 @@ class ScheduleServiceTest {
         Instant createdAt = Instant.parse("2026-04-17T00:00:00Z");
         ReflectionTestUtils.setField(schedule, "createdAt", createdAt);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.existsByRoom_IdAndDayNumber(roomId, 2)).willReturn(false);
         given(scheduleRepository.existsByRoom_IdAndDate(roomId, LocalDate.of(2026, 4, 21))).willReturn(false);
         given(scheduleRepository.saveAndFlush(any(Schedule.class))).willReturn(schedule);
@@ -87,14 +86,13 @@ class ScheduleServiceTest {
         assertThat(scheduleCaptor.getValue().getDate()).isEqualTo(LocalDate.of(2026, 4, 21));
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"방이 없으면", "soft delete 된 방이면"})
+    @Test
     @DisplayName("방을 찾을 수 없으면 일정 생성 시 ROOM_NOT_FOUND 예외를 던진다")
-    void createThrowsWhenRoomUnavailable(String ignoredScenario) {
+    void createThrowsWhenRoomUnavailable() {
         UUID roomId = UUID.randomUUID();
         ScheduleCreateCommand command = new ScheduleCreateCommand(1, LocalDate.of(2026, 4, 20));
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.empty());
+        given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> scheduleService.create(roomId, command))
                 .isInstanceOf(CustomException.class)
@@ -111,7 +109,7 @@ class ScheduleServiceTest {
 
         ReflectionTestUtils.setField(room, "id", roomId);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
 
         assertThatThrownBy(() -> scheduleService.create(roomId, command))
                 .isInstanceOf(CustomException.class)
@@ -128,7 +126,7 @@ class ScheduleServiceTest {
 
         ReflectionTestUtils.setField(room, "id", roomId);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.existsByRoom_IdAndDayNumber(roomId, 1)).willReturn(true);
 
         assertThatThrownBy(() -> scheduleService.create(roomId, command))
@@ -146,7 +144,7 @@ class ScheduleServiceTest {
 
         ReflectionTestUtils.setField(room, "id", roomId);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.existsByRoom_IdAndDayNumber(roomId, 1)).willReturn(false);
         given(scheduleRepository.existsByRoom_IdAndDate(roomId, LocalDate.of(2026, 4, 20))).willReturn(true);
 
@@ -165,7 +163,7 @@ class ScheduleServiceTest {
 
         ReflectionTestUtils.setField(room, "id", roomId);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.existsByRoom_IdAndDayNumber(roomId, 1)).willReturn(false);
         given(scheduleRepository.existsByRoom_IdAndDate(roomId, LocalDate.of(2026, 4, 20))).willReturn(false);
         given(scheduleRepository.saveAndFlush(any(Schedule.class)))
@@ -189,7 +187,7 @@ class ScheduleServiceTest {
         ReflectionTestUtils.setField(first, "id", 10L);
         ReflectionTestUtils.setField(second, "id", 11L);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findAllByRoom_IdOrderByDayNumberAsc(roomId)).willReturn(List.of(first, second));
 
         List<ScheduleResult> results = scheduleService.getSchedules(roomId);
@@ -203,7 +201,7 @@ class ScheduleServiceTest {
     void getSchedulesThrowsWhenRoomMissing() {
         UUID roomId = UUID.randomUUID();
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.empty());
+        given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> scheduleService.getSchedules(roomId))
                 .isInstanceOf(CustomException.class)
@@ -215,7 +213,7 @@ class ScheduleServiceTest {
     @DisplayName("방 밖의 일정은 삭제 시 SCHEDULE_NOT_FOUND 예외를 던진다")
     void deleteThrowsWhenScheduleOutsideRoom() {
         UUID roomId = UUID.randomUUID();
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId))
+        given(roomRepository.findById(roomId))
                 .willReturn(Optional.of(Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L)));
         given(scheduleRepository.findByIdAndRoom_Id(10L, roomId)).willReturn(Optional.empty());
 
@@ -230,7 +228,7 @@ class ScheduleServiceTest {
     void deleteThrowsWhenRoomMissing() {
         UUID roomId = UUID.randomUUID();
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.empty());
+        given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> scheduleService.delete(roomId, 10L))
                 .isInstanceOf(CustomException.class)
@@ -248,7 +246,7 @@ class ScheduleServiceTest {
         ReflectionTestUtils.setField(room, "id", roomId);
         ReflectionTestUtils.setField(schedule, "id", 10L);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findByIdAndRoom_Id(10L, roomId)).willReturn(Optional.of(schedule));
 
         scheduleService.delete(roomId, 10L);

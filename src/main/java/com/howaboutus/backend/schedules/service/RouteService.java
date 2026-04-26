@@ -18,7 +18,7 @@ public class RouteService {
     public RouteResult computeRoute(String origin, String destination, String travelMode) {
         String mode = travelMode != null ? travelMode : "DRIVING";
         GoogleComputeRoutesResponse response = googleRoutesClient.computeRoutes(origin, destination, mode);
-        GoogleComputeRoutesResponse.Route route = response.routes().get(0);
+        GoogleComputeRoutesResponse.Route route = response.routes().getFirst();
         return new RouteResult(
                 route.distanceMeters() != null ? route.distanceMeters() : 0,
                 route.durationSeconds(),

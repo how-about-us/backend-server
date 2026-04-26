@@ -13,8 +13,6 @@ import org.springframework.web.client.RestClientException;
 @RequiredArgsConstructor
 public class GoogleRoutesClient {
 
-    private static final String FIELD_MASK = "routes.distanceMeters,routes.duration";
-
     private final RestClient googleRoutesRestClient;
     private final GoogleRoutesProperties properties;
 
@@ -24,7 +22,7 @@ public class GoogleRoutesClient {
             return googleRoutesRestClient.post()
                     .uri("/directions/v2:computeRoutes")
                     .header("X-Goog-Api-Key", properties.apiKey())
-                    .header("X-Goog-FieldMask", FIELD_MASK)
+                    .header("X-Goog-FieldMask", properties.fieldMask())
                     .body(request)
                     .retrieve()
                     .body(GoogleComputeRoutesResponse.class);

@@ -19,6 +19,7 @@ google:
   routes:
     api-key: ${GOOGLE_PLACES_API_KEY}
     base-url: https://routes.googleapis.com
+    field-mask: routes.distanceMeters,routes.duration
 
   oauth:
     client-id: ${GOOGLE_OAUTH_CLIENT_ID}

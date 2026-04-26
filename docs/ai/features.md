@@ -106,18 +106,18 @@
 
 ### 6-2. 일정 항목 (Schedule Items — 장소 단위)
 
-> **이동 정보 갱신 흐름:** 순서 변경(HTTP) → WS 브로드캐스트 → @Async Routes API 호출 → DB 저장 → WS 브로드캐스트
+> **이동 정보 흐름:** 순서 변경(HTTP) → DB 반영 → 클라이언트가 영향받는 구간을 병렬로 `/route` 조회 → 서버가 Google Routes API 프록시 (Redis 3분 캐시). Google Maps Platform 정책상 결과(distance, duration)를 DB에 영구 저장하지 않음.
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
 | `[x]` | 일정에 장소 추가 | 특정 일자에 장소 추가 (보관함 또는 검색에서 바로) | schedule_items |
 | `[x]` | 일정 항목 목록 조회 | 특정 일자의 장소 목록 (order_index 순) | schedule_items |
 | `[x]` | 일정 항목 삭제 | 일자에서 장소 제거 | schedule_items |
-| `[ ]` | 일정 순서 변경 (D&D) | order_index 재정렬 → WebSocket 브로드캐스트 | schedule_items |
+| `[x]` | 일정 순서 변경 (D&D) | order_index 재정렬, 변경된 전체 목록 반환 | schedule_items |
 | `[-]` | 일정 항목 메모 수정 | 1차 구현 범위 제외 | schedule_items |
 | `[x]` | 시간 설정 | start_time, duration_minutes 설정 | schedule_items |
-| `[ ]` | 이동 정보 조회 | 비동기 계산된 distance_meters, duration_seconds, travel_mode 조회 | schedule_items |
-| `[ ]` | 이동 수단 변경 | travel_mode 수동 변경 → 비동기로 Routes API 재호출 | schedule_items |
+| `[x]` | 이동 정보 조회 | 현재→다음 장소 구간의 distance_meters, duration_seconds, travel_mode 반환. 마지막 항목은 204. 결과는 Redis 3분 캐시, DB 저장 없음 | schedule_items, Redis |
+| `[x]` | 이동 수단 변경 | travel_mode 수동 변경 (DB 저장) → 클라이언트가 /route 재조회 | schedule_items |
 
 ---
 

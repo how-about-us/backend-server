@@ -163,16 +163,14 @@ Google OAuth 기반 사용자 정보
 | order_index | INT | NOT NULL | 정렬 순서 (목록 조회 시 0부터 연속 유지) |
 | memo | TEXT | NULLABLE | 방문 메모 (1차 구현 범위 제외, 후속 단계 예정) |
 | travel_mode | VARCHAR(20) | NULLABLE | 다음 장소까지 이동 수단 (DRIVING / WALKING / TRANSIT / BICYCLING) |
-| distance_meters | INT | NULLABLE | 다음 장소까지 이동 거리 (미터) |
-| duration_seconds | INT | NULLABLE | 다음 장소까지 예상 이동 시간 (초) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
 
 **인덱스:** (schedule_id, order_index), (google_place_id)
 
-> **현재 구현 범위:** 1차 구현에서는 장소 추가/조회/삭제와 시간 설정만 제공합니다. 항목 삭제 시 남은 `order_index`는 0부터 연속되도록 재정렬합니다.
+> **현재 구현 범위:** 장소 추가/조회/삭제, 시간 설정, D&D 순서 변경, 이동 수단(`travel_mode`) 변경, 이동 정보 조회를 제공합니다. 항목 삭제·순서 변경 시 남은 `order_index`는 0부터 연속되도록 재정렬합니다.
 >
-> **이동 정보 갱신 흐름(후속 범위):** 장소 추가/삭제/순서 변경 시 HTTP 요청으로 order_index를 DB에 반영한 뒤, 변경 사항을 WebSocket으로 브로드캐스트합니다. 이후 @Async로 Routes API(Compute Routes)를 호출하여 영향받는 구간의 distance_meters, duration_seconds를 갱신하고, 결과를 다시 WebSocket으로 브로드캐스트합니다. 마지막 장소는 다음 장소가 없으므로 이동 정보가 NULL입니다.
+> **이동 정보 흐름:** `distance_meters`, `duration_seconds`는 Google Maps Platform 정책상 DB에 영구 저장할 수 없습니다. 서버가 Google Routes API(Compute Routes)를 프록시하여 결과를 직접 클라이언트에 반환하며, Redis에 3분 TTL로 임시 캐시합니다(`route::{origin}:{dest}:{mode}`). `travel_mode`는 사용자 입력값이므로 DB에 저장합니다. 마지막 장소는 다음 장소가 없으므로 이동 정보를 반환하지 않습니다(204).
 
 ---
 
@@ -200,6 +198,7 @@ Google OAuth 기반 사용자 정보
 | `room:{roomId}:metadata` | 방 메타데이터 캐시 (DB 스냅샷) | Sliding TTL | |
 | `room:{roomId}:connected_users` | 현재 접속 중인 유저 목록 (ephemeral) | 세션 종료 시 제거 | |
 | `place:detail:{googlePlaceId}` | 장소 상세 조회 결과 캐시 | 5분 | |
+| `route::{origin}:{dest}:{travelMode}` | Routes API 이동 정보 캐시 | 3분 | Google Maps Platform 정책상 영구 저장 불가, 임시 캐시만 허용 |
 | `refresh:token:{uuid}` | userId (String) | 14일 | 토큰 → 유저 매핑, 유효성 검증 |
 | `refresh:user:{userId}` | Set\<uuid\> | 없음 | 유저 활성 토큰 목록, 전체 무효화 & Replay Detection |
 
@@ -213,7 +212,7 @@ Google OAuth 기반 사용자 정보
 4. **room.id UUID:** 초대 URL에 노출되므로 추측 불가능한 UUID 사용.
 5. **장소 상세 캐시:** 자유도가 높은 검색어는 캐시 히트율이 낮을 수 있으므로 검색 결과는 캐시하지 않는다. 대신 Google Place 상세 조회 응답은 `google_place_id` 기준으로 Redis에 5분 TTL로 저장한다.
 6. **schedule_items.order_index:** D&D UI를 위한 정렬 인덱스. 재정렬 시 해당 컬럼만 업데이트.
-7. **이동 정보 비동기 갱신:** travel_mode, distance_meters, duration_seconds는 "현재 장소 → 다음 장소" 구간 이동 정보 저장. 마지막 장소의 이동 정보는 NULL.
+7. **이동 정보 프록시:** `travel_mode`(이동 수단 선호)만 DB에 저장. Google Maps Platform 정책상 `distance_meters`·`duration_seconds`는 DB에 영구 저장 불가 — 서버가 Routes API를 프록시하여 결과를 클라이언트에 직접 반환하고, Redis 3분 TTL로 임시 캐시.
 8. **방 Soft Delete:** `rooms.deleted_at` 컬럼으로 방 삭제를 논리 삭제로 표현하고, active room 조회는 soft delete 된 방을 제외한다. 하위 데이터(room_members 등) 정리 정책(CASCADE, 비동기 정리 등)은 추후 논의한다.
 
 ---

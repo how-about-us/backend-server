@@ -16,6 +16,10 @@ google:
     search-field-mask: places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.rating,places.photos
     detail-field-mask: id,displayName,formattedAddress,location,primaryType,rating,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours.weekdayDescriptions,photos.name
 
+  routes:
+    api-key: ${GOOGLE_PLACES_API_KEY}
+    base-url: https://routes.googleapis.com
+
   oauth:
     client-id: ${GOOGLE_OAUTH_CLIENT_ID}
     client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET}

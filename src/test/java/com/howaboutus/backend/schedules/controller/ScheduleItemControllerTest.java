@@ -98,6 +98,7 @@ class ScheduleItemControllerTest {
                 null,
                 null,
                 1,
+                null,
                 Instant.parse("2025-01-01T01:00:00Z")
         );
         given(scheduleItemService.create(eq(ROOM_ID), eq(SCHEDULE_ID), any(ScheduleItemCreateCommand.class), eq(USER_ID)))
@@ -259,6 +260,7 @@ class ScheduleItemControllerTest {
             LocalTime.of(9, 30),
             30,
             0,
+            null,
             Instant.parse("2025-01-01T00:00:00Z")
     );
 }

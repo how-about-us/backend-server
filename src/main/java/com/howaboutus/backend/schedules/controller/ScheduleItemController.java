@@ -1,8 +1,11 @@
 package com.howaboutus.backend.schedules.controller;
 
 import com.howaboutus.backend.schedules.controller.dto.CreateScheduleItemRequest;
+import com.howaboutus.backend.schedules.controller.dto.ReorderScheduleItemRequest;
+import com.howaboutus.backend.schedules.controller.dto.RouteResponse;
 import com.howaboutus.backend.schedules.controller.dto.ScheduleItemResponse;
 import com.howaboutus.backend.schedules.controller.dto.UpdateScheduleItemRequest;
+import com.howaboutus.backend.schedules.controller.dto.UpdateTravelModeRequest;
 import com.howaboutus.backend.schedules.service.ScheduleItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Schedule Items", description = "일정 항목 API")
@@ -103,5 +107,65 @@ public class ScheduleItemController {
     ) {
         scheduleItemService.delete(roomId, scheduleId, itemId, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "일정 순서 변경 (D&D)",
+            description = "일정 항목의 순서를 변경합니다. 변경된 전체 목록을 반환합니다."
+    )
+    @PatchMapping("/{itemId}/order")
+    public List<ScheduleItemResponse> reorder(
+            @AuthenticationPrincipal Long userId,
+            @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+            @PathVariable UUID roomId,
+            @Parameter(description = "일정 ID", example = "1")
+            @PathVariable Long scheduleId,
+            @Parameter(description = "일정 항목 ID", example = "1")
+            @PathVariable Long itemId,
+            @RequestBody @Valid ReorderScheduleItemRequest request
+    ) {
+        return scheduleItemService.reorder(roomId, scheduleId, itemId, request.newOrderIndex(), userId)
+                .stream().map(ScheduleItemResponse::from).toList();
+    }
+
+    @Operation(
+            summary = "이동 수단 변경",
+            description = "다음 장소까지의 이동 수단을 변경합니다."
+    )
+    @PatchMapping("/{itemId}/travel-mode")
+    public ScheduleItemResponse updateTravelMode(
+            @AuthenticationPrincipal Long userId,
+            @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+            @PathVariable UUID roomId,
+            @Parameter(description = "일정 ID", example = "1")
+            @PathVariable Long scheduleId,
+            @Parameter(description = "일정 항목 ID", example = "1")
+            @PathVariable Long itemId,
+            @RequestBody @Valid UpdateTravelModeRequest request
+    ) {
+        return ScheduleItemResponse.from(
+                scheduleItemService.updateTravelMode(roomId, scheduleId, itemId, request.travelMode(), userId)
+        );
+    }
+
+    @Operation(
+            summary = "이동 정보 조회",
+            description = "현재 항목에서 다음 항목까지의 이동 정보를 조회합니다. 마지막 항목은 204를 반환합니다."
+    )
+    @GetMapping("/{itemId}/route")
+    public ResponseEntity<RouteResponse> getRoute(
+            @AuthenticationPrincipal Long userId,
+            @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+            @PathVariable UUID roomId,
+            @Parameter(description = "일정 ID", example = "1")
+            @PathVariable Long scheduleId,
+            @Parameter(description = "일정 항목 ID", example = "1")
+            @PathVariable Long itemId,
+            @Parameter(description = "이동 수단 (저장된 값 대신 사용할 경우)")
+            @RequestParam(required = false) String travelMode
+    ) {
+        return scheduleItemService.getRouteForItem(roomId, scheduleId, itemId, travelMode, userId)
+                .map(result -> ResponseEntity.ok(RouteResponse.from(result)))
+                .orElse(ResponseEntity.noContent().build());
     }
 }

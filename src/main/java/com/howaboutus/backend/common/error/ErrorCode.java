@@ -21,6 +21,7 @@ public enum ErrorCode {
 
     // 400 BAD REQUEST
     SCHEDULE_DATE_MISMATCH(HttpStatus.BAD_REQUEST, "여행 날짜와 일차 정보가 일치하지 않습니다"),
+    INVALID_ORDER_INDEX(HttpStatus.BAD_REQUEST, "유효하지 않은 순서 인덱스입니다"),
 
     // 403 FORBIDDEN
     NOT_ROOM_MEMBER(HttpStatus.FORBIDDEN, "방의 멤버가 아닙니다"),

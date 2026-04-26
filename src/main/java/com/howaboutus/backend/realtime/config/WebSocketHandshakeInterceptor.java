@@ -1,0 +1,55 @@
+package com.howaboutus.backend.realtime.config;
+
+import com.howaboutus.backend.auth.service.JwtProvider;
+import com.howaboutus.backend.common.error.CustomException;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.server.ServerHttpRequest;
+import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.server.HandshakeInterceptor;
+
+@Component
+@RequiredArgsConstructor
+public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
+
+    private static final String ACCESS_TOKEN_COOKIE = "access_token";
+
+    private final JwtProvider jwtProvider;
+
+    @Override
+    public boolean beforeHandshake(ServerHttpRequest request,
+                                   ServerHttpResponse response,
+                                   WebSocketHandler wsHandler,
+                                   Map<String, Object> attributes) {
+        extractAccessToken(request).ifPresent(token -> storeUserId(token, attributes));
+        return true;
+    }
+
+    @Override
+    public void afterHandshake(ServerHttpRequest request,
+                               ServerHttpResponse response,
+                               WebSocketHandler wsHandler,
+                               Exception exception) {
+    }
+
+    private java.util.Optional<String> extractAccessToken(ServerHttpRequest request) {
+        return request.getHeaders().getOrEmpty(HttpHeaders.COOKIE).stream()
+                .flatMap(header -> java.util.Arrays.stream(header.split(";")))
+                .map(String::trim)
+                .filter(cookie -> cookie.startsWith(ACCESS_TOKEN_COOKIE + "="))
+                .map(cookie -> cookie.substring((ACCESS_TOKEN_COOKIE + "=").length()))
+                .filter(token -> !token.isBlank())
+                .findFirst();
+    }
+
+    private void storeUserId(String token, Map<String, Object> attributes) {
+        try {
+            attributes.put(WebSocketSessionAttributes.USER_ID, jwtProvider.extractUserId(token));
+        } catch (CustomException ignored) {
+            attributes.remove(WebSocketSessionAttributes.USER_ID);
+        }
+    }
+}

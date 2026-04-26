@@ -43,7 +43,8 @@ public class SecurityConfig {
                                 "/actuator/health",
                                 "/auth/google/login",
                                 "/auth/refresh",
-                                "/auth/logout")
+                                "/auth/logout",
+                                "/ws/**")
                         .permitAll()
                         .anyRequest().authenticated())
                 //인증 실패시 응답 설정

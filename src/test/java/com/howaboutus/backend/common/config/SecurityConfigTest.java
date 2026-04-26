@@ -51,4 +51,11 @@ class SecurityConfigTest {
         mockMvc.perform(get("/some/protected/path"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("SockJS endpoint prefix는 인증 없이 security filter를 통과한다")
+    void permitsSockJsEndpointPrefix() throws Exception {
+        mockMvc.perform(get("/ws/info"))
+                .andExpect(status().isNotFound());
+    }
 }

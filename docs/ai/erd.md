@@ -197,6 +197,7 @@ Google OAuth 기반 사용자 정보
 |---------|------|-----|------|
 | `room:{roomId}:metadata` | 방 메타데이터 캐시 (DB 스냅샷) | Sliding TTL | |
 | `room:{roomId}:connected_users` | 현재 접속 중인 유저 목록 (ephemeral) | 세션 종료 시 제거 | |
+| `room:{roomId}:sessions:{userId}` | 접속 유저별 WebSocket/STOMP 세션 목록 (ephemeral) | 세션 종료 시 제거 | 같은 유저의 다중 탭/다중 세션 접속 상태 정합성 유지 |
 | `place:detail:{googlePlaceId}` | 장소 상세 조회 결과 캐시 | 5분 | |
 | `route::{origin}:{dest}:{travelMode}` | Routes API 이동 정보 캐시 | 3분 | Google Maps Platform 정책상 영구 저장 불가, 임시 캐시만 허용 |
 | `refresh:token:{uuid}` | userId (String) | 14일 | 토큰 → 유저 매핑, 유효성 검증 |

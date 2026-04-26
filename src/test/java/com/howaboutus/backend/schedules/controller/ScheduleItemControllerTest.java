@@ -22,10 +22,12 @@ import com.howaboutus.backend.schedules.service.ScheduleItemService;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemCreateCommand;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemResult;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemUpdateCommand;
+import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -49,10 +51,16 @@ class ScheduleItemControllerTest {
     @MockitoBean
     private ScheduleItemService scheduleItemService;
 
+    @BeforeEach
+    void setUp() {
+        given(jwtProvider.extractUserId(VALID_TOKEN)).willReturn(USER_ID);
+    }
+
     @Test
     @DisplayName("googlePlaceId가 공백이면 400을 반환하고 서비스는 호출하지 않는다")
     void returnsBadRequestWhenGooglePlaceIdIsBlank() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"googlePlaceId": "   ", "startTime": "09:30", "durationMinutes": 30}
@@ -68,6 +76,7 @@ class ScheduleItemControllerTest {
     @DisplayName("durationMinutes가 0 이하면 400을 반환하고 서비스는 호출하지 않는다")
     void returnsBadRequestWhenDurationMinutesIsNotPositive() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"googlePlaceId": "place-1", "startTime": "09:30", "durationMinutes": 0}
@@ -95,6 +104,7 @@ class ScheduleItemControllerTest {
                 .willReturn(resultWithoutTime);
 
         mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"googlePlaceId": "place-optional"}
@@ -122,6 +132,7 @@ class ScheduleItemControllerTest {
                 .willReturn(SCHEDULE_ITEM_RESULT);
 
         mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"googlePlaceId": "place-1", "startTime": "09:30", "durationMinutes": 30}
@@ -149,6 +160,7 @@ class ScheduleItemControllerTest {
                 .willReturn(SCHEDULE_ITEM_RESULT);
 
         mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"startTime": "10:30", "durationMinutes": 45}
@@ -177,6 +189,7 @@ class ScheduleItemControllerTest {
                 .willReturn(SCHEDULE_ITEM_RESULT);
 
         mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"durationMinutes": 45}
@@ -195,6 +208,7 @@ class ScheduleItemControllerTest {
     @DisplayName("잘못된 시간 형식이면 400을 반환하고 서비스는 호출하지 않는다")
     void returnsBadRequestWhenStartTimeFormatIsInvalid() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"googlePlaceId": "place-1", "startTime": "25:99"}
@@ -211,7 +225,8 @@ class ScheduleItemControllerTest {
     void returnsScheduleItemListSuccessfully() throws Exception {
         given(scheduleItemService.getItems(ROOM_ID, SCHEDULE_ID)).willReturn(List.of(SCHEDULE_ITEM_RESULT));
 
-        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID))
+        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].itemId").value(SCHEDULE_ITEM_RESULT.itemId()))
                 .andExpect(jsonPath("$[0].scheduleId").value(SCHEDULE_ITEM_RESULT.scheduleId()))
@@ -225,12 +240,15 @@ class ScheduleItemControllerTest {
     @Test
     @DisplayName("일정 항목 삭제 성공 시 204를 반환한다")
     void deletesScheduleItemSuccessfully() throws Exception {
-        mockMvc.perform(delete("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", ROOM_ID, SCHEDULE_ID, ITEM_ID))
+        mockMvc.perform(delete("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
         then(scheduleItemService).should().delete(ROOM_ID, SCHEDULE_ID, ITEM_ID);
     }
 
+    private static final Long USER_ID = 1L;
+    private static final String VALID_TOKEN = "valid-jwt";
     private static final UUID ROOM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final Long SCHEDULE_ID = 10L;
     private static final Long ITEM_ID = 99L;

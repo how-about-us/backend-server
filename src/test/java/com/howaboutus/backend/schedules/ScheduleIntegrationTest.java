@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.schedules.entity.Schedule;
@@ -16,21 +17,31 @@ import com.howaboutus.backend.schedules.repository.ScheduleItemRepository;
 import com.howaboutus.backend.schedules.repository.ScheduleRepository;
 import com.howaboutus.backend.support.BaseIntegrationTest;
 import com.jayway.jsonpath.JsonPath;
+import jakarta.servlet.http.Cookie;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.BDDMockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @AutoConfigureMockMvc
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 class ScheduleIntegrationTest extends BaseIntegrationTest {
+
+    private static final Long USER_ID = 1L;
+    private static final String VALID_TOKEN = "valid-jwt";
+
+    @MockitoBean
+    private JwtProvider jwtProvider;
 
     @Autowired
     private MockMvc mockMvc;
@@ -43,6 +54,11 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private ScheduleItemRepository scheduleItemRepository;
+
+    @BeforeEach
+    void setUp() {
+        BDDMockito.given(jwtProvider.extractUserId(VALID_TOKEN)).willReturn(USER_ID);
+    }
 
     @AfterEach
     void tearDown() {
@@ -64,6 +80,7 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
         ));
 
         String createResponse = mockMvc.perform(post("/rooms/{roomId}/schedules", room.getId())
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -93,7 +110,8 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
         String persistedCreatedAt = savedSchedule.orElseThrow().getCreatedAt().toString();
         assertThat(createdAt).isEqualTo(persistedCreatedAt);
 
-        mockMvc.perform(get("/rooms/{roomId}/schedules", room.getId()))
+        mockMvc.perform(get("/rooms/{roomId}/schedules", room.getId())
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].scheduleId").value(scheduleId))
@@ -102,7 +120,8 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$[0].date").value("2026-05-01"))
                 .andExpect(jsonPath("$[0].createdAt").value(persistedCreatedAt));
 
-        mockMvc.perform(delete("/rooms/{roomId}/schedules/{scheduleId}", room.getId(), scheduleId))
+        mockMvc.perform(delete("/rooms/{roomId}/schedules/{scheduleId}", room.getId(), scheduleId)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
         assertThat(scheduleRepository.findAll()).isEmpty();
@@ -123,6 +142,7 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
         Schedule schedule = scheduleRepository.saveAndFlush(Schedule.create(room, 1, LocalDate.of(2026, 5, 1)));
 
         mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", room.getId(), schedule.getId())
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"googlePlaceId": "place-1", "startTime": "09:00", "durationMinutes": 90}
@@ -131,6 +151,7 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.orderIndex").value(0));
 
         mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", room.getId(), schedule.getId())
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"googlePlaceId": "place-2"}
@@ -142,6 +163,7 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
 
         mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", room.getId(), schedule.getId(),
                         firstItem.getId())
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"durationMinutes": 120}
@@ -155,10 +177,12 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
         assertThat(updatedFirstItem.getDurationMinutes()).isEqualTo(120);
 
         mockMvc.perform(delete("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", room.getId(), schedule.getId(),
-                        firstItem.getId()))
+                        firstItem.getId())
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items", room.getId(), schedule.getId()))
+        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items", room.getId(), schedule.getId())
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].orderIndex").value(0))
                 .andExpect(jsonPath("$[0].googlePlaceId").value("place-2"));
@@ -170,6 +194,7 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
         UUID roomId = UUID.randomUUID();
 
         mockMvc.perform(post("/rooms/{roomId}/schedules", roomId)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {

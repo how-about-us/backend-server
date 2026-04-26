@@ -25,7 +25,9 @@ import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.schedules.service.ScheduleService;
 import com.howaboutus.backend.schedules.service.dto.ScheduleCreateCommand;
 import com.howaboutus.backend.schedules.service.dto.ScheduleResult;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,10 +50,16 @@ class ScheduleControllerTest {
     @MockitoBean
     private ScheduleService scheduleService;
 
+    @BeforeEach
+    void setUp() {
+        given(jwtProvider.extractUserId(VALID_TOKEN)).willReturn(USER_ID);
+    }
+
     @Test
     @DisplayName("dayNumber가 없으면 400을 반환하고 서비스는 호출하지 않는다")
     void returnsBadRequestWhenDayNumberIsMissing() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/schedules", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"date": "2025-01-02"}
@@ -67,6 +75,7 @@ class ScheduleControllerTest {
     @DisplayName("dayNumber가 1보다 작으면 400을 반환하고 서비스는 호출하지 않는다")
     void returnsBadRequestWhenDayNumberIsLessThanOne() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/schedules", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"dayNumber": 0, "date": "2025-01-02"}
@@ -82,6 +91,7 @@ class ScheduleControllerTest {
     @DisplayName("date가 없으면 400을 반환하고 서비스는 호출하지 않는다")
     void returnsBadRequestWhenDateIsMissing() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/schedules", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"dayNumber": 2}
@@ -97,6 +107,7 @@ class ScheduleControllerTest {
     @DisplayName("date 형식이 잘못되면 400을 반환하고 서비스는 호출하지 않는다")
     void returnsBadRequestWhenDateFormatIsInvalid() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/schedules", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"dayNumber": 2, "date": "2025-13-40"}
@@ -114,6 +125,7 @@ class ScheduleControllerTest {
         given(scheduleService.create(eq(ROOM_ID), any(ScheduleCreateCommand.class))).willReturn(SCHEDULE_RESULT);
 
         mockMvc.perform(post("/rooms/{roomId}/schedules", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"dayNumber": 2, "date": "2025-01-02"}
@@ -136,7 +148,8 @@ class ScheduleControllerTest {
     void returnsScheduleListSuccessfully() throws Exception {
         given(scheduleService.getSchedules(ROOM_ID)).willReturn(List.of(SCHEDULE_RESULT));
 
-        mockMvc.perform(get("/rooms/{roomId}/schedules", ROOM_ID))
+        mockMvc.perform(get("/rooms/{roomId}/schedules", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].scheduleId").value(SCHEDULE_RESULT.scheduleId()))
                 .andExpect(jsonPath("$[0].roomId").value(ROOM_ID.toString()))
@@ -148,12 +161,15 @@ class ScheduleControllerTest {
     @Test
     @DisplayName("일정 삭제 성공 시 204를 반환한다")
     void deletesScheduleSuccessfully() throws Exception {
-        mockMvc.perform(delete("/rooms/{roomId}/schedules/{scheduleId}", ROOM_ID, SCHEDULE_ID))
+        mockMvc.perform(delete("/rooms/{roomId}/schedules/{scheduleId}", ROOM_ID, SCHEDULE_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
         then(scheduleService).should().delete(ROOM_ID, SCHEDULE_ID);
     }
 
+    private static final Long USER_ID = 1L;
+    private static final String VALID_TOKEN = "valid-jwt";
     private static final UUID ROOM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final Long SCHEDULE_ID = 10L;
     private static final ScheduleResult SCHEDULE_RESULT = new ScheduleResult(

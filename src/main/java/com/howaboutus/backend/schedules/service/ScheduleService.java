@@ -4,6 +4,7 @@ import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
+import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import com.howaboutus.backend.schedules.entity.Schedule;
 import com.howaboutus.backend.schedules.repository.ScheduleRepository;
 import com.howaboutus.backend.schedules.service.dto.ScheduleCreateCommand;
@@ -24,10 +25,12 @@ public class ScheduleService {
     private final RoomRepository roomRepository;
     private final ScheduleRepository scheduleRepository;
     private final ScheduleItemService scheduleItemService;
+    private final RoomAuthorizationService roomAuthorizationService;
 
     @Transactional
-    public ScheduleResult create(UUID roomId, ScheduleCreateCommand command) {
+    public ScheduleResult create(UUID roomId, ScheduleCreateCommand command, Long userId) {
         Room room = getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         validateScheduleDate(room, command.dayNumber(), command.date());
         if (scheduleRepository.existsByRoom_IdAndDayNumber(roomId, command.dayNumber())
                 || scheduleRepository.existsByRoom_IdAndDate(roomId, command.date())) {
@@ -42,8 +45,9 @@ public class ScheduleService {
         }
     }
 
-    public List<ScheduleResult> getSchedules(UUID roomId) {
+    public List<ScheduleResult> getSchedules(UUID roomId, Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         return scheduleRepository.findAllByRoom_IdOrderByDayNumberAsc(roomId)
                 .stream()
                 .map(ScheduleResult::from)
@@ -51,8 +55,9 @@ public class ScheduleService {
     }
 
     @Transactional
-    public void delete(UUID roomId, Long scheduleId) {
+    public void delete(UUID roomId, Long scheduleId, Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         Schedule schedule = scheduleRepository.findByIdAndRoom_Id(scheduleId, roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SCHEDULE_NOT_FOUND));
         scheduleItemService.deleteAllByScheduleId(scheduleId);

@@ -4,6 +4,7 @@ import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
+import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import com.howaboutus.backend.schedules.entity.Schedule;
 import com.howaboutus.backend.schedules.entity.ScheduleItem;
 import com.howaboutus.backend.schedules.repository.ScheduleItemRepository;
@@ -27,10 +28,12 @@ public class ScheduleItemService {
     private final RoomRepository roomRepository;
     private final ScheduleRepository scheduleRepository;
     private final ScheduleItemRepository scheduleItemRepository;
+    private final RoomAuthorizationService roomAuthorizationService;
 
     @Transactional
-    public ScheduleItemResult create(UUID roomId, Long scheduleId, ScheduleItemCreateCommand command) {
+    public ScheduleItemResult create(UUID roomId, Long scheduleId, ScheduleItemCreateCommand command, Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         Schedule schedule = getScheduleForWrite(roomId, scheduleId);
         int nextOrderIndex = scheduleItemRepository.findMaxOrderIndexBySchedule_Id(scheduleId)
                 .map(maxOrderIndex -> maxOrderIndex + 1)
@@ -46,8 +49,9 @@ public class ScheduleItemService {
         return ScheduleItemResult.from(scheduleItemRepository.saveAndFlush(scheduleItem));
     }
 
-    public List<ScheduleItemResult> getItems(UUID roomId, Long scheduleId) {
+    public List<ScheduleItemResult> getItems(UUID roomId, Long scheduleId, Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         getSchedule(roomId, scheduleId);
         return scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(scheduleId)
                 .stream()
@@ -56,8 +60,10 @@ public class ScheduleItemService {
     }
 
     @Transactional
-    public ScheduleItemResult update(UUID roomId, Long scheduleId, Long itemId, ScheduleItemUpdateCommand command) {
+    public ScheduleItemResult update(UUID roomId, Long scheduleId, Long itemId, ScheduleItemUpdateCommand command,
+                                     Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         getScheduleForWrite(roomId, scheduleId);
         ScheduleItem scheduleItem = getScheduleItem(scheduleId, itemId);
 
@@ -70,8 +76,9 @@ public class ScheduleItemService {
     }
 
     @Transactional
-    public void delete(UUID roomId, Long scheduleId, Long itemId) {
+    public void delete(UUID roomId, Long scheduleId, Long itemId, Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         getScheduleForWrite(roomId, scheduleId);
         ScheduleItem scheduleItem = getScheduleItem(scheduleId, itemId);
 

@@ -11,6 +11,7 @@ import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
+import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -28,10 +29,12 @@ public class BookmarkCategoryService {
     private final RoomRepository roomRepository;
     private final BookmarkCategoryRepository bookmarkCategoryRepository;
     private final BookmarkRepository bookmarkRepository;
+    private final RoomAuthorizationService roomAuthorizationService;
 
     @Transactional
-    public BookmarkCategoryResult create(UUID roomId, BookmarkCategoryCreateCommand command) {
+    public BookmarkCategoryResult create(UUID roomId, BookmarkCategoryCreateCommand command, Long userId) {
         Room room = getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         String name = command.name().trim();
         String colorCode = command.colorCode().trim();
 
@@ -47,8 +50,9 @@ public class BookmarkCategoryService {
         }
     }
 
-    public List<BookmarkCategoryResult> getCategories(UUID roomId) {
+    public List<BookmarkCategoryResult> getCategories(UUID roomId, Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         Map<Long, Long> countMap = bookmarkRepository.countGroupedByCategoryId(roomId)
                 .stream()
                 .collect(Collectors.toMap(CategoryBookmarkCount::categoryId, CategoryBookmarkCount::count));
@@ -58,8 +62,9 @@ public class BookmarkCategoryService {
     }
 
     @Transactional
-    public BookmarkCategoryResult rename(UUID roomId, long categoryId, BookmarkCategoryRenameCommand command) {
+    public BookmarkCategoryResult rename(UUID roomId, long categoryId, BookmarkCategoryRenameCommand command, Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         BookmarkCategory category = getCategoryInRoom(roomId, categoryId);
         String name = command.name().trim();
         String colorCode = command.colorCode().trim();
@@ -77,8 +82,9 @@ public class BookmarkCategoryService {
     }
 
     @Transactional
-    public void delete(UUID roomId, long categoryId) {
+    public void delete(UUID roomId, long categoryId, Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         BookmarkCategory category = getCategoryInRoom(roomId, categoryId);
         bookmarkRepository.deleteAllByCategory_Id(categoryId);
         bookmarkCategoryRepository.delete(category);

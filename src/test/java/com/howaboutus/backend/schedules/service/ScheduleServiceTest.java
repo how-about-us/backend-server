@@ -11,6 +11,7 @@ import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
+import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import com.howaboutus.backend.schedules.entity.Schedule;
 import com.howaboutus.backend.schedules.repository.ScheduleRepository;
 import com.howaboutus.backend.schedules.service.dto.ScheduleCreateCommand;
@@ -46,11 +47,15 @@ class ScheduleServiceTest {
     @Mock
     private ScheduleItemService scheduleItemService;
 
+    @Mock
+    private RoomAuthorizationService roomAuthorizationService;
+
     private ScheduleService scheduleService;
 
     @BeforeEach
     void setUp() {
-        scheduleService = new ScheduleService(roomRepository, scheduleRepository, scheduleItemService);
+        scheduleService = new ScheduleService(roomRepository, scheduleRepository, scheduleItemService,
+                roomAuthorizationService);
     }
 
     @Test
@@ -71,7 +76,7 @@ class ScheduleServiceTest {
         given(scheduleRepository.existsByRoom_IdAndDate(roomId, LocalDate.of(2026, 4, 21))).willReturn(false);
         given(scheduleRepository.saveAndFlush(any(Schedule.class))).willReturn(schedule);
 
-        ScheduleResult result = scheduleService.create(roomId, command);
+        ScheduleResult result = scheduleService.create(roomId, command, 1L);
 
         assertThat(result.scheduleId()).isEqualTo(10L);
         assertThat(result.roomId()).isEqualTo(roomId);
@@ -94,7 +99,7 @@ class ScheduleServiceTest {
 
         given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> scheduleService.create(roomId, command))
+        assertThatThrownBy(() -> scheduleService.create(roomId, command, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
@@ -111,7 +116,7 @@ class ScheduleServiceTest {
 
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
 
-        assertThatThrownBy(() -> scheduleService.create(roomId, command))
+        assertThatThrownBy(() -> scheduleService.create(roomId, command, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_DATE_MISMATCH);
@@ -129,7 +134,7 @@ class ScheduleServiceTest {
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.existsByRoom_IdAndDayNumber(roomId, 1)).willReturn(true);
 
-        assertThatThrownBy(() -> scheduleService.create(roomId, command))
+        assertThatThrownBy(() -> scheduleService.create(roomId, command, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_ALREADY_EXISTS);
@@ -148,7 +153,7 @@ class ScheduleServiceTest {
         given(scheduleRepository.existsByRoom_IdAndDayNumber(roomId, 1)).willReturn(false);
         given(scheduleRepository.existsByRoom_IdAndDate(roomId, LocalDate.of(2026, 4, 20))).willReturn(true);
 
-        assertThatThrownBy(() -> scheduleService.create(roomId, command))
+        assertThatThrownBy(() -> scheduleService.create(roomId, command, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_ALREADY_EXISTS);
@@ -169,7 +174,7 @@ class ScheduleServiceTest {
         given(scheduleRepository.saveAndFlush(any(Schedule.class)))
                 .willThrow(new DataIntegrityViolationException("duplicate"));
 
-        assertThatThrownBy(() -> scheduleService.create(roomId, command))
+        assertThatThrownBy(() -> scheduleService.create(roomId, command, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_ALREADY_EXISTS);
@@ -190,7 +195,7 @@ class ScheduleServiceTest {
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findAllByRoom_IdOrderByDayNumberAsc(roomId)).willReturn(List.of(first, second));
 
-        List<ScheduleResult> results = scheduleService.getSchedules(roomId);
+        List<ScheduleResult> results = scheduleService.getSchedules(roomId, 1L);
 
         assertThat(results).containsExactly(ScheduleResult.from(first), ScheduleResult.from(second));
         assertThat(results.getFirst().dayNumber()).isEqualTo(1);
@@ -203,7 +208,7 @@ class ScheduleServiceTest {
 
         given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> scheduleService.getSchedules(roomId))
+        assertThatThrownBy(() -> scheduleService.getSchedules(roomId, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
@@ -217,7 +222,7 @@ class ScheduleServiceTest {
                 .willReturn(Optional.of(Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L)));
         given(scheduleRepository.findByIdAndRoom_Id(10L, roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> scheduleService.delete(roomId, 10L))
+        assertThatThrownBy(() -> scheduleService.delete(roomId, 10L, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_NOT_FOUND);
@@ -230,7 +235,7 @@ class ScheduleServiceTest {
 
         given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> scheduleService.delete(roomId, 10L))
+        assertThatThrownBy(() -> scheduleService.delete(roomId, 10L, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
@@ -249,7 +254,7 @@ class ScheduleServiceTest {
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findByIdAndRoom_Id(10L, roomId)).willReturn(Optional.of(schedule));
 
-        scheduleService.delete(roomId, 10L);
+        scheduleService.delete(roomId, 10L, 1L);
 
         var order = inOrder(scheduleItemService, scheduleRepository);
         order.verify(scheduleItemService).deleteAllByScheduleId(10L);

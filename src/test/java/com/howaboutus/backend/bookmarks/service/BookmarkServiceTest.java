@@ -16,6 +16,7 @@ import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
+import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -42,11 +43,15 @@ class BookmarkServiceTest {
     @Mock
     private BookmarkCategoryRepository bookmarkCategoryRepository;
 
+    @Mock
+    private RoomAuthorizationService roomAuthorizationService;
+
     private BookmarkService bookmarkService;
 
     @BeforeEach
     void setUp() {
-        bookmarkService = new BookmarkService(roomRepository, bookmarkRepository, bookmarkCategoryRepository);
+        bookmarkService = new BookmarkService(roomRepository, bookmarkRepository, bookmarkCategoryRepository,
+                roomAuthorizationService);
     }
 
     @Test
@@ -68,7 +73,7 @@ class BookmarkServiceTest {
         given(bookmarkRepository.existsByRoom_IdAndGooglePlaceId(roomId, "place-1")).willReturn(false);
         given(bookmarkRepository.saveAndFlush(any(Bookmark.class))).willReturn(savedBookmark);
 
-        BookmarkResult result = bookmarkService.create(roomId, new BookmarkCreateCommand("place-1", 10L));
+        BookmarkResult result = bookmarkService.create(roomId, new BookmarkCreateCommand("place-1", 10L), 1L);
 
         assertThat(result).isEqualTo(BookmarkResult.from(savedBookmark));
 
@@ -86,7 +91,7 @@ class BookmarkServiceTest {
 
         given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bookmarkService.create(roomId, command))
+        assertThatThrownBy(() -> bookmarkService.create(roomId, command, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
@@ -102,7 +107,7 @@ class BookmarkServiceTest {
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(bookmarkCategoryRepository.existsByRoom_Id(roomId)).willReturn(false);
 
-        assertThatThrownBy(() -> bookmarkService.create(roomId, command))
+        assertThatThrownBy(() -> bookmarkService.create(roomId, command, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BOOKMARK_CATEGORY_EMPTY);
@@ -119,7 +124,7 @@ class BookmarkServiceTest {
         given(bookmarkCategoryRepository.existsByRoom_Id(roomId)).willReturn(true);
         given(bookmarkCategoryRepository.findByIdAndRoom_Id(10L, roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bookmarkService.create(roomId, command))
+        assertThatThrownBy(() -> bookmarkService.create(roomId, command, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BOOKMARK_CATEGORY_NOT_FOUND);
@@ -141,7 +146,7 @@ class BookmarkServiceTest {
         given(bookmarkCategoryRepository.findByIdAndRoom_Id(10L, roomId)).willReturn(Optional.of(category));
         given(bookmarkRepository.existsByRoom_IdAndGooglePlaceId(roomId, "place-1")).willReturn(true);
 
-        assertThatThrownBy(() -> bookmarkService.create(roomId, command))
+        assertThatThrownBy(() -> bookmarkService.create(roomId, command, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BOOKMARK_ALREADY_EXISTS);
@@ -154,7 +159,7 @@ class BookmarkServiceTest {
 
         given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bookmarkService.getBookmarks(roomId, 1L))
+        assertThatThrownBy(() -> bookmarkService.getBookmarks(roomId, 1L, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
@@ -176,7 +181,7 @@ class BookmarkServiceTest {
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(bookmarkRepository.findAllByRoom_IdAndCategory_IdOrderByCreatedAtDesc(roomId, 20L)).willReturn(List.of(bookmark));
 
-        List<BookmarkResult> results = bookmarkService.getBookmarks(roomId, 20L);
+        List<BookmarkResult> results = bookmarkService.getBookmarks(roomId, 20L, 1L);
 
         assertThat(results).containsExactly(BookmarkResult.from(bookmark));
         assertThat(results.getFirst().categoryId()).isEqualTo(20L);
@@ -203,7 +208,7 @@ class BookmarkServiceTest {
         given(bookmarkCategoryRepository.findByIdAndRoom_Id(11L, roomId)).willReturn(Optional.of(newCategory));
         given(bookmarkRepository.saveAndFlush(any(Bookmark.class))).willReturn(bookmark);
 
-        BookmarkResult result = bookmarkService.updateCategory(roomId, 12L, 11L);
+        BookmarkResult result = bookmarkService.updateCategory(roomId, 12L, 11L, 1L);
 
         assertThat(result.categoryId()).isEqualTo(11L);
         assertThat(result.category()).isEqualTo("카페");
@@ -227,7 +232,7 @@ class BookmarkServiceTest {
         given(bookmarkRepository.findByIdAndRoom_Id(12L, roomId)).willReturn(Optional.of(bookmark));
         given(bookmarkCategoryRepository.findByIdAndRoom_Id(11L, roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bookmarkService.updateCategory(roomId, 12L, 11L))
+        assertThatThrownBy(() -> bookmarkService.updateCategory(roomId, 12L, 11L, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BOOKMARK_CATEGORY_NOT_FOUND);
@@ -242,7 +247,7 @@ class BookmarkServiceTest {
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(bookmarkRepository.findByIdAndRoom_Id(10L, roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bookmarkService.delete(roomId, 10L))
+        assertThatThrownBy(() -> bookmarkService.delete(roomId, 10L, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BOOKMARK_NOT_FOUND);
@@ -263,7 +268,7 @@ class BookmarkServiceTest {
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(bookmarkRepository.findByIdAndRoom_Id(11L, roomId)).willReturn(Optional.of(bookmark));
 
-        bookmarkService.delete(roomId, 11L);
+        bookmarkService.delete(roomId, 11L, 1L);
 
         verify(bookmarkRepository).delete(bookmark);
     }
@@ -286,7 +291,7 @@ class BookmarkServiceTest {
         given(bookmarkRepository.saveAndFlush(any(Bookmark.class)))
                 .willThrow(new DataIntegrityViolationException("duplicate"));
 
-        assertThatThrownBy(() -> bookmarkService.create(roomId, command))
+        assertThatThrownBy(() -> bookmarkService.create(roomId, command, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BOOKMARK_ALREADY_EXISTS);

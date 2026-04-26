@@ -100,7 +100,7 @@ class ScheduleItemControllerTest {
                 1,
                 Instant.parse("2025-01-01T01:00:00Z")
         );
-        given(scheduleItemService.create(eq(ROOM_ID), eq(SCHEDULE_ID), any(ScheduleItemCreateCommand.class)))
+        given(scheduleItemService.create(eq(ROOM_ID), eq(SCHEDULE_ID), any(ScheduleItemCreateCommand.class), eq(USER_ID)))
                 .willReturn(resultWithoutTime);
 
         mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
@@ -119,7 +119,7 @@ class ScheduleItemControllerTest {
                 .andExpect(jsonPath("$.createdAt").value(resultWithoutTime.createdAt().toString()));
 
         ArgumentCaptor<ScheduleItemCreateCommand> captor = ArgumentCaptor.forClass(ScheduleItemCreateCommand.class);
-        then(scheduleItemService).should().create(eq(ROOM_ID), eq(SCHEDULE_ID), captor.capture());
+        then(scheduleItemService).should().create(eq(ROOM_ID), eq(SCHEDULE_ID), captor.capture(), eq(USER_ID));
         assertThat(captor.getValue().googlePlaceId()).isEqualTo("place-optional");
         assertThat(captor.getValue().startTime()).isNull();
         assertThat(captor.getValue().durationMinutes()).isNull();
@@ -128,7 +128,7 @@ class ScheduleItemControllerTest {
     @Test
     @DisplayName("일정 항목 생성 성공 시 201을 반환하고 명령값을 전달한다")
     void createsScheduleItemSuccessfully() throws Exception {
-        given(scheduleItemService.create(eq(ROOM_ID), eq(SCHEDULE_ID), any(ScheduleItemCreateCommand.class)))
+        given(scheduleItemService.create(eq(ROOM_ID), eq(SCHEDULE_ID), any(ScheduleItemCreateCommand.class), eq(USER_ID)))
                 .willReturn(SCHEDULE_ITEM_RESULT);
 
         mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
@@ -147,7 +147,7 @@ class ScheduleItemControllerTest {
                 .andExpect(jsonPath("$.createdAt").value(SCHEDULE_ITEM_RESULT.createdAt().toString()));
 
         ArgumentCaptor<ScheduleItemCreateCommand> captor = ArgumentCaptor.forClass(ScheduleItemCreateCommand.class);
-        then(scheduleItemService).should().create(eq(ROOM_ID), eq(SCHEDULE_ID), captor.capture());
+        then(scheduleItemService).should().create(eq(ROOM_ID), eq(SCHEDULE_ID), captor.capture(), eq(USER_ID));
         assertThat(captor.getValue().googlePlaceId()).isEqualTo("place-1");
         assertThat(captor.getValue().startTime()).isEqualTo(LocalTime.of(9, 30));
         assertThat(captor.getValue().durationMinutes()).isEqualTo(30);
@@ -156,7 +156,7 @@ class ScheduleItemControllerTest {
     @Test
     @DisplayName("일정 항목 수정 성공 시 200을 반환한다")
     void updatesScheduleItemSuccessfully() throws Exception {
-        given(scheduleItemService.update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), any(ScheduleItemUpdateCommand.class)))
+        given(scheduleItemService.update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), any(ScheduleItemUpdateCommand.class), eq(USER_ID)))
                 .willReturn(SCHEDULE_ITEM_RESULT);
 
         mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", ROOM_ID, SCHEDULE_ID, ITEM_ID)
@@ -175,7 +175,7 @@ class ScheduleItemControllerTest {
                 .andExpect(jsonPath("$.createdAt").value(SCHEDULE_ITEM_RESULT.createdAt().toString()));
 
         ArgumentCaptor<ScheduleItemUpdateCommand> captor = ArgumentCaptor.forClass(ScheduleItemUpdateCommand.class);
-        then(scheduleItemService).should().update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), captor.capture());
+        then(scheduleItemService).should().update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), captor.capture(), eq(USER_ID));
         assertThat(captor.getValue().startTime()).isEqualTo(LocalTime.of(10, 30));
         assertThat(captor.getValue().durationMinutes()).isEqualTo(45);
         assertThat(captor.getValue().startTimeProvided()).isTrue();
@@ -185,7 +185,7 @@ class ScheduleItemControllerTest {
     @Test
     @DisplayName("일정 항목 부분 수정 시 전달하지 않은 필드는 미전달로 유지한다")
     void preservesMissingFieldsDuringScheduleItemPatch() throws Exception {
-        given(scheduleItemService.update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), any(ScheduleItemUpdateCommand.class)))
+        given(scheduleItemService.update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), any(ScheduleItemUpdateCommand.class), eq(USER_ID)))
                 .willReturn(SCHEDULE_ITEM_RESULT);
 
         mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", ROOM_ID, SCHEDULE_ID, ITEM_ID)
@@ -197,7 +197,7 @@ class ScheduleItemControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<ScheduleItemUpdateCommand> captor = ArgumentCaptor.forClass(ScheduleItemUpdateCommand.class);
-        then(scheduleItemService).should().update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), captor.capture());
+        then(scheduleItemService).should().update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), captor.capture(), eq(USER_ID));
         assertThat(captor.getValue().startTime()).isNull();
         assertThat(captor.getValue().durationMinutes()).isEqualTo(45);
         assertThat(captor.getValue().startTimeProvided()).isFalse();
@@ -223,7 +223,7 @@ class ScheduleItemControllerTest {
     @Test
     @DisplayName("일정 항목 목록 조회 성공 시 배열을 반환한다")
     void returnsScheduleItemListSuccessfully() throws Exception {
-        given(scheduleItemService.getItems(ROOM_ID, SCHEDULE_ID)).willReturn(List.of(SCHEDULE_ITEM_RESULT));
+        given(scheduleItemService.getItems(ROOM_ID, SCHEDULE_ID, USER_ID)).willReturn(List.of(SCHEDULE_ITEM_RESULT));
 
         mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
                         .cookie(new Cookie("access_token", VALID_TOKEN)))
@@ -244,7 +244,7 @@ class ScheduleItemControllerTest {
                         .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
-        then(scheduleItemService).should().delete(ROOM_ID, SCHEDULE_ID, ITEM_ID);
+        then(scheduleItemService).should().delete(ROOM_ID, SCHEDULE_ID, ITEM_ID, USER_ID);
     }
 
     private static final Long USER_ID = 1L;

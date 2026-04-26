@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
@@ -37,13 +38,14 @@ public class BookmarkCategoryController {
     @PostMapping
     @SuppressWarnings("JvmTaintAnalysis")
     public ResponseEntity<BookmarkCategoryResponse> create(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @RequestBody @Valid CreateBookmarkCategoryRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BookmarkCategoryResponse.from(
-                        bookmarkCategoryService.create(roomId, request.toCommand())
+                        bookmarkCategoryService.create(roomId, request.toCommand(), userId)
                 ));
     }
 
@@ -53,10 +55,11 @@ public class BookmarkCategoryController {
     )
     @GetMapping
     public List<BookmarkCategoryResponse> getCategories(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId
     ) {
-        return bookmarkCategoryService.getCategories(roomId).stream()
+        return bookmarkCategoryService.getCategories(roomId, userId).stream()
                 .map(BookmarkCategoryResponse::from)
                 .toList();
     }
@@ -67,6 +70,7 @@ public class BookmarkCategoryController {
     )
     @PatchMapping("/{categoryId}")
     public BookmarkCategoryResponse rename(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "보관함 카테고리 ID", example = "1")
@@ -74,7 +78,7 @@ public class BookmarkCategoryController {
             @RequestBody @Valid RenameBookmarkCategoryRequest request
     ) {
         return BookmarkCategoryResponse.from(
-                bookmarkCategoryService.rename(roomId, categoryId, request.toCommand())
+                bookmarkCategoryService.rename(roomId, categoryId, request.toCommand(), userId)
         );
     }
 
@@ -84,12 +88,13 @@ public class BookmarkCategoryController {
     )
     @DeleteMapping("/{categoryId}")
     public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "보관함 카테고리 ID", example = "1")
             @PathVariable long categoryId
     ) {
-        bookmarkCategoryService.delete(roomId, categoryId);
+        bookmarkCategoryService.delete(roomId, categoryId, userId);
         return ResponseEntity.noContent().build();
     }
 }

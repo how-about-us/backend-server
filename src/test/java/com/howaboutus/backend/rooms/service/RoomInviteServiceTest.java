@@ -36,6 +36,7 @@ class RoomInviteServiceTest {
     @Mock private RoomMemberRepository roomMemberRepository;
     @Mock private UserRepository userRepository;
     @Mock private InviteCodeGenerator inviteCodeGenerator;
+    private RoomAuthorizationService roomAuthorizationService;
 
     private RoomInviteService roomInviteService;
 
@@ -50,8 +51,9 @@ class RoomInviteServiceTest {
 
     @BeforeEach
     void setUp() {
+        roomAuthorizationService = new RoomAuthorizationService(roomMemberRepository);
         roomInviteService = new RoomInviteService(
-                roomRepository, roomMemberRepository, userRepository, inviteCodeGenerator);
+                roomRepository, roomMemberRepository, userRepository, inviteCodeGenerator, roomAuthorizationService);
 
         room = Room.create("부산 여행", "부산", null, null, "oldCode123", HOST_ID);
         ReflectionTestUtils.setField(room, "id", ROOM_ID);

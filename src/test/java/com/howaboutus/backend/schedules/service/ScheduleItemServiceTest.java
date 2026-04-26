@@ -11,6 +11,7 @@ import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
+import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import com.howaboutus.backend.schedules.entity.Schedule;
 import com.howaboutus.backend.schedules.entity.ScheduleItem;
 import com.howaboutus.backend.schedules.repository.ScheduleItemRepository;
@@ -46,11 +47,15 @@ class ScheduleItemServiceTest {
     @Mock
     private ScheduleItemRepository scheduleItemRepository;
 
+    @Mock
+    private RoomAuthorizationService roomAuthorizationService;
+
     private ScheduleItemService scheduleItemService;
 
     @BeforeEach
     void setUp() {
-        scheduleItemService = new ScheduleItemService(roomRepository, scheduleRepository, scheduleItemRepository);
+        scheduleItemService = new ScheduleItemService(roomRepository, scheduleRepository, scheduleItemRepository,
+                roomAuthorizationService);
     }
 
     @Test
@@ -79,7 +84,8 @@ class ScheduleItemServiceTest {
         ScheduleItemResult result = scheduleItemService.create(
                 roomId,
                 100L,
-                new ScheduleItemCreateCommand("place-1", LocalTime.of(9, 0), 120)
+                new ScheduleItemCreateCommand("place-1", LocalTime.of(9, 0), 120),
+                1L
         );
 
         assertThat(result.itemId()).isEqualTo(200L);
@@ -111,7 +117,7 @@ class ScheduleItemServiceTest {
         given(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(100L))
                 .willReturn(List.of(first, second, third));
 
-        scheduleItemService.delete(roomId, 100L, 11L);
+        scheduleItemService.delete(roomId, 100L, 11L, 1L);
 
         verify(scheduleRepository).findByIdAndRoom_Id(100L, roomId);
         verify(scheduleRepository).incrementVersionIfCurrent(100L, roomId, 0L);
@@ -147,7 +153,8 @@ class ScheduleItemServiceTest {
                 roomId,
                 100L,
                 10L,
-                new ScheduleItemUpdateCommand(null, 90, false, true)
+                new ScheduleItemUpdateCommand(null, 90, false, true),
+                1L
         );
 
         assertThat(result.startTime()).isEqualTo(LocalTime.of(9, 0));
@@ -183,7 +190,8 @@ class ScheduleItemServiceTest {
                 roomId,
                 100L,
                 10L,
-                new ScheduleItemUpdateCommand(null, 120, true, false)
+                new ScheduleItemUpdateCommand(null, 120, true, false),
+                1L
         );
 
         assertThat(result.startTime()).isNull();
@@ -204,7 +212,7 @@ class ScheduleItemServiceTest {
         given(scheduleRepository.findByIdAndRoom_Id(100L, roomId)).willReturn(Optional.of(schedule));
         given(scheduleRepository.incrementVersionIfCurrent(100L, roomId, 0L)).willReturn(0);
 
-        assertThatThrownBy(() -> scheduleItemService.create(roomId, 100L, command))
+        assertThatThrownBy(() -> scheduleItemService.create(roomId, 100L, command, 1L))
                 .isInstanceOf(ObjectOptimisticLockingFailureException.class);
 
         verify(scheduleItemRepository, never()).saveAndFlush(any(ScheduleItem.class));
@@ -229,7 +237,7 @@ class ScheduleItemServiceTest {
         given(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(100L))
                 .willReturn(List.of(first, second));
 
-        List<ScheduleItemResult> results = scheduleItemService.getItems(roomId, 100L);
+        List<ScheduleItemResult> results = scheduleItemService.getItems(roomId, 100L, 1L);
 
         verify(scheduleRepository).findByIdAndRoom_Id(100L, roomId);
         assertThat(results).containsExactly(
@@ -249,7 +257,7 @@ class ScheduleItemServiceTest {
 
         given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> scheduleItemService.getItems(roomId, 100L))
+        assertThatThrownBy(() -> scheduleItemService.getItems(roomId, 100L, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
@@ -265,7 +273,7 @@ class ScheduleItemServiceTest {
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(scheduleRepository.findByIdAndRoom_Id(100L, roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> scheduleItemService.update(roomId, 100L, 10L, command))
+        assertThatThrownBy(() -> scheduleItemService.update(roomId, 100L, 10L, command, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_NOT_FOUND);
@@ -282,7 +290,7 @@ class ScheduleItemServiceTest {
         givenScheduleForWrite(roomId, schedule);
         given(scheduleItemRepository.findByIdAndSchedule_Id(10L, 100L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> scheduleItemService.delete(roomId, 100L, 10L))
+        assertThatThrownBy(() -> scheduleItemService.delete(roomId, 100L, 10L, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_ITEM_NOT_FOUND);
@@ -296,7 +304,7 @@ class ScheduleItemServiceTest {
 
         given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> scheduleItemService.create(roomId, 100L, command))
+        assertThatThrownBy(() -> scheduleItemService.create(roomId, 100L, command, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);

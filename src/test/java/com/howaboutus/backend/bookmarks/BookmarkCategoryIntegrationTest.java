@@ -13,8 +13,13 @@ import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
 import com.howaboutus.backend.bookmarks.repository.BookmarkCategoryRepository;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
+import com.howaboutus.backend.rooms.entity.RoomMember;
+import com.howaboutus.backend.rooms.entity.RoomRole;
+import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.support.BaseIntegrationTest;
+import com.howaboutus.backend.user.entity.User;
+import com.howaboutus.backend.user.repository.UserRepository;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.Cookie;
 import java.time.LocalDate;
@@ -46,6 +51,12 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
     private RoomRepository roomRepository;
 
     @Autowired
+    private RoomMemberRepository roomMemberRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private BookmarkCategoryRepository bookmarkCategoryRepository;
 
     @Autowired
@@ -60,7 +71,9 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
     void tearDown() {
         bookmarkRepository.deleteAll();
         bookmarkCategoryRepository.deleteAll();
+        roomMemberRepository.deleteAll();
         roomRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -74,6 +87,7 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
                 "TOKYO-CAT-HTTP-1",
                 1L
         ));
+        authorizeRequestUserAsMember(room);
 
         String createResponse = mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", room.getId())
                         .cookie(new Cookie("access_token", VALID_TOKEN))
@@ -135,6 +149,7 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
                 "OSAKA-CAT-HTTP-2",
                 2L
         ));
+        authorizeRequestUserAsMember(roomA, roomB);
 
         String createResponse = mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", roomA.getId())
                         .cookie(new Cookie("access_token", VALID_TOKEN))
@@ -157,5 +172,19 @@ class BookmarkCategoryIntegrationTest extends BaseIntegrationTest {
                                 """))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(ErrorCode.BOOKMARK_CATEGORY_NOT_FOUND.name()));
+    }
+
+    private void authorizeRequestUserAsMember(Room... rooms) {
+        User user = userRepository.save(User.ofGoogle(
+                "bookmark-category-" + rooms[0].getId(),
+                "bookmark-category-" + rooms[0].getId() + "@test.com",
+                "카테고리테스터",
+                null
+        ));
+        BDDMockito.given(jwtProvider.extractUserId(VALID_TOKEN)).willReturn(user.getId());
+        for (Room room : rooms) {
+            roomMemberRepository.save(RoomMember.of(room, user, RoomRole.MEMBER));
+        }
+        roomMemberRepository.flush();
     }
 }

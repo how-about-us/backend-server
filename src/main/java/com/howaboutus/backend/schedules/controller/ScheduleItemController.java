@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -37,6 +38,7 @@ public class ScheduleItemController {
     @PostMapping
     @SuppressWarnings("JvmTaintAnalysis")
     public ResponseEntity<ScheduleItemResponse> create(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "일정 ID", example = "1")
@@ -44,7 +46,8 @@ public class ScheduleItemController {
             @RequestBody @Valid CreateScheduleItemRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ScheduleItemResponse.from(scheduleItemService.create(roomId, scheduleId, request.toCommand())));
+                .body(ScheduleItemResponse.from(scheduleItemService.create(roomId, scheduleId, request.toCommand(),
+                        userId)));
     }
 
     @Operation(
@@ -53,12 +56,13 @@ public class ScheduleItemController {
     )
     @GetMapping
     public List<ScheduleItemResponse> getItems(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "일정 ID", example = "1")
             @PathVariable Long scheduleId
     ) {
-        return scheduleItemService.getItems(roomId, scheduleId).stream()
+        return scheduleItemService.getItems(roomId, scheduleId, userId).stream()
                 .map(ScheduleItemResponse::from)
                 .toList();
     }
@@ -69,6 +73,7 @@ public class ScheduleItemController {
     )
     @PatchMapping("/{itemId}")
     public ScheduleItemResponse update(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "일정 ID", example = "1")
@@ -78,7 +83,7 @@ public class ScheduleItemController {
             @RequestBody @Valid UpdateScheduleItemRequest request
     ) {
         return ScheduleItemResponse.from(
-                scheduleItemService.update(roomId, scheduleId, itemId, request.toCommand())
+                scheduleItemService.update(roomId, scheduleId, itemId, request.toCommand(), userId)
         );
     }
 
@@ -88,6 +93,7 @@ public class ScheduleItemController {
     )
     @DeleteMapping("/{itemId}")
     public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "일정 ID", example = "1")
@@ -95,7 +101,7 @@ public class ScheduleItemController {
             @Parameter(description = "일정 항목 ID", example = "1")
             @PathVariable Long itemId
     ) {
-        scheduleItemService.delete(roomId, scheduleId, itemId);
+        scheduleItemService.delete(roomId, scheduleId, itemId, userId);
         return ResponseEntity.noContent().build();
     }
 }

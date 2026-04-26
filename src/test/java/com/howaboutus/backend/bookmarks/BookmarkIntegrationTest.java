@@ -15,8 +15,13 @@ import com.howaboutus.backend.bookmarks.entity.BookmarkCategory;
 import com.howaboutus.backend.bookmarks.repository.BookmarkCategoryRepository;
 import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
 import com.howaboutus.backend.rooms.entity.Room;
+import com.howaboutus.backend.rooms.entity.RoomMember;
+import com.howaboutus.backend.rooms.entity.RoomRole;
+import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.support.BaseIntegrationTest;
+import com.howaboutus.backend.user.entity.User;
+import com.howaboutus.backend.user.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
@@ -48,6 +53,12 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
     private RoomRepository roomRepository;
 
     @Autowired
+    private RoomMemberRepository roomMemberRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private BookmarkRepository bookmarkRepository;
 
     @Autowired
@@ -62,7 +73,9 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
     void tearDown() {
         bookmarkRepository.deleteAll();
         bookmarkCategoryRepository.deleteAll();
+        roomMemberRepository.deleteAll();
         roomRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -76,6 +89,7 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
                 "TOKYO-BMK-1",
                 1L
         ));
+        authorizeRequestUserAsMember(room);
         BookmarkCategory foodCategory = bookmarkCategoryRepository.saveAndFlush(
                 BookmarkCategory.create(room, "맛집", "#FF8800", null)
         );
@@ -182,5 +196,16 @@ class BookmarkIntegrationTest extends BaseIntegrationTest {
 
         assertThatThrownBy(() -> bookmarkRepository.saveAndFlush(crossRoomBookmark))
                 .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    private void authorizeRequestUserAsMember(Room room) {
+        User user = userRepository.save(User.ofGoogle(
+                "bookmark-" + room.getId(),
+                "bookmark-" + room.getId() + "@test.com",
+                "북마크테스터",
+                null
+        ));
+        BDDMockito.given(jwtProvider.extractUserId(VALID_TOKEN)).willReturn(user.getId());
+        roomMemberRepository.saveAndFlush(RoomMember.of(room, user, RoomRole.MEMBER));
     }
 }

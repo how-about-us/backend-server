@@ -5,6 +5,7 @@ import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.places.controller.PlaceController;
 import com.howaboutus.backend.places.service.PlaceDetailService;
+import com.howaboutus.backend.places.service.PlacePhotoService;
 import com.howaboutus.backend.places.service.PlaceSearchService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,9 @@ class SwaggerEndpointsTest {
 
     @MockitoBean
     private PlaceDetailService placeDetailService;
+
+    @MockitoBean
+    private PlacePhotoService placePhotoService;
 
     @Test
     @DisplayName("OpenAPI 문서를 조회할 수 있다")

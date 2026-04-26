@@ -9,9 +9,11 @@ import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
+import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +48,14 @@ class BookmarkCategoryControllerTest {
     @MockitoBean
     private BookmarkCategoryService bookmarkCategoryService;
 
+    private static final Long USER_ID = 1L;
+    private static final String VALID_TOKEN = "valid-jwt";
+
+    @BeforeEach
+    void setUp() {
+        given(jwtProvider.extractUserId(VALID_TOKEN)).willReturn(USER_ID);
+    }
+
     @Test
     @DisplayName("카테고리 생성 성공 시 201을 반환한다")
     void createsBookmarkCategorySuccessfully() throws Exception {
@@ -53,6 +63,7 @@ class BookmarkCategoryControllerTest {
                 .willReturn(BOOKMARK_CATEGORY_RESULT);
 
         mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "맛집", "colorCode": "#FF8800"}
@@ -70,6 +81,7 @@ class BookmarkCategoryControllerTest {
     @DisplayName("name이 공백이면 400을 반환한다")
     void returnsBadRequestWhenCreateNameIsBlank() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "   ", "colorCode": "#FF8800"}
@@ -85,6 +97,7 @@ class BookmarkCategoryControllerTest {
     @DisplayName("name이 50자를 초과하면 400을 반환한다")
     void returnsBadRequestWhenCreateNameIsTooLong() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "%s", "colorCode": "#FF8800"}
@@ -100,6 +113,7 @@ class BookmarkCategoryControllerTest {
     @DisplayName("colorCode가 #RRGGBB 형식이 아니면 생성 시 400을 반환한다")
     void returnsBadRequestWhenCreateColorCodeIsInvalid() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "맛집", "colorCode": "FF8800"}
@@ -116,7 +130,8 @@ class BookmarkCategoryControllerTest {
     void returnsBookmarkCategoryListSuccessfully() throws Exception {
         given(bookmarkCategoryService.getCategories(ROOM_ID)).willReturn(List.of(BOOKMARK_CATEGORY_RESULT));
 
-        mockMvc.perform(get("/rooms/{roomId}/bookmark-categories", ROOM_ID))
+        mockMvc.perform(get("/rooms/{roomId}/bookmark-categories", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].categoryId").value(BOOKMARK_CATEGORY_RESULT.categoryId()))
                 .andExpect(jsonPath("$[0].roomId").value(ROOM_ID.toString()))
@@ -133,6 +148,7 @@ class BookmarkCategoryControllerTest {
                 .willReturn(BOOKMARK_CATEGORY_RESULT);
 
         mockMvc.perform(patch("/rooms/{roomId}/bookmark-categories/{categoryId}", ROOM_ID, CATEGORY_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "카페", "colorCode": "#3366FF"}
@@ -150,6 +166,7 @@ class BookmarkCategoryControllerTest {
     @DisplayName("name이 공백이면 수정 시 400을 반환한다")
     void returnsBadRequestWhenRenameNameIsBlank() throws Exception {
         mockMvc.perform(patch("/rooms/{roomId}/bookmark-categories/{categoryId}", ROOM_ID, CATEGORY_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "   ", "colorCode": "#3366FF"}
@@ -165,6 +182,7 @@ class BookmarkCategoryControllerTest {
     @DisplayName("colorCode가 #RRGGBB 형식이 아니면 수정 시 400을 반환한다")
     void returnsBadRequestWhenRenameColorCodeIsInvalid() throws Exception {
         mockMvc.perform(patch("/rooms/{roomId}/bookmark-categories/{categoryId}", ROOM_ID, CATEGORY_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "카페", "colorCode": "3366FF"}
@@ -179,7 +197,8 @@ class BookmarkCategoryControllerTest {
     @Test
     @DisplayName("카테고리 삭제 성공 시 204를 반환한다")
     void deletesBookmarkCategorySuccessfully() throws Exception {
-        mockMvc.perform(delete("/rooms/{roomId}/bookmark-categories/{categoryId}", ROOM_ID, CATEGORY_ID))
+        mockMvc.perform(delete("/rooms/{roomId}/bookmark-categories/{categoryId}", ROOM_ID, CATEGORY_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
         then(bookmarkCategoryService).should().delete(ROOM_ID, CATEGORY_ID);
@@ -192,6 +211,7 @@ class BookmarkCategoryControllerTest {
                 .willThrow(new CustomException(ErrorCode.ROOM_NOT_FOUND));
 
         mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "맛집", "colorCode": "#FF8800"}

@@ -29,10 +29,12 @@ import com.howaboutus.backend.rooms.service.dto.RoomCreateCommand;
 import com.howaboutus.backend.rooms.service.dto.RoomDetailResult;
 import com.howaboutus.backend.rooms.service.dto.RoomListResult;
 import com.howaboutus.backend.rooms.service.dto.RoomUpdateCommand;
+import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,11 +62,17 @@ class RoomControllerTest {
 
     private static final UUID ROOM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final Long USER_ID = 1L;
+    private static final String VALID_TOKEN = "valid-jwt";
     private static final RoomDetailResult ROOM_DETAIL = new RoomDetailResult(
             ROOM_ID, "부산 여행", "부산",
             LocalDate.of(2026, 5, 1), LocalDate.of(2026, 5, 3),
             "aB3xK9mQ2w", 4, RoomRole.HOST,
             Instant.parse("2026-04-20T00:00:00Z"));
+
+    @BeforeEach
+    void setUp() {
+        given(jwtProvider.extractUserId(VALID_TOKEN)).willReturn(USER_ID);
+    }
 
     @Test
     @DisplayName("방 생성 성공 시 201을 반환한다")
@@ -72,7 +80,7 @@ class RoomControllerTest {
         given(roomService.create(any(RoomCreateCommand.class), eq(USER_ID))).willReturn(ROOM_DETAIL);
 
         mockMvc.perform(post("/rooms")
-                        .header("X-User-Id", USER_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"부산 여행","destination":"부산","startDate":"2026-05-01","endDate":"2026-05-03"}
@@ -88,7 +96,7 @@ class RoomControllerTest {
     @DisplayName("title이 없으면 방 생성 시 400을 반환한다")
     void createRoomReturns400WhenTitleMissing() throws Exception {
         mockMvc.perform(post("/rooms")
-                        .header("X-User-Id", USER_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"destination":"부산"}
@@ -105,7 +113,7 @@ class RoomControllerTest {
         given(roomService.getDetail(ROOM_ID, USER_ID)).willReturn(ROOM_DETAIL);
 
         mockMvc.perform(get("/rooms/{roomId}", ROOM_ID)
-                        .header("X-User-Id", USER_ID))
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("부산 여행"))
                 .andExpect(jsonPath("$.memberCount").value(4));
@@ -118,7 +126,7 @@ class RoomControllerTest {
                 .willThrow(new CustomException(ErrorCode.NOT_ROOM_MEMBER));
 
         mockMvc.perform(get("/rooms/{roomId}", ROOM_ID)
-                        .header("X-User-Id", USER_ID))
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("NOT_ROOM_MEMBER"));
     }
@@ -135,7 +143,7 @@ class RoomControllerTest {
         given(roomService.getMyRooms(eq(USER_ID), eq(null), eq(20))).willReturn(listResult);
 
         mockMvc.perform(get("/rooms")
-                        .header("X-User-Id", USER_ID))
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rooms[0].title").value("부산 여행"))
                 .andExpect(jsonPath("$.hasNext").value(false));
@@ -148,7 +156,7 @@ class RoomControllerTest {
                 .willReturn(ROOM_DETAIL);
 
         mockMvc.perform(patch("/rooms/{roomId}", ROOM_ID)
-                        .header("X-User-Id", USER_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"부산 맛집 여행"}
@@ -164,7 +172,7 @@ class RoomControllerTest {
                 .willThrow(new CustomException(ErrorCode.NOT_ROOM_HOST));
 
         mockMvc.perform(patch("/rooms/{roomId}", ROOM_ID)
-                        .header("X-User-Id", USER_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"변경"}
@@ -177,7 +185,7 @@ class RoomControllerTest {
     @DisplayName("방 삭제 성공 시 204를 반환한다")
     void deleteRoomReturns204() throws Exception {
         mockMvc.perform(delete("/rooms/{roomId}", ROOM_ID)
-                        .header("X-User-Id", USER_ID))
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
         then(roomService).should().delete(ROOM_ID, USER_ID);
@@ -190,7 +198,7 @@ class RoomControllerTest {
                 .willReturn("newCode1234");
 
         mockMvc.perform(post("/rooms/{roomId}/invite-code", ROOM_ID)
-                        .header("X-User-Id", USER_ID))
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.inviteCode").value("newCode1234"));
     }
@@ -202,7 +210,7 @@ class RoomControllerTest {
                 .willReturn(JoinResult.pending(ROOM_ID, "부산 여행"));
 
         mockMvc.perform(post("/rooms/join")
-                        .header("X-User-Id", USER_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"inviteCode":"aB3xK9mQ2w"}
@@ -219,7 +227,7 @@ class RoomControllerTest {
                 .willReturn(JoinResult.alreadyMember(ROOM_ID, "부산 여행", RoomRole.MEMBER));
 
         mockMvc.perform(post("/rooms/join")
-                        .header("X-User-Id", USER_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"inviteCode":"aB3xK9mQ2w"}
@@ -236,7 +244,7 @@ class RoomControllerTest {
                 .willReturn(JoinStatusResult.pending(ROOM_ID, "부산 여행"));
 
         mockMvc.perform(get("/rooms/{roomId}/join/status", ROOM_ID)
-                        .header("X-User-Id", USER_ID))
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("pending"));
     }
@@ -250,7 +258,7 @@ class RoomControllerTest {
                         Instant.parse("2026-04-20T00:00:00Z"))));
 
         mockMvc.perform(get("/rooms/{roomId}/join-requests", ROOM_ID)
-                        .header("X-User-Id", USER_ID))
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.requests[0].requestId").value(42))
                 .andExpect(jsonPath("$.requests[0].nickname").value("김철수"));
@@ -260,7 +268,7 @@ class RoomControllerTest {
     @DisplayName("입장 승인 성공 시 200을 반환한다")
     void approveJoinRequestReturns200() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/join-requests/{requestId}/approve", ROOM_ID, 42)
-                        .header("X-User-Id", USER_ID))
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk());
 
         then(roomInviteService).should().approve(ROOM_ID, 42L, USER_ID);
@@ -270,7 +278,7 @@ class RoomControllerTest {
     @DisplayName("입장 거절 성공 시 200을 반환한다")
     void rejectJoinRequestReturns200() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/join-requests/{requestId}/reject", ROOM_ID, 42)
-                        .header("X-User-Id", USER_ID))
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk());
 
         then(roomInviteService).should().reject(ROOM_ID, 42L, USER_ID);

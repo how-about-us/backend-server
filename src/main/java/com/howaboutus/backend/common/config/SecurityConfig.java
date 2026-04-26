@@ -40,13 +40,12 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
+                                "/actuator/health",
                                 "/auth/google/login",
                                 "/auth/refresh",
                                 "/auth/logout")
                         .permitAll()
-                        .requestMatchers("/users/me").authenticated()
-                        // TODO: API가 갖춰지면 .anyRequest().authenticated() 로 전환
-                        .anyRequest().permitAll())
+                        .anyRequest().authenticated())
                 //인증 실패시 응답 설정
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint))

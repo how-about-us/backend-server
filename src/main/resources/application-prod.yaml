@@ -16,5 +16,9 @@ spring:
     compose:
       enabled: false
 
+  jpa:
+    hibernate:
+      ddl-auto: update
+
 jwt:
   access-token-expiration: 1800000  # 30분 (밀리초)

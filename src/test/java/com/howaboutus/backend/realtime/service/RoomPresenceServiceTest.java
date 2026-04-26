@@ -18,7 +18,7 @@ class RoomPresenceServiceTest {
 
     private StringRedisTemplate redisTemplate;
     private SetOperations<String, String> setOperations;
-    private RedisRoomPresenceService roomPresenceService;
+    private RoomPresenceService roomPresenceService;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -26,7 +26,7 @@ class RoomPresenceServiceTest {
         redisTemplate = Mockito.mock(StringRedisTemplate.class);
         setOperations = Mockito.mock(SetOperations.class);
         given(redisTemplate.opsForSet()).willReturn(setOperations);
-        roomPresenceService = new RedisRoomPresenceService(redisTemplate);
+        roomPresenceService = new RoomPresenceService(redisTemplate);
     }
 
     @Test

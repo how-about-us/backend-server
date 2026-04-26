@@ -2,7 +2,9 @@ package com.howaboutus.backend.realtime.config;
 
 import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.common.error.CustomException;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpHeaders;
@@ -36,11 +38,11 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
                                Exception exception) {
     }
 
-    private java.util.Optional<String> extractAccessToken(ServerHttpRequest request) {
+    private Optional<String> extractAccessToken(ServerHttpRequest request) {
         return request.getHeaders()
                 .getOrEmpty(HttpHeaders.COOKIE)
                 .stream()
-                .flatMap(header -> java.util.Arrays.stream(header.split(";")))
+                .flatMap(header -> Arrays.stream(header.split(";")))
                 .map(String::trim)
                 .filter(cookie -> cookie.startsWith(ACCESS_TOKEN_COOKIE + "="))
                 .map(cookie -> cookie.substring((ACCESS_TOKEN_COOKIE + "=").length()))

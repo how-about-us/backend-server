@@ -27,8 +27,9 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
                                    @NonNull ServerHttpResponse response,
                                    @NonNull WebSocketHandler wsHandler,
                                    @NonNull Map<String, Object> attributes) {
-        extractAccessToken(request).ifPresent(token -> storeUserId(token, attributes));
-        return true;
+        return extractAccessToken(request)
+                .map(token -> storeUserId(token, attributes))
+                .orElse(false);
     }
 
     @Override
@@ -50,11 +51,13 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
                 .findFirst();
     }
 
-    private void storeUserId(String token, Map<String, Object> attributes) {
+    private boolean storeUserId(String token, Map<String, Object> attributes) {
         try {
             attributes.put(WebSocketSessionAttributes.USER_ID, jwtProvider.extractUserId(token));
+            return true;
         } catch (CustomException ignored) {
             attributes.remove(WebSocketSessionAttributes.USER_ID);
+            return false;
         }
     }
 }

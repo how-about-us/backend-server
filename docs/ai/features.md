@@ -57,7 +57,7 @@
 | `[ ]` | 방 멤버 목록 조회 | 방 참여자 목록 + 역할(HOST/MEMBER) + 접속 상태 | room_members |
 | `[ ]` | 멤버 추방 | HOST가 특정 멤버 추방 (HOST는 추방 불가) | room_members |
 | `[ ]` | 방 나가기 | 본인이 방에서 탈퇴 | room_members |
-| `[x]` | 실시간 방 접속 상태 추적 | SockJS + STOMP 방 topic 구독 성공 시 Redis에 접속 유저를 기록하고 접속 이벤트를 브로드캐스트, 세션 종료 시 제거와 해제 이벤트 브로드캐스트 | Redis (connected_users) |
+| `[x]` | 실시간 방 접속 상태 추적 | 유효한 access_token 쿠키가 있는 사용자만 WebSocket handshake를 허용한다. SockJS + STOMP 방 topic 구독 성공 시 Redis에 접속 유저를 기록하고 접속 이벤트를 브로드캐스트, 세션 종료 시 제거와 해제 이벤트 브로드캐스트 | Redis (connected_users) |
 | `[ ]` | 현재 접속 중인 유저 조회 | 실시간 접속 유저 목록 | Redis (connected_users) |
 | `[-]` | 방장 위임 | 권한 이전 | room_members |
 

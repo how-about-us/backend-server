@@ -44,7 +44,7 @@ public class SecurityConfig {
                                 "/auth/google/login",
                                 "/auth/refresh",
                                 "/auth/logout",
-                                "/ws/**")
+                                "/ws/**")   // 웹소켓 인증은 Spring Security에서 다루지 않음
                         .permitAll()
                         .anyRequest().authenticated())
                 //인증 실패시 응답 설정

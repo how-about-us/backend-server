@@ -47,8 +47,8 @@ class WebSocketHandshakeInterceptorTest {
     }
 
     @Test
-    @DisplayName("access_token 쿠키가 없으면 handshake는 허용하되 userId를 저장하지 않는다")
-    void allowsHandshakeWithoutAccessTokenCookie() {
+    @DisplayName("access_token 쿠키가 없으면 handshake를 거부한다")
+    void rejectsHandshakeWithoutAccessTokenCookie() {
         ServerHttpRequest request = requestWithCookie("refresh_token=refresh-token");
         Map<String, Object> attributes = new HashMap<>();
 
@@ -59,13 +59,13 @@ class WebSocketHandshakeInterceptorTest {
                 attributes
         );
 
-        assertThat(result).isTrue();
+        assertThat(result).isFalse();
         assertThat(attributes).doesNotContainKey(WebSocketSessionAttributes.USER_ID);
     }
 
     @Test
-    @DisplayName("access_token 쿠키가 유효하지 않으면 handshake는 허용하되 userId를 저장하지 않는다")
-    void allowsHandshakeWithInvalidAccessTokenCookie() {
+    @DisplayName("access_token 쿠키가 유효하지 않으면 handshake를 거부한다")
+    void rejectsHandshakeWithInvalidAccessTokenCookie() {
         ServerHttpRequest request = requestWithCookie("access_token=invalid-token");
         Map<String, Object> attributes = new HashMap<>();
         given(jwtProvider.extractUserId("invalid-token"))
@@ -78,7 +78,7 @@ class WebSocketHandshakeInterceptorTest {
                 attributes
         );
 
-        assertThat(result).isTrue();
+        assertThat(result).isFalse();
         assertThat(attributes).doesNotContainKey(WebSocketSessionAttributes.USER_ID);
     }
 

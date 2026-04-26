@@ -365,6 +365,25 @@ class ScheduleItemServiceTest {
     }
 
     @Test
+    @DisplayName("이동 수단 변경 시 공백과 대소문자를 정규화한다")
+    void updateTravelModeNormalizesValue() {
+        UUID roomId = UUID.randomUUID();
+        Room room = createRoom(roomId);
+        Schedule schedule = createSchedule(room, 100L);
+        ScheduleItem item = createScheduleItem(schedule, 10L, "place-1", 0);
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        givenScheduleForWrite(roomId, schedule);
+        given(scheduleItemRepository.findByIdAndSchedule_Id(10L, 100L)).willReturn(Optional.of(item));
+        given(scheduleItemRepository.saveAndFlush(item)).willReturn(item);
+
+        ScheduleItemResult result = scheduleItemService.updateTravelMode(roomId, 100L, 10L, " walking ", 1L);
+
+        assertThat(result.travelMode()).isEqualTo("WALKING");
+        assertThat(item.getTravelMode()).isEqualTo("WALKING");
+    }
+
+    @Test
     @DisplayName("마지막 항목이 아니면 이동 정보를 반환한다")
     void getRouteForItemReturnsRouteWhenNotLast() {
         UUID roomId = UUID.randomUUID();
@@ -381,6 +400,50 @@ class ScheduleItemServiceTest {
         given(routeService.computeRoute("place-1", "place-2", "DRIVING")).willReturn(expected);
 
         Optional<RouteResult> result = scheduleItemService.getRouteForItem(roomId, 100L, 10L, null, 1L);
+
+        assertThat(result).contains(expected);
+    }
+
+    @Test
+    @DisplayName("저장된 이동 수단이 있으면 이동 정보 조회 시 해당 값을 사용한다")
+    void getRouteForItemUsesStoredTravelMode() {
+        UUID roomId = UUID.randomUUID();
+        Room room = createRoom(roomId);
+        Schedule schedule = createSchedule(room, 100L);
+        ScheduleItem first = createScheduleItem(schedule, 10L, "place-1", 0);
+        ScheduleItem second = createScheduleItem(schedule, 11L, "place-2", 1);
+        first.updateTravelMode("TRANSIT");
+        RouteResult expected = new RouteResult(500, 300, "TRANSIT");
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(scheduleRepository.findByIdAndRoom_Id(100L, roomId)).willReturn(Optional.of(schedule));
+        given(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(100L))
+                .willReturn(List.of(first, second));
+        given(routeService.computeRoute("place-1", "place-2", "TRANSIT")).willReturn(expected);
+
+        Optional<RouteResult> result = scheduleItemService.getRouteForItem(roomId, 100L, 10L, null, 1L);
+
+        assertThat(result).contains(expected);
+    }
+
+    @Test
+    @DisplayName("이동 수단 override가 있으면 저장된 이동 수단보다 우선하고 정규화한다")
+    void getRouteForItemUsesNormalizedOverrideBeforeStoredTravelMode() {
+        UUID roomId = UUID.randomUUID();
+        Room room = createRoom(roomId);
+        Schedule schedule = createSchedule(room, 100L);
+        ScheduleItem first = createScheduleItem(schedule, 10L, "place-1", 0);
+        ScheduleItem second = createScheduleItem(schedule, 11L, "place-2", 1);
+        first.updateTravelMode("TRANSIT");
+        RouteResult expected = new RouteResult(700, 420, "WALKING");
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(scheduleRepository.findByIdAndRoom_Id(100L, roomId)).willReturn(Optional.of(schedule));
+        given(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(100L))
+                .willReturn(List.of(first, second));
+        given(routeService.computeRoute("place-1", "place-2", "WALKING")).willReturn(expected);
+
+        Optional<RouteResult> result = scheduleItemService.getRouteForItem(roomId, 100L, 10L, " walking ", 1L);
 
         assertThat(result).contains(expected);
     }

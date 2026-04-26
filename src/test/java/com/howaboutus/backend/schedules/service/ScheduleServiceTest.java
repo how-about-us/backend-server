@@ -4,8 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
@@ -83,10 +86,12 @@ class ScheduleServiceTest {
         assertThat(result.dayNumber()).isEqualTo(2);
         assertThat(result.date()).isEqualTo(LocalDate.of(2026, 4, 21));
         assertThat(result.createdAt()).isEqualTo(createdAt);
-        verify(roomAuthorizationService).requireActiveMember(roomId, 1L);
-
         ArgumentCaptor<Schedule> scheduleCaptor = ArgumentCaptor.forClass(Schedule.class);
-        verify(scheduleRepository).saveAndFlush(scheduleCaptor.capture());
+        var order = inOrder(roomAuthorizationService, scheduleRepository);
+        order.verify(roomAuthorizationService).requireActiveMember(roomId, 1L);
+        order.verify(scheduleRepository).existsByRoom_IdAndDayNumber(roomId, 2);
+        order.verify(scheduleRepository).existsByRoom_IdAndDate(roomId, LocalDate.of(2026, 4, 21));
+        order.verify(scheduleRepository).saveAndFlush(scheduleCaptor.capture());
         assertThat(scheduleCaptor.getValue().getRoom()).isSameAs(room);
         assertThat(scheduleCaptor.getValue().getDayNumber()).isEqualTo(2);
         assertThat(scheduleCaptor.getValue().getDate()).isEqualTo(LocalDate.of(2026, 4, 21));
@@ -104,6 +109,25 @@ class ScheduleServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("방 멤버가 아니면 일정 생성 시 저장소 검증 전에 예외를 전파한다")
+    void createPropagatesAuthorizationFailureBeforeScheduleRepositoryCalls() {
+        UUID roomId = UUID.randomUUID();
+        Room room = Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L);
+        ScheduleCreateCommand command = new ScheduleCreateCommand(1, LocalDate.of(2026, 4, 20));
+        CustomException authorizationFailure = new CustomException(ErrorCode.NOT_ROOM_MEMBER);
+
+        ReflectionTestUtils.setField(room, "id", roomId);
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        doThrow(authorizationFailure).when(roomAuthorizationService).requireActiveMember(roomId, 1L);
+
+        assertThatThrownBy(() -> scheduleService.create(roomId, command, 1L))
+                .isSameAs(authorizationFailure);
+
+        verifyNoInteractions(scheduleRepository);
     }
 
     @ParameterizedTest(name = "{0}")
@@ -200,7 +224,9 @@ class ScheduleServiceTest {
 
         assertThat(results).containsExactly(ScheduleResult.from(first), ScheduleResult.from(second));
         assertThat(results.getFirst().dayNumber()).isEqualTo(1);
-        verify(roomAuthorizationService).requireActiveMember(roomId, 1L);
+        var order = inOrder(roomAuthorizationService, scheduleRepository);
+        order.verify(roomAuthorizationService).requireActiveMember(roomId, 1L);
+        order.verify(scheduleRepository).findAllByRoom_IdOrderByDayNumberAsc(roomId);
     }
 
     @Test
@@ -214,6 +240,24 @@ class ScheduleServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROOM_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("방 멤버가 아니면 일정 목록 조회 시 일정 저장소를 호출하지 않는다")
+    void getSchedulesPropagatesAuthorizationFailureBeforeScheduleRepositoryCalls() {
+        UUID roomId = UUID.randomUUID();
+        Room room = Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L);
+        CustomException authorizationFailure = new CustomException(ErrorCode.NOT_ROOM_MEMBER);
+
+        ReflectionTestUtils.setField(room, "id", roomId);
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        doThrow(authorizationFailure).when(roomAuthorizationService).requireActiveMember(roomId, 1L);
+
+        assertThatThrownBy(() -> scheduleService.getSchedules(roomId, 1L))
+                .isSameAs(authorizationFailure);
+
+        verify(scheduleRepository, never()).findAllByRoom_IdOrderByDayNumberAsc(roomId);
     }
 
     @Test
@@ -258,10 +302,30 @@ class ScheduleServiceTest {
 
         scheduleService.delete(roomId, 10L, 1L);
 
-        verify(roomAuthorizationService).requireActiveMember(roomId, 1L);
-        var order = inOrder(scheduleItemService, scheduleRepository);
+        var order = inOrder(roomAuthorizationService, scheduleRepository, scheduleItemService);
+        order.verify(roomAuthorizationService).requireActiveMember(roomId, 1L);
+        order.verify(scheduleRepository).findByIdAndRoom_Id(10L, roomId);
         order.verify(scheduleItemService).deleteAllByScheduleId(10L);
         order.verify(scheduleRepository).delete(schedule);
+    }
+
+    @Test
+    @DisplayName("방 멤버가 아니면 일정 삭제 시 일정 저장소와 항목 서비스를 호출하지 않는다")
+    void deletePropagatesAuthorizationFailureBeforeScheduleRepositoryCalls() {
+        UUID roomId = UUID.randomUUID();
+        Room room = Room.create("도쿄 여행", "도쿄", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 23), "INVITE", 1L);
+        CustomException authorizationFailure = new CustomException(ErrorCode.NOT_ROOM_MEMBER);
+
+        ReflectionTestUtils.setField(room, "id", roomId);
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        doThrow(authorizationFailure).when(roomAuthorizationService).requireActiveMember(roomId, 1L);
+
+        assertThatThrownBy(() -> scheduleService.delete(roomId, 10L, 1L))
+                .isSameAs(authorizationFailure);
+
+        verify(scheduleRepository, never()).findByIdAndRoom_Id(10L, roomId);
+        verifyNoInteractions(scheduleItemService);
     }
 
     private static Stream<Arguments> invalidScheduleCreateCommands() {

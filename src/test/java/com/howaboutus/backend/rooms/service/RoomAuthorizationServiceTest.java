@@ -87,6 +87,34 @@ class RoomAuthorizationServiceTest {
                 .isEqualTo(ErrorCode.NOT_ROOM_HOST);
     }
 
+    @Test
+    @DisplayName("HOST는 HOST 검증을 통과한다")
+    void requireHostAllowsHost() {
+        UUID roomId = UUID.randomUUID();
+        Long userId = 1L;
+        RoomAuthorizationService service = new RoomAuthorizationService(roomMemberRepository);
+
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId))
+                .willReturn(Optional.of(createMember(RoomRole.HOST)));
+
+        service.requireHost(roomId, userId);
+    }
+
+    @Test
+    @DisplayName("멤버가 없으면 HOST 검증에서 거절된다")
+    void requireHostRejectsMissingMember() {
+        UUID roomId = UUID.randomUUID();
+        Long userId = 1L;
+        RoomAuthorizationService service = new RoomAuthorizationService(roomMemberRepository);
+
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.requireHost(roomId, userId))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.NOT_ROOM_MEMBER);
+    }
+
     private RoomMember createMember(RoomRole role) {
         Room room = Room.create("도쿄 여행", "도쿄", null, null, "INVITE", 1L);
         User user = User.ofGoogle("google-1", "user@example.com", "사용자", null);

@@ -5,6 +5,7 @@ import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.common.integration.google.GoogleRoutesClient;
 import com.howaboutus.backend.common.integration.google.dto.GoogleComputeRoutesResponse;
+import com.howaboutus.backend.schedules.entity.TravelMode;
 import com.howaboutus.backend.schedules.service.dto.RouteResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -16,14 +17,14 @@ public class RouteService {
 
     private final GoogleRoutesClient googleRoutesClient;
 
-    @Cacheable(cacheNames = CachePolicy.Keys.ROUTE, key = "#origin + ':' + #destination + ':' + (#travelMode ?: 'DRIVING')")
+    @Cacheable(
+            cacheNames = CachePolicy.Keys.ROUTE,
+            condition = "T(com.howaboutus.backend.schedules.entity.TravelMode).isAllowedOrNull(#travelMode)",
+            key = "#origin + ':' + #destination + ':' + "
+                    + "T(com.howaboutus.backend.schedules.entity.TravelMode).normalizeOrDefault(#travelMode)"
+    )
     public RouteResult computeRoute(String origin, String destination, String travelMode) {
-        String mode;
-        if (travelMode != null) {
-            mode = travelMode;
-        } else {
-            mode = "DRIVING";
-        }
+        String mode = TravelMode.normalizeOrDefault(travelMode);
         GoogleComputeRoutesResponse response = googleRoutesClient.computeRoutes(origin, destination, mode);
         if (response == null || response.routes() == null || response.routes().isEmpty()) {
             throw new CustomException(ErrorCode.EXTERNAL_API_ERROR);

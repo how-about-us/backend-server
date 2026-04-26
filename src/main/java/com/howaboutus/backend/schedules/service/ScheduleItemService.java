@@ -7,6 +7,7 @@ import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import com.howaboutus.backend.schedules.entity.Schedule;
 import com.howaboutus.backend.schedules.entity.ScheduleItem;
+import com.howaboutus.backend.schedules.entity.TravelMode;
 import com.howaboutus.backend.schedules.repository.ScheduleItemRepository;
 import com.howaboutus.backend.schedules.repository.ScheduleRepository;
 import com.howaboutus.backend.schedules.service.dto.RouteResult;
@@ -157,14 +158,9 @@ public class ScheduleItemService {
             return Optional.empty();
         }
 
-        String mode;
-        if (travelModeOverride != null) {
-            mode = travelModeOverride;
-        } else if (current.getTravelMode() != null) {
-            mode = current.getTravelMode();
-        } else {
-            mode = "DRIVING";
-        }
+        String mode = travelModeOverride != null
+                ? TravelMode.normalize(travelModeOverride)
+                : TravelMode.normalizeOrDefault(current.getTravelMode());
         return Optional.of(routeService.computeRoute(current.getGooglePlaceId(), next.getGooglePlaceId(), mode));
     }
 

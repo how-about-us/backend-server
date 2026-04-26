@@ -327,6 +327,20 @@ class ScheduleItemControllerTest {
     }
 
     @Test
+    @DisplayName("이동 수단 파라미터가 있으면 이동 정보 조회 시 서비스에 전달한다")
+    void passesTravelModeOverrideWhenRouteParamIsProvided() throws Exception {
+        RouteResult routeResult = new RouteResult(900, 600, "WALKING");
+        given(scheduleItemService.getRouteForItem(ROOM_ID, SCHEDULE_ID, ITEM_ID, "WALKING", USER_ID))
+                .willReturn(Optional.of(routeResult));
+
+        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/route", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .param("travelMode", "WALKING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.travelMode").value("WALKING"));
+    }
+
+    @Test
     @DisplayName("마지막 항목이면 이동 정보 조회 시 204를 반환한다")
     void returnsNoContentWhenItemIsLast() throws Exception {
         given(scheduleItemService.getRouteForItem(ROOM_ID, SCHEDULE_ID, ITEM_ID, null, USER_ID))

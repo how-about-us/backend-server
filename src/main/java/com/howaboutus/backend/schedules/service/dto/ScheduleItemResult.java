@@ -11,6 +11,7 @@ public record ScheduleItemResult(
         LocalTime startTime,
         Integer durationMinutes,
         int orderIndex,
+        String travelMode,
         Instant createdAt
 ) {
 
@@ -22,6 +23,7 @@ public record ScheduleItemResult(
                 scheduleItem.getStartTime(),
                 scheduleItem.getDurationMinutes(),
                 scheduleItem.getOrderIndex(),
+                scheduleItem.getTravelMode(),
                 scheduleItem.getCreatedAt()
         );
     }

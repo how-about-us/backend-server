@@ -109,7 +109,7 @@ class BookmarkControllerTest {
     @Test
     @DisplayName("북마크 생성 성공 시 201을 반환한다")
     void createsBookmarkSuccessfully() throws Exception {
-        given(bookmarkService.create(eq(ROOM_ID), any(BookmarkCreateCommand.class))).willReturn(BOOKMARK_RESULT);
+        given(bookmarkService.create(eq(ROOM_ID), any(BookmarkCreateCommand.class), eq(USER_ID))).willReturn(BOOKMARK_RESULT);
 
         mockMvc.perform(post("/rooms/{roomId}/bookmarks", ROOM_ID)
                         .cookie(new Cookie("access_token", VALID_TOKEN))
@@ -127,7 +127,7 @@ class BookmarkControllerTest {
                 .andExpect(jsonPath("$.createdAt").value(BOOKMARK_RESULT.createdAt().toString()));
 
         ArgumentCaptor<BookmarkCreateCommand> captor = ArgumentCaptor.forClass(BookmarkCreateCommand.class);
-        then(bookmarkService).should().create(eq(ROOM_ID), captor.capture());
+        then(bookmarkService).should().create(eq(ROOM_ID), captor.capture(), eq(USER_ID));
         assertThat(captor.getValue().googlePlaceId()).isEqualTo("place-1");
         assertThat(captor.getValue().categoryId()).isEqualTo(10L);
     }
@@ -151,7 +151,7 @@ class BookmarkControllerTest {
     @Test
     @DisplayName("북마크 카테고리 변경 성공 시 200을 반환한다")
     void updatesBookmarkCategorySuccessfully() throws Exception {
-        given(bookmarkService.updateCategory(ROOM_ID, BOOKMARK_ID, 20L))
+        given(bookmarkService.updateCategory(ROOM_ID, BOOKMARK_ID, 20L, USER_ID))
                 .willReturn(BOOKMARK_RESULT);
 
         mockMvc.perform(patch("/rooms/{roomId}/bookmarks/{bookmarkId}/category", ROOM_ID, BOOKMARK_ID)
@@ -169,13 +169,13 @@ class BookmarkControllerTest {
                 .andExpect(jsonPath("$.addedBy").value(BOOKMARK_RESULT.addedBy()))
                 .andExpect(jsonPath("$.createdAt").value(BOOKMARK_RESULT.createdAt().toString()));
 
-        then(bookmarkService).should().updateCategory(ROOM_ID, BOOKMARK_ID, 20L);
+        then(bookmarkService).should().updateCategory(ROOM_ID, BOOKMARK_ID, 20L, USER_ID);
     }
 
     @Test
     @DisplayName("방이 없으면 목록 조회 시 404를 반환한다")
     void returnsNotFoundWhenRoomIsMissing() throws Exception {
-        given(bookmarkService.getBookmarks(ROOM_ID, 1L))
+        given(bookmarkService.getBookmarks(ROOM_ID, 1L, USER_ID))
                 .willThrow(new CustomException(ErrorCode.ROOM_NOT_FOUND));
 
         mockMvc.perform(get("/rooms/{roomId}/bookmarks", ROOM_ID)
@@ -188,7 +188,7 @@ class BookmarkControllerTest {
     @Test
     @DisplayName("북마크 목록 조회 성공 시 categoryId와 category를 포함해 반환한다")
     void returnsBookmarkListSuccessfully() throws Exception {
-        given(bookmarkService.getBookmarks(ROOM_ID, 1L)).willReturn(List.of(BOOKMARK_RESULT));
+        given(bookmarkService.getBookmarks(ROOM_ID, 1L, USER_ID)).willReturn(List.of(BOOKMARK_RESULT));
 
         mockMvc.perform(get("/rooms/{roomId}/bookmarks", ROOM_ID)
                         .cookie(new Cookie("access_token", VALID_TOKEN))
@@ -210,7 +210,7 @@ class BookmarkControllerTest {
                         .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
-        then(bookmarkService).should().delete(ROOM_ID, BOOKMARK_ID);
+        then(bookmarkService).should().delete(ROOM_ID, BOOKMARK_ID, USER_ID);
     }
 
     private static final UUID ROOM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");

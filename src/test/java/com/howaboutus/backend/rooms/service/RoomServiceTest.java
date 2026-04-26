@@ -44,13 +44,15 @@ class RoomServiceTest {
     @Mock private RoomMemberRepository roomMemberRepository;
     @Mock private UserRepository userRepository;
     @Mock private InviteCodeGenerator inviteCodeGenerator;
+    private RoomAuthorizationService roomAuthorizationService;
 
     private RoomService roomService;
 
     @BeforeEach
     void setUp() {
+        roomAuthorizationService = new RoomAuthorizationService(roomMemberRepository);
         roomService = new RoomService(roomRepository, roomMemberRepository,
-                userRepository, inviteCodeGenerator);
+                userRepository, inviteCodeGenerator, roomAuthorizationService);
     }
 
     @Test

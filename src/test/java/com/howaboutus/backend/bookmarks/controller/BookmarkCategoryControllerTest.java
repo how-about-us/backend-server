@@ -59,7 +59,7 @@ class BookmarkCategoryControllerTest {
     @Test
     @DisplayName("카테고리 생성 성공 시 201을 반환한다")
     void createsBookmarkCategorySuccessfully() throws Exception {
-        given(bookmarkCategoryService.create(eq(ROOM_ID), any()))
+        given(bookmarkCategoryService.create(eq(ROOM_ID), any(), eq(USER_ID)))
                 .willReturn(BOOKMARK_CATEGORY_RESULT);
 
         mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)
@@ -128,7 +128,7 @@ class BookmarkCategoryControllerTest {
     @Test
     @DisplayName("카테고리 목록 조회 성공 시 200을 반환한다")
     void returnsBookmarkCategoryListSuccessfully() throws Exception {
-        given(bookmarkCategoryService.getCategories(ROOM_ID)).willReturn(List.of(BOOKMARK_CATEGORY_RESULT));
+        given(bookmarkCategoryService.getCategories(ROOM_ID, USER_ID)).willReturn(List.of(BOOKMARK_CATEGORY_RESULT));
 
         mockMvc.perform(get("/rooms/{roomId}/bookmark-categories", ROOM_ID)
                         .cookie(new Cookie("access_token", VALID_TOKEN)))
@@ -144,7 +144,7 @@ class BookmarkCategoryControllerTest {
     @Test
     @DisplayName("카테고리 이름 변경 성공 시 200을 반환한다")
     void renamesBookmarkCategorySuccessfully() throws Exception {
-        given(bookmarkCategoryService.rename(eq(ROOM_ID), eq(CATEGORY_ID), any()))
+        given(bookmarkCategoryService.rename(eq(ROOM_ID), eq(CATEGORY_ID), any(), eq(USER_ID)))
                 .willReturn(BOOKMARK_CATEGORY_RESULT);
 
         mockMvc.perform(patch("/rooms/{roomId}/bookmark-categories/{categoryId}", ROOM_ID, CATEGORY_ID)
@@ -201,13 +201,13 @@ class BookmarkCategoryControllerTest {
                         .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
-        then(bookmarkCategoryService).should().delete(ROOM_ID, CATEGORY_ID);
+        then(bookmarkCategoryService).should().delete(ROOM_ID, CATEGORY_ID, USER_ID);
     }
 
     @Test
     @DisplayName("서비스가 ROOM_NOT_FOUND를 던지면 404를 반환한다")
     void returnsNotFoundWhenServiceThrowsRoomNotFound() throws Exception {
-        given(bookmarkCategoryService.create(eq(ROOM_ID), any()))
+        given(bookmarkCategoryService.create(eq(ROOM_ID), any(), eq(USER_ID)))
                 .willThrow(new CustomException(ErrorCode.ROOM_NOT_FOUND));
 
         mockMvc.perform(post("/rooms/{roomId}/bookmark-categories", ROOM_ID)

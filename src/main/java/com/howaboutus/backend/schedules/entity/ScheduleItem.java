@@ -9,7 +9,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalTime;
@@ -23,9 +22,6 @@ import lombok.NoArgsConstructor;
         indexes = {
                 @Index(name = "idx_schedule_items_schedule_order", columnList = "schedule_id, order_index"),
                 @Index(name = "idx_schedule_items_google_place_id", columnList = "google_place_id")
-        },
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uq_schedule_items_schedule_order", columnNames = {"schedule_id", "order_index"})
         }
 )
 @Getter
@@ -54,12 +50,6 @@ public class ScheduleItem extends BaseTimeEntity {
 
     @Column(name = "travel_mode", length = 20)
     private String travelMode;
-
-    @Column(name = "distance_meters")
-    private Integer distanceMeters;
-
-    @Column(name = "duration_seconds")
-    private Integer durationSeconds;
 
     private ScheduleItem(
             Schedule schedule,
@@ -92,5 +82,9 @@ public class ScheduleItem extends BaseTimeEntity {
 
     public void changeOrderIndex(int orderIndex) {
         this.orderIndex = orderIndex;
+    }
+
+    public void updateTravelMode(String travelMode) {
+        this.travelMode = TravelMode.normalizeNullable(travelMode);
     }
 }

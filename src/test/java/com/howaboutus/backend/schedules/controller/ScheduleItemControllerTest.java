@@ -19,6 +19,7 @@ import com.howaboutus.backend.common.config.SecurityConfig;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
 import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.schedules.service.ScheduleItemService;
+import com.howaboutus.backend.schedules.service.dto.RouteResult;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemCreateCommand;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemResult;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemUpdateCommand;
@@ -26,6 +27,7 @@ import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -98,9 +100,10 @@ class ScheduleItemControllerTest {
                 null,
                 null,
                 1,
+                null,
                 Instant.parse("2025-01-01T01:00:00Z")
         );
-        given(scheduleItemService.create(eq(ROOM_ID), eq(SCHEDULE_ID), any(ScheduleItemCreateCommand.class)))
+        given(scheduleItemService.create(eq(ROOM_ID), eq(SCHEDULE_ID), any(ScheduleItemCreateCommand.class), eq(USER_ID)))
                 .willReturn(resultWithoutTime);
 
         mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
@@ -119,7 +122,7 @@ class ScheduleItemControllerTest {
                 .andExpect(jsonPath("$.createdAt").value(resultWithoutTime.createdAt().toString()));
 
         ArgumentCaptor<ScheduleItemCreateCommand> captor = ArgumentCaptor.forClass(ScheduleItemCreateCommand.class);
-        then(scheduleItemService).should().create(eq(ROOM_ID), eq(SCHEDULE_ID), captor.capture());
+        then(scheduleItemService).should().create(eq(ROOM_ID), eq(SCHEDULE_ID), captor.capture(), eq(USER_ID));
         assertThat(captor.getValue().googlePlaceId()).isEqualTo("place-optional");
         assertThat(captor.getValue().startTime()).isNull();
         assertThat(captor.getValue().durationMinutes()).isNull();
@@ -128,7 +131,7 @@ class ScheduleItemControllerTest {
     @Test
     @DisplayName("일정 항목 생성 성공 시 201을 반환하고 명령값을 전달한다")
     void createsScheduleItemSuccessfully() throws Exception {
-        given(scheduleItemService.create(eq(ROOM_ID), eq(SCHEDULE_ID), any(ScheduleItemCreateCommand.class)))
+        given(scheduleItemService.create(eq(ROOM_ID), eq(SCHEDULE_ID), any(ScheduleItemCreateCommand.class), eq(USER_ID)))
                 .willReturn(SCHEDULE_ITEM_RESULT);
 
         mockMvc.perform(post("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
@@ -147,7 +150,7 @@ class ScheduleItemControllerTest {
                 .andExpect(jsonPath("$.createdAt").value(SCHEDULE_ITEM_RESULT.createdAt().toString()));
 
         ArgumentCaptor<ScheduleItemCreateCommand> captor = ArgumentCaptor.forClass(ScheduleItemCreateCommand.class);
-        then(scheduleItemService).should().create(eq(ROOM_ID), eq(SCHEDULE_ID), captor.capture());
+        then(scheduleItemService).should().create(eq(ROOM_ID), eq(SCHEDULE_ID), captor.capture(), eq(USER_ID));
         assertThat(captor.getValue().googlePlaceId()).isEqualTo("place-1");
         assertThat(captor.getValue().startTime()).isEqualTo(LocalTime.of(9, 30));
         assertThat(captor.getValue().durationMinutes()).isEqualTo(30);
@@ -156,7 +159,7 @@ class ScheduleItemControllerTest {
     @Test
     @DisplayName("일정 항목 수정 성공 시 200을 반환한다")
     void updatesScheduleItemSuccessfully() throws Exception {
-        given(scheduleItemService.update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), any(ScheduleItemUpdateCommand.class)))
+        given(scheduleItemService.update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), any(ScheduleItemUpdateCommand.class), eq(USER_ID)))
                 .willReturn(SCHEDULE_ITEM_RESULT);
 
         mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", ROOM_ID, SCHEDULE_ID, ITEM_ID)
@@ -175,7 +178,7 @@ class ScheduleItemControllerTest {
                 .andExpect(jsonPath("$.createdAt").value(SCHEDULE_ITEM_RESULT.createdAt().toString()));
 
         ArgumentCaptor<ScheduleItemUpdateCommand> captor = ArgumentCaptor.forClass(ScheduleItemUpdateCommand.class);
-        then(scheduleItemService).should().update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), captor.capture());
+        then(scheduleItemService).should().update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), captor.capture(), eq(USER_ID));
         assertThat(captor.getValue().startTime()).isEqualTo(LocalTime.of(10, 30));
         assertThat(captor.getValue().durationMinutes()).isEqualTo(45);
         assertThat(captor.getValue().startTimeProvided()).isTrue();
@@ -185,7 +188,7 @@ class ScheduleItemControllerTest {
     @Test
     @DisplayName("일정 항목 부분 수정 시 전달하지 않은 필드는 미전달로 유지한다")
     void preservesMissingFieldsDuringScheduleItemPatch() throws Exception {
-        given(scheduleItemService.update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), any(ScheduleItemUpdateCommand.class)))
+        given(scheduleItemService.update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), any(ScheduleItemUpdateCommand.class), eq(USER_ID)))
                 .willReturn(SCHEDULE_ITEM_RESULT);
 
         mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}", ROOM_ID, SCHEDULE_ID, ITEM_ID)
@@ -197,7 +200,7 @@ class ScheduleItemControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<ScheduleItemUpdateCommand> captor = ArgumentCaptor.forClass(ScheduleItemUpdateCommand.class);
-        then(scheduleItemService).should().update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), captor.capture());
+        then(scheduleItemService).should().update(eq(ROOM_ID), eq(SCHEDULE_ID), eq(ITEM_ID), captor.capture(), eq(USER_ID));
         assertThat(captor.getValue().startTime()).isNull();
         assertThat(captor.getValue().durationMinutes()).isEqualTo(45);
         assertThat(captor.getValue().startTimeProvided()).isFalse();
@@ -223,7 +226,7 @@ class ScheduleItemControllerTest {
     @Test
     @DisplayName("일정 항목 목록 조회 성공 시 배열을 반환한다")
     void returnsScheduleItemListSuccessfully() throws Exception {
-        given(scheduleItemService.getItems(ROOM_ID, SCHEDULE_ID)).willReturn(List.of(SCHEDULE_ITEM_RESULT));
+        given(scheduleItemService.getItems(ROOM_ID, SCHEDULE_ID, USER_ID)).willReturn(List.of(SCHEDULE_ITEM_RESULT));
 
         mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items", ROOM_ID, SCHEDULE_ID)
                         .cookie(new Cookie("access_token", VALID_TOKEN)))
@@ -244,7 +247,120 @@ class ScheduleItemControllerTest {
                         .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
-        then(scheduleItemService).should().delete(ROOM_ID, SCHEDULE_ID, ITEM_ID);
+        then(scheduleItemService).should().delete(ROOM_ID, SCHEDULE_ID, ITEM_ID, USER_ID);
+    }
+
+    @Test
+    @DisplayName("순서 변경 성공 시 200과 항목 목록을 반환한다")
+    void reordersScheduleItemSuccessfully() throws Exception {
+        given(scheduleItemService.reorder(ROOM_ID, SCHEDULE_ID, ITEM_ID, 1, USER_ID))
+                .willReturn(List.of(SCHEDULE_ITEM_RESULT));
+
+        mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/order", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"newOrderIndex": 1}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].itemId").value(SCHEDULE_ITEM_RESULT.itemId()));
+    }
+
+    @Test
+    @DisplayName("newOrderIndex가 음수면 순서 변경 시 400을 반환한다")
+    void returnsBadRequestWhenReorderIndexIsNegative() throws Exception {
+        mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/order", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"newOrderIndex": -1}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(scheduleItemService);
+    }
+
+    @Test
+    @DisplayName("이동 수단 변경 성공 시 200을 반환한다")
+    void updatesTravelModeSuccessfully() throws Exception {
+        given(scheduleItemService.updateTravelMode(ROOM_ID, SCHEDULE_ID, ITEM_ID, "WALKING", USER_ID))
+                .willReturn(SCHEDULE_ITEM_RESULT);
+
+        mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/travel-mode", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"travelMode": "WALKING"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.itemId").value(SCHEDULE_ITEM_RESULT.itemId()));
+    }
+
+    @Test
+    @DisplayName("허용되지 않는 이동 수단이면 400을 반환한다")
+    void returnsBadRequestWhenTravelModeIsInvalid() throws Exception {
+        mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/travel-mode", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"travelMode": "FLYING"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+
+        verifyNoInteractions(scheduleItemService);
+    }
+
+    @Test
+    @DisplayName("마지막 항목이 아니면 이동 정보 조회 시 200을 반환한다")
+    void returnsRouteWhenItemIsNotLast() throws Exception {
+        RouteResult routeResult = new RouteResult(1200, 900, "DRIVING");
+        given(scheduleItemService.getRouteForItem(ROOM_ID, SCHEDULE_ID, ITEM_ID, null, USER_ID))
+                .willReturn(Optional.of(routeResult));
+
+        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/route", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.distanceMeters").value(1200))
+                .andExpect(jsonPath("$.durationSeconds").value(900))
+                .andExpect(jsonPath("$.travelMode").value("DRIVING"));
+    }
+
+    @Test
+    @DisplayName("이동 수단 파라미터가 있으면 이동 정보 조회 시 서비스에 전달한다")
+    void passesTravelModeOverrideWhenRouteParamIsProvided() throws Exception {
+        RouteResult routeResult = new RouteResult(900, 600, "WALKING");
+        given(scheduleItemService.getRouteForItem(ROOM_ID, SCHEDULE_ID, ITEM_ID, "WALKING", USER_ID))
+                .willReturn(Optional.of(routeResult));
+
+        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/route", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .param("travelMode", "WALKING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.travelMode").value("WALKING"));
+    }
+
+    @Test
+    @DisplayName("마지막 항목이면 이동 정보 조회 시 204를 반환한다")
+    void returnsNoContentWhenItemIsLast() throws Exception {
+        given(scheduleItemService.getRouteForItem(ROOM_ID, SCHEDULE_ID, ITEM_ID, null, USER_ID))
+                .willReturn(Optional.empty());
+
+        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/route", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("허용되지 않는 travelMode 파라미터면 이동 정보 조회 시 400을 반환한다")
+    void returnsBadRequestWhenRouteTravelModeParamIsInvalid() throws Exception {
+        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/route", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .param("travelMode", "FLYING"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+
+        verifyNoInteractions(scheduleItemService);
     }
 
     private static final Long USER_ID = 1L;
@@ -259,6 +375,7 @@ class ScheduleItemControllerTest {
             LocalTime.of(9, 30),
             30,
             0,
+            null,
             Instant.parse("2025-01-01T00:00:00Z")
     );
 }

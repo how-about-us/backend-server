@@ -122,7 +122,7 @@ class ScheduleControllerTest {
     @Test
     @DisplayName("일정 생성 성공 시 201을 반환한다")
     void createsScheduleSuccessfully() throws Exception {
-        given(scheduleService.create(eq(ROOM_ID), any(ScheduleCreateCommand.class))).willReturn(SCHEDULE_RESULT);
+        given(scheduleService.create(eq(ROOM_ID), any(ScheduleCreateCommand.class), eq(USER_ID))).willReturn(SCHEDULE_RESULT);
 
         mockMvc.perform(post("/rooms/{roomId}/schedules", ROOM_ID)
                         .cookie(new Cookie("access_token", VALID_TOKEN))
@@ -138,7 +138,7 @@ class ScheduleControllerTest {
                 .andExpect(jsonPath("$.createdAt").value(SCHEDULE_RESULT.createdAt().toString()));
 
         ArgumentCaptor<ScheduleCreateCommand> captor = ArgumentCaptor.forClass(ScheduleCreateCommand.class);
-        then(scheduleService).should().create(eq(ROOM_ID), captor.capture());
+        then(scheduleService).should().create(eq(ROOM_ID), captor.capture(), eq(USER_ID));
         assertThat(captor.getValue().dayNumber()).isEqualTo(2);
         assertThat(captor.getValue().date()).isEqualTo(LocalDate.of(2025, 1, 2));
     }
@@ -146,7 +146,7 @@ class ScheduleControllerTest {
     @Test
     @DisplayName("일정 목록 조회 성공 시 배열을 반환한다")
     void returnsScheduleListSuccessfully() throws Exception {
-        given(scheduleService.getSchedules(ROOM_ID)).willReturn(List.of(SCHEDULE_RESULT));
+        given(scheduleService.getSchedules(ROOM_ID, USER_ID)).willReturn(List.of(SCHEDULE_RESULT));
 
         mockMvc.perform(get("/rooms/{roomId}/schedules", ROOM_ID)
                         .cookie(new Cookie("access_token", VALID_TOKEN)))
@@ -165,7 +165,7 @@ class ScheduleControllerTest {
                         .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
-        then(scheduleService).should().delete(ROOM_ID, SCHEDULE_ID);
+        then(scheduleService).should().delete(ROOM_ID, SCHEDULE_ID, USER_ID);
     }
 
     private static final Long USER_ID = 1L;

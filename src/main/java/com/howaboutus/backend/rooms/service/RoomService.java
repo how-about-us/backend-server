@@ -34,6 +34,7 @@ public class RoomService {
     private final RoomMemberRepository roomMemberRepository;
     private final UserRepository userRepository;
     private final InviteCodeGenerator inviteCodeGenerator;
+    private final RoomAuthorizationService roomAuthorizationService;
 
     @Transactional
     public RoomDetailResult create(RoomCreateCommand command, Long userId) {
@@ -55,7 +56,7 @@ public class RoomService {
 
     public RoomDetailResult getDetail(UUID roomId, Long userId) {
         Room room = getActiveRoom(roomId);
-        RoomMember member = getActiveMember(roomId, userId);
+        RoomMember member = roomAuthorizationService.requireActiveMember(roomId, userId);
         long memberCount = roomMemberRepository.countByRoom_IdAndRoleIn(roomId, ACTIVE_ROLES);
         return RoomDetailResult.of(room, member.getRole(), memberCount);
     }
@@ -63,7 +64,7 @@ public class RoomService {
     @Transactional
     public RoomDetailResult update(UUID roomId, RoomUpdateCommand command, Long userId) {
         Room room = getActiveRoom(roomId);
-        getHostMember(roomId, userId);
+        roomAuthorizationService.requireHost(roomId, userId);
         LocalDate effectiveStart = command.startDate() != null ? command.startDate() : room.getStartDate();
         LocalDate effectiveEnd = command.endDate() != null ? command.endDate() : room.getEndDate();
         validateDateRange(effectiveStart, effectiveEnd);
@@ -75,7 +76,7 @@ public class RoomService {
     @Transactional
     public void delete(UUID roomId, Long userId) {
         Room room = getActiveRoom(roomId);
-        getHostMember(roomId, userId);
+        roomAuthorizationService.requireHost(roomId, userId);
         room.delete();
     }
 
@@ -125,20 +126,4 @@ public class RoomService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
     }
 
-    private RoomMember getActiveMember(UUID roomId, Long userId) {
-        RoomMember member = roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.NOT_ROOM_MEMBER));
-        if (member.getRole() == RoomRole.PENDING) {
-            throw new CustomException(ErrorCode.NOT_ROOM_MEMBER);
-        }
-        return member;
-    }
-
-    private RoomMember getHostMember(UUID roomId, Long userId) {
-        RoomMember member = getActiveMember(roomId, userId);
-        if (member.getRole() != RoomRole.HOST) {
-            throw new CustomException(ErrorCode.NOT_ROOM_HOST);
-        }
-        return member;
-    }
 }

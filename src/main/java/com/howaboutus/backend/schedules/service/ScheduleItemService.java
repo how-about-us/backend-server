@@ -4,14 +4,18 @@ import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
+import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import com.howaboutus.backend.schedules.entity.Schedule;
 import com.howaboutus.backend.schedules.entity.ScheduleItem;
+import com.howaboutus.backend.schedules.entity.TravelMode;
 import com.howaboutus.backend.schedules.repository.ScheduleItemRepository;
 import com.howaboutus.backend.schedules.repository.ScheduleRepository;
+import com.howaboutus.backend.schedules.service.dto.RouteResult;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemCreateCommand;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemResult;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemUpdateCommand;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.time.LocalTime;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +31,13 @@ public class ScheduleItemService {
     private final RoomRepository roomRepository;
     private final ScheduleRepository scheduleRepository;
     private final ScheduleItemRepository scheduleItemRepository;
+    private final RoomAuthorizationService roomAuthorizationService;
+    private final RouteService routeService;
 
     @Transactional
-    public ScheduleItemResult create(UUID roomId, Long scheduleId, ScheduleItemCreateCommand command) {
+    public ScheduleItemResult create(UUID roomId, Long scheduleId, ScheduleItemCreateCommand command, Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         Schedule schedule = getScheduleForWrite(roomId, scheduleId);
         int nextOrderIndex = scheduleItemRepository.findMaxOrderIndexBySchedule_Id(scheduleId)
                 .map(maxOrderIndex -> maxOrderIndex + 1)
@@ -46,8 +53,9 @@ public class ScheduleItemService {
         return ScheduleItemResult.from(scheduleItemRepository.saveAndFlush(scheduleItem));
     }
 
-    public List<ScheduleItemResult> getItems(UUID roomId, Long scheduleId) {
+    public List<ScheduleItemResult> getItems(UUID roomId, Long scheduleId, Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         getSchedule(roomId, scheduleId);
         return scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(scheduleId)
                 .stream()
@@ -56,8 +64,10 @@ public class ScheduleItemService {
     }
 
     @Transactional
-    public ScheduleItemResult update(UUID roomId, Long scheduleId, Long itemId, ScheduleItemUpdateCommand command) {
+    public ScheduleItemResult update(UUID roomId, Long scheduleId, Long itemId, ScheduleItemUpdateCommand command,
+                                     Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         getScheduleForWrite(roomId, scheduleId);
         ScheduleItem scheduleItem = getScheduleItem(scheduleId, itemId);
 
@@ -70,8 +80,9 @@ public class ScheduleItemService {
     }
 
     @Transactional
-    public void delete(UUID roomId, Long scheduleId, Long itemId) {
+    public void delete(UUID roomId, Long scheduleId, Long itemId, Long userId) {
         getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
         getScheduleForWrite(roomId, scheduleId);
         ScheduleItem scheduleItem = getScheduleItem(scheduleId, itemId);
 
@@ -82,6 +93,75 @@ public class ScheduleItemService {
     @Transactional
     public void deleteAllByScheduleId(Long scheduleId) {
         scheduleItemRepository.deleteAllBySchedule_Id(scheduleId);
+    }
+
+    @Transactional
+    public List<ScheduleItemResult> reorder(UUID roomId, Long scheduleId, Long itemId, int newOrderIndex, Long userId) {
+        getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
+        getScheduleForWrite(roomId, scheduleId);
+
+        List<ScheduleItem> items = scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(scheduleId);
+
+        ScheduleItem movedItem = items.stream()
+                .filter(item -> item.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new CustomException(ErrorCode.SCHEDULE_ITEM_NOT_FOUND));
+
+        if (newOrderIndex < 0 || newOrderIndex >= items.size()) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_INDEX);
+        }
+
+        items.remove(movedItem);
+        items.add(newOrderIndex, movedItem);
+
+        for (int i = 0; i < items.size(); i++) {
+            items.get(i).changeOrderIndex(i);
+        }
+
+        return items.stream().map(ScheduleItemResult::from).toList();
+    }
+
+    @Transactional
+    public ScheduleItemResult updateTravelMode(UUID roomId, Long scheduleId, Long itemId, String travelMode, Long userId) {
+        getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
+        getScheduleForWrite(roomId, scheduleId);
+        ScheduleItem scheduleItem = getScheduleItem(scheduleId, itemId);
+        scheduleItem.updateTravelMode(travelMode);
+        return ScheduleItemResult.from(scheduleItemRepository.saveAndFlush(scheduleItem));
+    }
+
+    public Optional<RouteResult> getRouteForItem(UUID roomId, Long scheduleId, Long itemId, String travelModeOverride, Long userId) {
+        getRoom(roomId);
+        roomAuthorizationService.requireActiveMember(roomId, userId);
+        getSchedule(roomId, scheduleId);
+
+        List<ScheduleItem> items = scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(scheduleId);
+
+        ScheduleItem current = null;
+        ScheduleItem next = null;
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).getId().equals(itemId)) {
+                current = items.get(i);
+                if (i + 1 < items.size()) {
+                    next = items.get(i + 1);
+                }
+                break;
+            }
+        }
+
+        if (current == null) {
+            throw new CustomException(ErrorCode.SCHEDULE_ITEM_NOT_FOUND);
+        }
+        if (next == null) {
+            return Optional.empty();
+        }
+
+        String mode = travelModeOverride != null
+                ? TravelMode.normalize(travelModeOverride)
+                : TravelMode.normalizeOrDefault(current.getTravelMode());
+        return Optional.of(routeService.computeRoute(current.getGooglePlaceId(), next.getGooglePlaceId(), mode));
     }
 
     private void reorderRemainingItems(Long scheduleId, Long deletedItemId) {

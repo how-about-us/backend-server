@@ -10,12 +10,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.howaboutus.backend.auth.service.JwtProvider;
 import com.howaboutus.backend.rooms.entity.Room;
+import com.howaboutus.backend.rooms.entity.RoomMember;
+import com.howaboutus.backend.rooms.entity.RoomRole;
+import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.schedules.entity.Schedule;
 import com.howaboutus.backend.schedules.entity.ScheduleItem;
 import com.howaboutus.backend.schedules.repository.ScheduleItemRepository;
 import com.howaboutus.backend.schedules.repository.ScheduleRepository;
 import com.howaboutus.backend.support.BaseIntegrationTest;
+import com.howaboutus.backend.user.entity.User;
+import com.howaboutus.backend.user.repository.UserRepository;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.Cookie;
 import java.time.LocalDate;
@@ -50,6 +55,12 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
     private RoomRepository roomRepository;
 
     @Autowired
+    private RoomMemberRepository roomMemberRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private ScheduleRepository scheduleRepository;
 
     @Autowired
@@ -64,7 +75,9 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
     void tearDown() {
         scheduleItemRepository.deleteAll();
         scheduleRepository.deleteAll();
+        roomMemberRepository.deleteAll();
         roomRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -78,6 +91,7 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
                 "SEOUL-SCH-1",
                 1L
         ));
+        authorizeRequestUserAsMember(room);
 
         String createResponse = mockMvc.perform(post("/rooms/{roomId}/schedules", room.getId())
                         .cookie(new Cookie("access_token", VALID_TOKEN))
@@ -138,6 +152,7 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
                 "TOKYO-ITEM-INTEGRATION",
                 1L
         ));
+        authorizeRequestUserAsMember(room);
 
         Schedule schedule = scheduleRepository.saveAndFlush(Schedule.create(room, 1, LocalDate.of(2026, 5, 1)));
 
@@ -204,5 +219,16 @@ class ScheduleIntegrationTest extends BaseIntegrationTest {
                                 """))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("ROOM_NOT_FOUND"));
+    }
+
+    private void authorizeRequestUserAsMember(Room room) {
+        User user = userRepository.save(User.ofGoogle(
+                "schedule-" + room.getId(),
+                "schedule-" + room.getId() + "@test.com",
+                "일정테스터",
+                null
+        ));
+        BDDMockito.given(jwtProvider.extractUserId(VALID_TOKEN)).willReturn(user.getId());
+        roomMemberRepository.saveAndFlush(RoomMember.of(room, user, RoomRole.MEMBER));
     }
 }

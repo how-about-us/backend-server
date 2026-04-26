@@ -3,6 +3,9 @@ package com.howaboutus.backend.schedules;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.howaboutus.backend.rooms.entity.Room;
+import com.howaboutus.backend.rooms.entity.RoomMember;
+import com.howaboutus.backend.rooms.entity.RoomRole;
+import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.schedules.entity.Schedule;
 import com.howaboutus.backend.schedules.entity.ScheduleItem;
@@ -14,6 +17,8 @@ import com.howaboutus.backend.schedules.service.dto.ScheduleItemResult;
 import com.howaboutus.backend.support.BaseIntegrationTest;
 import com.howaboutus.backend.support.concurrency.RepositoryLookupBarrier;
 import com.howaboutus.backend.support.schedules.ScheduleOptimisticLockTestConfig;
+import com.howaboutus.backend.user.entity.User;
+import com.howaboutus.backend.user.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
@@ -39,6 +44,12 @@ class ScheduleOptimisticLockIntegrationTest extends BaseIntegrationTest {
     private RoomRepository roomRepository;
 
     @Autowired
+    private RoomMemberRepository roomMemberRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private ScheduleRepository scheduleRepository;
 
     @Autowired
@@ -54,7 +65,9 @@ class ScheduleOptimisticLockIntegrationTest extends BaseIntegrationTest {
     void tearDown() {
         scheduleItemRepository.deleteAll();
         scheduleRepository.deleteAll();
+        roomMemberRepository.deleteAll();
         roomRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -68,6 +81,8 @@ class ScheduleOptimisticLockIntegrationTest extends BaseIntegrationTest {
                 "SEOUL-LOCK-1",
                 1L
         ));
+        User user = userRepository.save(User.ofGoogle("lock-user", "lock@test.com", "락테스터", null));
+        roomMemberRepository.saveAndFlush(RoomMember.of(room, user, RoomRole.MEMBER));
         Schedule schedule = scheduleRepository.saveAndFlush(Schedule.create(room, 1, LocalDate.of(2026, 5, 1)));
         Long initialVersion = scheduleRepository.findById(schedule.getId())
                 .map(Schedule::getVersion)
@@ -77,10 +92,10 @@ class ScheduleOptimisticLockIntegrationTest extends BaseIntegrationTest {
             repositoryLookupBarrier.activate(new CyclicBarrier(2));
             try {
                 Future<WorkerResult> firstCreate = executorService.submit(
-                        createItemTask(room.getId(), schedule.getId(), "place-a", LocalTime.of(10, 0))
+                        createItemTask(room.getId(), schedule.getId(), "place-a", LocalTime.of(10, 0), user.getId())
                 );
                 Future<WorkerResult> secondCreate = executorService.submit(
-                        createItemTask(room.getId(), schedule.getId(), "place-b", LocalTime.of(11, 0))
+                        createItemTask(room.getId(), schedule.getId(), "place-b", LocalTime.of(11, 0), user.getId())
                 );
 
                 List<WorkerResult> results = Arrays.asList(
@@ -120,13 +135,15 @@ class ScheduleOptimisticLockIntegrationTest extends BaseIntegrationTest {
                 .hasValueSatisfying(version -> assertThat(version).isGreaterThan(initialVersion));
     }
 
-    private Callable<WorkerResult> createItemTask(UUID roomId, Long scheduleId, String googlePlaceId, LocalTime startTime) {
+    private Callable<WorkerResult> createItemTask(UUID roomId, Long scheduleId, String googlePlaceId,
+                                                  LocalTime startTime, Long userId) {
         return () -> {
             try {
                 ScheduleItemResult result = scheduleItemService.create(
                         roomId,
                         scheduleId,
-                        new ScheduleItemCreateCommand(googlePlaceId, startTime, 60)
+                        new ScheduleItemCreateCommand(googlePlaceId, startTime, 60),
+                        userId
                 );
                 return WorkerResult.success(result);
             } catch (Throwable throwable) {

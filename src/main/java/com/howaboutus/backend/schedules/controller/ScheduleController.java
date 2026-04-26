@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,12 +37,13 @@ public class ScheduleController {
     @PostMapping
     @SuppressWarnings("JvmTaintAnalysis")
     public ResponseEntity<ScheduleResponse> create(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @RequestBody @Valid CreateScheduleRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ScheduleResponse.from(scheduleService.create(roomId, request.toCommand())));
+                .body(ScheduleResponse.from(scheduleService.create(roomId, request.toCommand(), userId)));
     }
 
     @Operation(
@@ -50,10 +52,11 @@ public class ScheduleController {
     )
     @GetMapping
     public List<ScheduleResponse> getSchedules(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId
     ) {
-        return scheduleService.getSchedules(roomId).stream()
+        return scheduleService.getSchedules(roomId, userId).stream()
                 .map(ScheduleResponse::from)
                 .toList();
     }
@@ -64,12 +67,13 @@ public class ScheduleController {
     )
     @DeleteMapping("/{scheduleId}")
     public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "일정 ID", example = "1")
             @PathVariable Long scheduleId
     ) {
-        scheduleService.delete(roomId, scheduleId);
+        scheduleService.delete(roomId, scheduleId, userId);
         return ResponseEntity.noContent().build();
     }
 }

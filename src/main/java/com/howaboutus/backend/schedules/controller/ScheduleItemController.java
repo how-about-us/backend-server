@@ -1,18 +1,24 @@
 package com.howaboutus.backend.schedules.controller;
 
 import com.howaboutus.backend.schedules.controller.dto.CreateScheduleItemRequest;
+import com.howaboutus.backend.schedules.controller.dto.ReorderScheduleItemRequest;
+import com.howaboutus.backend.schedules.controller.dto.RouteResponse;
 import com.howaboutus.backend.schedules.controller.dto.ScheduleItemResponse;
 import com.howaboutus.backend.schedules.controller.dto.UpdateScheduleItemRequest;
+import com.howaboutus.backend.schedules.controller.dto.UpdateTravelModeRequest;
 import com.howaboutus.backend.schedules.service.ScheduleItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,8 +26,10 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Validated
 @Tag(name = "Schedule Items", description = "일정 항목 API")
 @RestController
 @RequiredArgsConstructor
@@ -37,6 +45,7 @@ public class ScheduleItemController {
     @PostMapping
     @SuppressWarnings("JvmTaintAnalysis")
     public ResponseEntity<ScheduleItemResponse> create(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "일정 ID", example = "1")
@@ -44,7 +53,8 @@ public class ScheduleItemController {
             @RequestBody @Valid CreateScheduleItemRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ScheduleItemResponse.from(scheduleItemService.create(roomId, scheduleId, request.toCommand())));
+                .body(ScheduleItemResponse.from(scheduleItemService.create(roomId, scheduleId, request.toCommand(),
+                        userId)));
     }
 
     @Operation(
@@ -53,12 +63,13 @@ public class ScheduleItemController {
     )
     @GetMapping
     public List<ScheduleItemResponse> getItems(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "일정 ID", example = "1")
             @PathVariable Long scheduleId
     ) {
-        return scheduleItemService.getItems(roomId, scheduleId).stream()
+        return scheduleItemService.getItems(roomId, scheduleId, userId).stream()
                 .map(ScheduleItemResponse::from)
                 .toList();
     }
@@ -69,6 +80,7 @@ public class ScheduleItemController {
     )
     @PatchMapping("/{itemId}")
     public ScheduleItemResponse update(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "일정 ID", example = "1")
@@ -78,7 +90,7 @@ public class ScheduleItemController {
             @RequestBody @Valid UpdateScheduleItemRequest request
     ) {
         return ScheduleItemResponse.from(
-                scheduleItemService.update(roomId, scheduleId, itemId, request.toCommand())
+                scheduleItemService.update(roomId, scheduleId, itemId, request.toCommand(), userId)
         );
     }
 
@@ -88,6 +100,7 @@ public class ScheduleItemController {
     )
     @DeleteMapping("/{itemId}")
     public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal Long userId,
             @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID roomId,
             @Parameter(description = "일정 ID", example = "1")
@@ -95,7 +108,68 @@ public class ScheduleItemController {
             @Parameter(description = "일정 항목 ID", example = "1")
             @PathVariable Long itemId
     ) {
-        scheduleItemService.delete(roomId, scheduleId, itemId);
+        scheduleItemService.delete(roomId, scheduleId, itemId, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "일정 순서 변경 (D&D)",
+            description = "일정 항목의 순서를 변경합니다. 변경된 전체 목록을 반환합니다."
+    )
+    @PatchMapping("/{itemId}/order")
+    public List<ScheduleItemResponse> reorder(
+            @AuthenticationPrincipal Long userId,
+            @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+            @PathVariable UUID roomId,
+            @Parameter(description = "일정 ID", example = "1")
+            @PathVariable Long scheduleId,
+            @Parameter(description = "일정 항목 ID", example = "1")
+            @PathVariable Long itemId,
+            @RequestBody @Valid ReorderScheduleItemRequest request
+    ) {
+        return scheduleItemService.reorder(roomId, scheduleId, itemId, request.newOrderIndex(), userId)
+                .stream().map(ScheduleItemResponse::from).toList();
+    }
+
+    @Operation(
+            summary = "이동 수단 변경",
+            description = "다음 장소까지의 이동 수단을 변경합니다."
+    )
+    @PatchMapping("/{itemId}/travel-mode")
+    public ScheduleItemResponse updateTravelMode(
+            @AuthenticationPrincipal Long userId,
+            @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+            @PathVariable UUID roomId,
+            @Parameter(description = "일정 ID", example = "1")
+            @PathVariable Long scheduleId,
+            @Parameter(description = "일정 항목 ID", example = "1")
+            @PathVariable Long itemId,
+            @RequestBody @Valid UpdateTravelModeRequest request
+    ) {
+        return ScheduleItemResponse.from(
+                scheduleItemService.updateTravelMode(roomId, scheduleId, itemId, request.travelMode(), userId)
+        );
+    }
+
+    @Operation(
+            summary = "이동 정보 조회",
+            description = "현재 항목에서 다음 항목까지의 이동 정보를 조회합니다. 마지막 항목은 204를 반환합니다."
+    )
+    @GetMapping("/{itemId}/route")
+    public ResponseEntity<RouteResponse> getRoute(
+            @AuthenticationPrincipal Long userId,
+            @Parameter(description = "방 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+            @PathVariable UUID roomId,
+            @Parameter(description = "일정 ID", example = "1")
+            @PathVariable Long scheduleId,
+            @Parameter(description = "일정 항목 ID", example = "1")
+            @PathVariable Long itemId,
+            @Parameter(description = "이동 수단 (저장된 값 대신 사용할 경우)")
+            @Pattern(regexp = "DRIVING|WALKING|BICYCLING|TRANSIT", message = "이동 수단은 DRIVING, WALKING, BICYCLING, TRANSIT 중 하나여야 합니다")
+            @RequestParam(required = false) String travelMode
+    ) {
+        return scheduleItemService.getRouteForItem(roomId, scheduleId, itemId, travelMode, userId)
+                .map(result -> ResponseEntity.ok(RouteResponse.from(result)))
+                .orElse(ResponseEntity.noContent().build());
     }
 }

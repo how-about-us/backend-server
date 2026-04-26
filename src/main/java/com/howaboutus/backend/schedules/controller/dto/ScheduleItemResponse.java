@@ -13,6 +13,7 @@ public record ScheduleItemResponse(
         LocalTime startTime,
         Integer durationMinutes,
         int orderIndex,
+        String travelMode,
         Instant createdAt
 ) {
     public static ScheduleItemResponse from(ScheduleItemResult result) {
@@ -23,6 +24,7 @@ public record ScheduleItemResponse(
                 result.startTime(),
                 result.durationMinutes(),
                 result.orderIndex(),
+                result.travelMode(),
                 result.createdAt()
         );
     }

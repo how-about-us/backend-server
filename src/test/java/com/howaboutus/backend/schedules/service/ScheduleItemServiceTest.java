@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -17,12 +16,14 @@ import com.howaboutus.backend.schedules.entity.Schedule;
 import com.howaboutus.backend.schedules.entity.ScheduleItem;
 import com.howaboutus.backend.schedules.repository.ScheduleItemRepository;
 import com.howaboutus.backend.schedules.repository.ScheduleRepository;
+import com.howaboutus.backend.schedules.service.dto.RouteResult;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemCreateCommand;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemResult;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemUpdateCommand;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -51,12 +52,15 @@ class ScheduleItemServiceTest {
     @Mock
     private RoomAuthorizationService roomAuthorizationService;
 
+    @Mock
+    private RouteService routeService;
+
     private ScheduleItemService scheduleItemService;
 
     @BeforeEach
     void setUp() {
         scheduleItemService = new ScheduleItemService(roomRepository, scheduleRepository, scheduleItemRepository,
-                roomAuthorizationService, mock(RouteService.class));
+                roomAuthorizationService, routeService);
     }
 
     @Test
@@ -295,6 +299,108 @@ class ScheduleItemServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.SCHEDULE_ITEM_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("순서 변경 시 항목 목록을 새 순서로 반환한다")
+    void reorderReturnsItemsInNewOrder() {
+        UUID roomId = UUID.randomUUID();
+        Room room = createRoom(roomId);
+        Schedule schedule = createSchedule(room, 100L);
+        ScheduleItem first = createScheduleItem(schedule, 10L, "place-1", 0);
+        ScheduleItem second = createScheduleItem(schedule, 11L, "place-2", 1);
+        ScheduleItem third = createScheduleItem(schedule, 12L, "place-3", 2);
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        givenScheduleForWrite(roomId, schedule);
+        given(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(100L))
+                .willReturn(new ArrayList<>(List.of(first, second, third)));
+
+        List<ScheduleItemResult> results = scheduleItemService.reorder(roomId, 100L, 10L, 2, 1L);
+
+        assertThat(results).hasSize(3);
+        assertThat(results.get(0).googlePlaceId()).isEqualTo("place-2");
+        assertThat(results.get(1).googlePlaceId()).isEqualTo("place-3");
+        assertThat(results.get(2).googlePlaceId()).isEqualTo("place-1");
+        assertThat(results.get(2).orderIndex()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("범위를 벗어난 순서 인덱스로 변경 시 INVALID_ORDER_INDEX 예외를 던진다")
+    void reorderThrowsWhenIndexOutOfRange() {
+        UUID roomId = UUID.randomUUID();
+        Room room = createRoom(roomId);
+        Schedule schedule = createSchedule(room, 100L);
+        ScheduleItem first = createScheduleItem(schedule, 10L, "place-1", 0);
+        ScheduleItem second = createScheduleItem(schedule, 11L, "place-2", 1);
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        givenScheduleForWrite(roomId, schedule);
+        given(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(100L))
+                .willReturn(new ArrayList<>(List.of(first, second)));
+
+        assertThatThrownBy(() -> scheduleItemService.reorder(roomId, 100L, 10L, 5, 1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_ORDER_INDEX);
+    }
+
+    @Test
+    @DisplayName("이동 수단 변경 시 변경된 항목을 반환한다")
+    void updateTravelModeReturnsSavedItem() {
+        UUID roomId = UUID.randomUUID();
+        Room room = createRoom(roomId);
+        Schedule schedule = createSchedule(room, 100L);
+        ScheduleItem item = createScheduleItem(schedule, 10L, "place-1", 0);
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        givenScheduleForWrite(roomId, schedule);
+        given(scheduleItemRepository.findByIdAndSchedule_Id(10L, 100L)).willReturn(Optional.of(item));
+        given(scheduleItemRepository.saveAndFlush(item)).willReturn(item);
+
+        ScheduleItemResult result = scheduleItemService.updateTravelMode(roomId, 100L, 10L, "WALKING", 1L);
+
+        assertThat(result.travelMode()).isEqualTo("WALKING");
+        assertThat(item.getTravelMode()).isEqualTo("WALKING");
+    }
+
+    @Test
+    @DisplayName("마지막 항목이 아니면 이동 정보를 반환한다")
+    void getRouteForItemReturnsRouteWhenNotLast() {
+        UUID roomId = UUID.randomUUID();
+        Room room = createRoom(roomId);
+        Schedule schedule = createSchedule(room, 100L);
+        ScheduleItem first = createScheduleItem(schedule, 10L, "place-1", 0);
+        ScheduleItem second = createScheduleItem(schedule, 11L, "place-2", 1);
+        RouteResult expected = new RouteResult(500, 300, "DRIVING");
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(scheduleRepository.findByIdAndRoom_Id(100L, roomId)).willReturn(Optional.of(schedule));
+        given(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(100L))
+                .willReturn(List.of(first, second));
+        given(routeService.computeRoute("place-1", "place-2", "DRIVING")).willReturn(expected);
+
+        Optional<RouteResult> result = scheduleItemService.getRouteForItem(roomId, 100L, 10L, null, 1L);
+
+        assertThat(result).contains(expected);
+    }
+
+    @Test
+    @DisplayName("마지막 항목이면 이동 정보를 반환하지 않는다")
+    void getRouteForItemReturnsEmptyWhenLast() {
+        UUID roomId = UUID.randomUUID();
+        Room room = createRoom(roomId);
+        Schedule schedule = createSchedule(room, 100L);
+        ScheduleItem only = createScheduleItem(schedule, 10L, "place-1", 0);
+
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
+        given(scheduleRepository.findByIdAndRoom_Id(100L, roomId)).willReturn(Optional.of(schedule));
+        given(scheduleItemRepository.findAllBySchedule_IdOrderByOrderIndexAsc(100L))
+                .willReturn(List.of(only));
+
+        Optional<RouteResult> result = scheduleItemService.getRouteForItem(roomId, 100L, 10L, null, 1L);
+
+        assertThat(result).isEmpty();
     }
 
     @Test

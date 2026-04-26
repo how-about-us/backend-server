@@ -83,6 +83,7 @@ class ScheduleServiceTest {
         assertThat(result.dayNumber()).isEqualTo(2);
         assertThat(result.date()).isEqualTo(LocalDate.of(2026, 4, 21));
         assertThat(result.createdAt()).isEqualTo(createdAt);
+        verify(roomAuthorizationService).requireActiveMember(roomId, 1L);
 
         ArgumentCaptor<Schedule> scheduleCaptor = ArgumentCaptor.forClass(Schedule.class);
         verify(scheduleRepository).saveAndFlush(scheduleCaptor.capture());
@@ -199,6 +200,7 @@ class ScheduleServiceTest {
 
         assertThat(results).containsExactly(ScheduleResult.from(first), ScheduleResult.from(second));
         assertThat(results.getFirst().dayNumber()).isEqualTo(1);
+        verify(roomAuthorizationService).requireActiveMember(roomId, 1L);
     }
 
     @Test
@@ -256,6 +258,7 @@ class ScheduleServiceTest {
 
         scheduleService.delete(roomId, 10L, 1L);
 
+        verify(roomAuthorizationService).requireActiveMember(roomId, 1L);
         var order = inOrder(scheduleItemService, scheduleRepository);
         order.verify(scheduleItemService).deleteAllByScheduleId(10L);
         order.verify(scheduleRepository).delete(schedule);

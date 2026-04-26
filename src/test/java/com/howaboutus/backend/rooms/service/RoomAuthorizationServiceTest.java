@@ -26,8 +26,8 @@ class RoomAuthorizationServiceTest {
     private RoomMemberRepository roomMemberRepository;
 
     @Test
-    @DisplayName("HOST와 MEMBER는 활성 방 멤버 검증을 통과한다")
-    void requireActiveMemberAllowsHostAndMember() {
+    @DisplayName("HOST는 활성 방 멤버 검증을 통과한다")
+    void requireActiveMemberAllowsHost() {
         UUID roomId = UUID.randomUUID();
         Long userId = 1L;
         RoomMember host = createMember(RoomRole.HOST);
@@ -38,6 +38,21 @@ class RoomAuthorizationServiceTest {
         RoomMember result = service.requireActiveMember(roomId, userId);
 
         assertThat(result).isSameAs(host);
+    }
+
+    @Test
+    @DisplayName("MEMBER는 활성 방 멤버 검증을 통과한다")
+    void requireActiveMemberAllowsMember() {
+        UUID roomId = UUID.randomUUID();
+        Long userId = 2L;
+        RoomMember member = createMember(RoomRole.MEMBER);
+        RoomAuthorizationService service = new RoomAuthorizationService(roomMemberRepository);
+
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(member));
+
+        RoomMember result = service.requireActiveMember(roomId, userId);
+
+        assertThat(result).isSameAs(member);
     }
 
     @Test

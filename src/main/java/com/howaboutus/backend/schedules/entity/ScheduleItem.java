@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalTime;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,6 +28,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ScheduleItem extends BaseTimeEntity {
+
+    private static final Set<String> ALLOWED_TRAVEL_MODES = Set.of("DRIVING", "WALKING", "BICYCLING", "TRANSIT");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -85,6 +88,9 @@ public class ScheduleItem extends BaseTimeEntity {
     }
 
     public void updateTravelMode(String travelMode) {
+        if (travelMode != null && !ALLOWED_TRAVEL_MODES.contains(travelMode)) {
+            throw new IllegalArgumentException("Invalid travel mode: " + travelMode);
+        }
         this.travelMode = travelMode;
     }
 }

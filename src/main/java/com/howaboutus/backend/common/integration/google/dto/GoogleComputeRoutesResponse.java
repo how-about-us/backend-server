@@ -13,7 +13,7 @@ public record GoogleComputeRoutesResponse(
         // Google returns duration as "Xs" string (e.g. "900s")
         public int durationSeconds() {
             if (duration == null || duration.isEmpty()) return 0;
-            return Integer.parseInt(duration.replace("s", ""));
+            return (int) Double.parseDouble(duration.replace("s", ""));
         }
     }
 }

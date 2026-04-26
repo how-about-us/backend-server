@@ -19,6 +19,7 @@ import com.howaboutus.backend.common.config.SecurityConfig;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
 import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.schedules.service.ScheduleItemService;
+import com.howaboutus.backend.schedules.service.dto.RouteResult;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemCreateCommand;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemResult;
 import com.howaboutus.backend.schedules.service.dto.ScheduleItemUpdateCommand;
@@ -26,6 +27,7 @@ import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -246,6 +248,105 @@ class ScheduleItemControllerTest {
                 .andExpect(status().isNoContent());
 
         then(scheduleItemService).should().delete(ROOM_ID, SCHEDULE_ID, ITEM_ID, USER_ID);
+    }
+
+    @Test
+    @DisplayName("순서 변경 성공 시 200과 항목 목록을 반환한다")
+    void reordersScheduleItemSuccessfully() throws Exception {
+        given(scheduleItemService.reorder(ROOM_ID, SCHEDULE_ID, ITEM_ID, 1, USER_ID))
+                .willReturn(List.of(SCHEDULE_ITEM_RESULT));
+
+        mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/order", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"newOrderIndex": 1}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].itemId").value(SCHEDULE_ITEM_RESULT.itemId()));
+    }
+
+    @Test
+    @DisplayName("newOrderIndex가 음수면 순서 변경 시 400을 반환한다")
+    void returnsBadRequestWhenReorderIndexIsNegative() throws Exception {
+        mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/order", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"newOrderIndex": -1}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(scheduleItemService);
+    }
+
+    @Test
+    @DisplayName("이동 수단 변경 성공 시 200을 반환한다")
+    void updatesTravelModeSuccessfully() throws Exception {
+        given(scheduleItemService.updateTravelMode(ROOM_ID, SCHEDULE_ID, ITEM_ID, "WALKING", USER_ID))
+                .willReturn(SCHEDULE_ITEM_RESULT);
+
+        mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/travel-mode", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"travelMode": "WALKING"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.itemId").value(SCHEDULE_ITEM_RESULT.itemId()));
+    }
+
+    @Test
+    @DisplayName("허용되지 않는 이동 수단이면 400을 반환한다")
+    void returnsBadRequestWhenTravelModeIsInvalid() throws Exception {
+        mockMvc.perform(patch("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/travel-mode", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"travelMode": "FLYING"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+
+        verifyNoInteractions(scheduleItemService);
+    }
+
+    @Test
+    @DisplayName("마지막 항목이 아니면 이동 정보 조회 시 200을 반환한다")
+    void returnsRouteWhenItemIsNotLast() throws Exception {
+        RouteResult routeResult = new RouteResult(1200, 900, "DRIVING");
+        given(scheduleItemService.getRouteForItem(ROOM_ID, SCHEDULE_ID, ITEM_ID, null, USER_ID))
+                .willReturn(Optional.of(routeResult));
+
+        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/route", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.distanceMeters").value(1200))
+                .andExpect(jsonPath("$.durationSeconds").value(900))
+                .andExpect(jsonPath("$.travelMode").value("DRIVING"));
+    }
+
+    @Test
+    @DisplayName("마지막 항목이면 이동 정보 조회 시 204를 반환한다")
+    void returnsNoContentWhenItemIsLast() throws Exception {
+        given(scheduleItemService.getRouteForItem(ROOM_ID, SCHEDULE_ID, ITEM_ID, null, USER_ID))
+                .willReturn(Optional.empty());
+
+        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/route", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("허용되지 않는 travelMode 파라미터면 이동 정보 조회 시 400을 반환한다")
+    void returnsBadRequestWhenRouteTravelModeParamIsInvalid() throws Exception {
+        mockMvc.perform(get("/rooms/{roomId}/schedules/{scheduleId}/items/{itemId}/route", ROOM_ID, SCHEDULE_ID, ITEM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .param("travelMode", "FLYING"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+
+        verifyNoInteractions(scheduleItemService);
     }
 
     private static final Long USER_ID = 1L;

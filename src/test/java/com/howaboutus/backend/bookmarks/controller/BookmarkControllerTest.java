@@ -23,9 +23,11 @@ import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.common.error.GlobalExceptionHandler;
+import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -49,10 +51,19 @@ class BookmarkControllerTest {
     @MockitoBean
     private BookmarkService bookmarkService;
 
+    private static final Long USER_ID = 1L;
+    private static final String VALID_TOKEN = "valid-jwt";
+
+    @BeforeEach
+    void setUp() {
+        given(jwtProvider.extractUserId(VALID_TOKEN)).willReturn(USER_ID);
+    }
+
     @Test
     @DisplayName("googlePlaceId가 공백이면 400을 반환한다")
     void returnsBadRequestWhenGooglePlaceIdIsBlank() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/bookmarks", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                                 {"googlePlaceId": "   ", "categoryId": 10}
@@ -67,6 +78,7 @@ class BookmarkControllerTest {
     @DisplayName("googlePlaceId가 300자를 초과하면 400을 반환한다")
     void returnsBadRequestWhenGooglePlaceIdIsTooLong() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/bookmarks", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"googlePlaceId": "%s", "categoryId": 10}
@@ -82,6 +94,7 @@ class BookmarkControllerTest {
     @DisplayName("categoryId가 없으면 생성 시 400을 반환한다")
     void returnsBadRequestWhenCategoryIdIsMissingOnCreate() throws Exception {
         mockMvc.perform(post("/rooms/{roomId}/bookmarks", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"googlePlaceId": "place-1"}
@@ -99,6 +112,7 @@ class BookmarkControllerTest {
         given(bookmarkService.create(eq(ROOM_ID), any(BookmarkCreateCommand.class))).willReturn(BOOKMARK_RESULT);
 
         mockMvc.perform(post("/rooms/{roomId}/bookmarks", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"googlePlaceId": "place-1", "categoryId": 10}
@@ -122,6 +136,7 @@ class BookmarkControllerTest {
     @DisplayName("categoryId가 없으면 카테고리 변경 시 400을 반환한다")
     void returnsBadRequestWhenCategoryIdIsMissingOnUpdate() throws Exception {
         mockMvc.perform(patch("/rooms/{roomId}/bookmarks/{bookmarkId}/category", ROOM_ID, BOOKMARK_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {}
@@ -140,6 +155,7 @@ class BookmarkControllerTest {
                 .willReturn(BOOKMARK_RESULT);
 
         mockMvc.perform(patch("/rooms/{roomId}/bookmarks/{bookmarkId}/category", ROOM_ID, BOOKMARK_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"categoryId": 20}
@@ -162,7 +178,9 @@ class BookmarkControllerTest {
         given(bookmarkService.getBookmarks(ROOM_ID, 1L))
                 .willThrow(new CustomException(ErrorCode.ROOM_NOT_FOUND));
 
-        mockMvc.perform(get("/rooms/{roomId}/bookmarks", ROOM_ID).param("categoryId", "1"))
+        mockMvc.perform(get("/rooms/{roomId}/bookmarks", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .param("categoryId", "1"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("ROOM_NOT_FOUND"));
     }
@@ -172,7 +190,9 @@ class BookmarkControllerTest {
     void returnsBookmarkListSuccessfully() throws Exception {
         given(bookmarkService.getBookmarks(ROOM_ID, 1L)).willReturn(List.of(BOOKMARK_RESULT));
 
-        mockMvc.perform(get("/rooms/{roomId}/bookmarks", ROOM_ID).param("categoryId", "1"))
+        mockMvc.perform(get("/rooms/{roomId}/bookmarks", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .param("categoryId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].bookmarkId").value(BOOKMARK_RESULT.bookmarkId()))
                 .andExpect(jsonPath("$[0].roomId").value(ROOM_ID.toString()))
@@ -186,7 +206,8 @@ class BookmarkControllerTest {
     @Test
     @DisplayName("북마크 삭제 성공 시 204를 반환한다")
     void deletesBookmarkSuccessfully() throws Exception {
-        mockMvc.perform(delete("/rooms/{roomId}/bookmarks/{bookmarkId}", ROOM_ID, BOOKMARK_ID))
+        mockMvc.perform(delete("/rooms/{roomId}/bookmarks/{bookmarkId}", ROOM_ID, BOOKMARK_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isNoContent());
 
         then(bookmarkService).should().delete(ROOM_ID, BOOKMARK_ID);

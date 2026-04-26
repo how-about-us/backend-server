@@ -11,6 +11,7 @@ import com.howaboutus.backend.places.service.PlacePhotoService;
 import com.howaboutus.backend.places.service.PlaceSearchService;
 import com.howaboutus.backend.places.service.dto.PlaceDetailResult;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
+import jakarta.servlet.http.Cookie;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,6 +40,8 @@ class PlaceControllerTest {
     private static final String VALID_QUERY = "seoul cafe";
     private static final double DEFAULT_LAT = 37.5;
     private static final double DEFAULT_LNG = 127.0;
+    private static final Long USER_ID = 1L;
+    private static final String VALID_TOKEN = "valid-jwt";
 
     @Autowired
     private MockMvc mockMvc;
@@ -60,6 +63,7 @@ class PlaceControllerTest {
 
     @BeforeEach
     void setUp() {
+        given(jwtProvider.extractUserId(VALID_TOKEN)).willReturn(USER_ID);
         placeSearchResult = new PlaceSearchResult(
                 "ChIJ123",
                 "Cafe Layered",
@@ -99,6 +103,7 @@ class PlaceControllerTest {
     @DisplayName("위도가 범위를 벗어나면 400을 반환한다")
     void returnsBadRequestWhenLatitudeIsOutOfRange() throws Exception {
         mockMvc.perform(get(SEARCH_PATH)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("query", VALID_QUERY)
                         .param("latitude", "200")
                         .param("longitude", "127.0"))
@@ -113,6 +118,7 @@ class PlaceControllerTest {
     @DisplayName("경도가 범위를 벗어나면 400을 반환한다")
     void returnsBadRequestWhenLongitudeIsOutOfRange() throws Exception {
         mockMvc.perform(get(SEARCH_PATH)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("query", VALID_QUERY)
                         .param("latitude", "37.5")
                         .param("longitude", "-200"))
@@ -127,6 +133,7 @@ class PlaceControllerTest {
     @DisplayName("반경이 음수이면 400을 반환한다")
     void returnsBadRequestWhenRadiusIsNegative() throws Exception {
         mockMvc.perform(get(SEARCH_PATH)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("query", VALID_QUERY)
                         .param("latitude", "37.5")
                         .param("longitude", "127.0")
@@ -142,6 +149,7 @@ class PlaceControllerTest {
     @DisplayName("반경이 최대값(50000)을 초과하면 400을 반환한다")
     void returnsBadRequestWhenRadiusExceedsMaximum() throws Exception {
         mockMvc.perform(get(SEARCH_PATH)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("query", VALID_QUERY)
                         .param("latitude", "37.5")
                         .param("longitude", "127.0")
@@ -157,6 +165,7 @@ class PlaceControllerTest {
     @DisplayName("query 파라미터가 없으면 400을 반환한다")
     void returnsBadRequestWhenQueryParameterIsMissing() throws Exception {
         mockMvc.perform(get(SEARCH_PATH)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("latitude", "37.5")
                         .param("longitude", "127.0"))
                 .andExpect(status().isBadRequest())
@@ -168,6 +177,7 @@ class PlaceControllerTest {
     @DisplayName("latitude 파라미터가 없으면 400을 반환한다")
     void returnsBadRequestWhenLatitudeParameterIsMissing() throws Exception {
         mockMvc.perform(get(SEARCH_PATH)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("query", VALID_QUERY)
                         .param("longitude", "127.0"))
                 .andExpect(status().isBadRequest())
@@ -179,6 +189,7 @@ class PlaceControllerTest {
     @DisplayName("longitude 파라미터가 없으면 400을 반환한다")
     void returnsBadRequestWhenLongitudeParameterIsMissing() throws Exception {
         mockMvc.perform(get(SEARCH_PATH)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("query", VALID_QUERY)
                         .param("latitude", "37.5"))
                 .andExpect(status().isBadRequest())
@@ -207,6 +218,7 @@ class PlaceControllerTest {
                 .willReturn(List.of(placeSearchResult));
 
         mockMvc.perform(get(SEARCH_PATH)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("query", VALID_QUERY)
                         .param("latitude", "37.5")
                         .param("longitude", "127.0")
@@ -224,6 +236,7 @@ class PlaceControllerTest {
                 .willReturn(List.of(placeSearchResult));
 
         mockMvc.perform(get(SEARCH_PATH)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("query", VALID_QUERY)
                         .param("latitude", "37.5")
                         .param("longitude", "127.0"))
@@ -284,7 +297,8 @@ class PlaceControllerTest {
         given(placeDetailService.getDetail("ChIJ123"))
                 .willReturn(placeDetailResult);
 
-        mockMvc.perform(get("/places/{googlePlaceId}", "ChIJ123"))
+        mockMvc.perform(get("/places/{googlePlaceId}", "ChIJ123")
+                .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.googlePlaceId").value("ChIJ123"))
                 .andExpect(jsonPath("$.phoneNumber").value("02-123-4567"))
@@ -299,7 +313,8 @@ class PlaceControllerTest {
         given(placeDetailService.getDetail("ChIJ123"))
                 .willThrow(new ExternalApiException(new RuntimeException("connection timeout")));
 
-        mockMvc.perform(get("/places/{googlePlaceId}", "ChIJ123"))
+        mockMvc.perform(get("/places/{googlePlaceId}", "ChIJ123")
+                .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.code").value("EXTERNAL_API_ERROR"))
                 .andExpect(jsonPath("$.message").value("외부 API 호출 중 오류가 발생했습니다"));
@@ -312,6 +327,7 @@ class PlaceControllerTest {
                 .willReturn("https://lh3.googleusercontent.com/photo.jpg");
 
         mockMvc.perform(get("/places/photos")
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("photoName", "places/ChIJ123/photos/abc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.photoUrl").value("https://lh3.googleusercontent.com/photo.jpg"));
@@ -323,6 +339,7 @@ class PlaceControllerTest {
     @DisplayName("유효하지 않은 형식의 name으로 요청하면 400을 반환한다")
     void returnsBadRequestWhenNameIsBlank() throws Exception {
         mockMvc.perform(get("/places/photos")
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("photoName", "   "))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
@@ -334,7 +351,8 @@ class PlaceControllerTest {
     @Test
     @DisplayName("name 파라미터가 없으면 400을 반환한다")
     void returnsBadRequestWhenNameParameterIsMissing() throws Exception {
-        mockMvc.perform(get("/places/photos"))
+        mockMvc.perform(get("/places/photos")
+                .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.message").value("필수 요청 파라미터가 누락되었습니다: photoName"));
@@ -349,6 +367,7 @@ class PlaceControllerTest {
                 .willThrow(new ExternalApiException(new RuntimeException("connection timeout")));
 
         mockMvc.perform(get("/places/photos")
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("photoName", "places/ChIJ123/photos/abc"))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.code").value("EXTERNAL_API_ERROR"))
@@ -359,6 +378,7 @@ class PlaceControllerTest {
     @DisplayName("유효하지 않은 photoName 형식으로 요청하면 400을 반환한다")
     void returnsBadRequestWhenPhotoNameFormatIsInvalid() throws Exception {
         mockMvc.perform(get("/places/photos")
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
                         .param("photoName", "../../admin"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
@@ -369,6 +389,7 @@ class PlaceControllerTest {
 
     private static MockHttpServletRequestBuilder searchRequest(String query) {
         return get(SEARCH_PATH)
+                .cookie(new Cookie("access_token", VALID_TOKEN))
                 .param("query", query)
                 .param("latitude", String.valueOf(DEFAULT_LAT))
                 .param("longitude", String.valueOf(DEFAULT_LNG));

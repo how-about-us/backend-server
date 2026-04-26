@@ -16,13 +16,20 @@ public class RouteService {
 
     @Cacheable(cacheNames = CachePolicy.Keys.ROUTE, key = "#origin + ':' + #destination + ':' + #travelMode")
     public RouteResult computeRoute(String origin, String destination, String travelMode) {
-        String mode = travelMode != null ? travelMode : "DRIVING";
+        String mode;
+        if (travelMode != null) {
+            mode = travelMode;
+        } else {
+            mode = "DRIVING";
+        }
         GoogleComputeRoutesResponse response = googleRoutesClient.computeRoutes(origin, destination, mode);
         GoogleComputeRoutesResponse.Route route = response.routes().getFirst();
-        return new RouteResult(
-                route.distanceMeters() != null ? route.distanceMeters() : 0,
-                route.durationSeconds(),
-                mode
-        );
+        int distanceMeters;
+        if (route.distanceMeters() != null) {
+            distanceMeters = route.distanceMeters();
+        } else {
+            distanceMeters = 0;
+        }
+        return new RouteResult(distanceMeters, route.durationSeconds(), mode);
     }
 }

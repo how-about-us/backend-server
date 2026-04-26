@@ -157,8 +157,14 @@ public class ScheduleItemService {
             return Optional.empty();
         }
 
-        String mode = travelModeOverride != null ? travelModeOverride
-                : (current.getTravelMode() != null ? current.getTravelMode() : "DRIVING");
+        String mode;
+        if (travelModeOverride != null) {
+            mode = travelModeOverride;
+        } else if (current.getTravelMode() != null) {
+            mode = current.getTravelMode();
+        } else {
+            mode = "DRIVING";
+        }
         return Optional.of(routeService.computeRoute(current.getGooglePlaceId(), next.getGooglePlaceId(), mode));
     }
 

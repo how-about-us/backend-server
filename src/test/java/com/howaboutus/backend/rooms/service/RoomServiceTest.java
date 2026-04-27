@@ -101,7 +101,7 @@ class RoomServiceTest {
         ReflectionTestUtils.setField(user, "id", userId);
         RoomMember member = RoomMember.of(room, user, RoomRole.HOST);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(member));
         given(roomMemberRepository.countByRoom_IdAndRoleIn(roomId, List.of(RoomRole.HOST, RoomRole.MEMBER)))
                 .willReturn(3L);
@@ -117,7 +117,7 @@ class RoomServiceTest {
     @DisplayName("삭제된 방을 조회하면 ROOM_NOT_FOUND 예외")
     void getDetailThrowsWhenRoomDeleted() {
         UUID roomId = UUID.randomUUID();
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.empty());
+        given(roomRepository.findById(roomId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> roomService.getDetail(roomId, 1L))
                 .isInstanceOf(CustomException.class)
@@ -132,7 +132,7 @@ class RoomServiceTest {
         Room room = Room.create("부산 여행", "부산", null, null, "aB3xK9mQ2w", 1L);
         ReflectionTestUtils.setField(room, "id", roomId);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, 99L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> roomService.getDetail(roomId, 99L))
@@ -153,7 +153,7 @@ class RoomServiceTest {
         ReflectionTestUtils.setField(user, "id", userId);
         RoomMember pendingMember = RoomMember.of(room, user, RoomRole.PENDING);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(pendingMember));
 
         assertThatThrownBy(() -> roomService.getDetail(roomId, userId))
@@ -188,7 +188,7 @@ class RoomServiceTest {
         ReflectionTestUtils.setField(user, "id", userId);
         RoomMember hostMember = RoomMember.of(room, user, RoomRole.HOST);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(hostMember));
         given(roomMemberRepository.countByRoom_IdAndRoleIn(roomId, List.of(RoomRole.HOST, RoomRole.MEMBER)))
                 .willReturn(2L);
@@ -217,7 +217,7 @@ class RoomServiceTest {
         ReflectionTestUtils.setField(user, "id", userId);
         RoomMember hostMember = RoomMember.of(room, user, RoomRole.HOST);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(hostMember));
 
         // startDate는 null(기존 5/10 유지), endDate만 5/05로 변경 → 5/10 > 5/05 이므로 예외
@@ -242,7 +242,7 @@ class RoomServiceTest {
         ReflectionTestUtils.setField(user, "id", userId);
         RoomMember hostMember = RoomMember.of(room, user, RoomRole.HOST);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(hostMember));
 
         // endDate는 null(기존 5/20 유지), startDate만 5/25로 변경 → 5/25 > 5/20 이므로 예외
@@ -266,7 +266,7 @@ class RoomServiceTest {
         ReflectionTestUtils.setField(user, "id", userId);
         RoomMember memberRole = RoomMember.of(room, user, RoomRole.MEMBER);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(memberRole));
 
         RoomUpdateCommand command = new RoomUpdateCommand("제주 여행", "제주", null, null);
@@ -278,7 +278,7 @@ class RoomServiceTest {
     }
 
     @Test
-    @DisplayName("HOST가 방을 삭제하면 성공한다")
+    @DisplayName("HOST가 방을 삭제하면 RoomMember와 Room이 물리 삭제된다")
     void deleteRoomSucceeds() {
         UUID roomId = UUID.randomUUID();
         Long userId = 1L;
@@ -289,12 +289,13 @@ class RoomServiceTest {
         ReflectionTestUtils.setField(user, "id", userId);
         RoomMember hostMember = RoomMember.of(room, user, RoomRole.HOST);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(hostMember));
 
         roomService.delete(roomId, userId);
 
-        assertThat(room.isDeleted()).isTrue();
+        verify(roomMemberRepository).deleteByRoom_Id(roomId);
+        verify(roomRepository).delete(room);
     }
 
     @Test
@@ -309,7 +310,7 @@ class RoomServiceTest {
         ReflectionTestUtils.setField(user, "id", userId);
         RoomMember memberRole = RoomMember.of(room, user, RoomRole.MEMBER);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(roomId)).willReturn(Optional.of(room));
+        given(roomRepository.findById(roomId)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)).willReturn(Optional.of(memberRole));
 
         assertThatThrownBy(() -> roomService.delete(roomId, userId))
@@ -342,7 +343,7 @@ class RoomServiceTest {
             members.add(member);
         }
 
-        given(roomMemberRepository.findByUser_IdAndRoleInAndRoom_DeletedAtIsNullOrderByJoinedAtDesc(
+        given(roomMemberRepository.findByUser_IdAndRoleInOrderByJoinedAtDesc(
                 userId, ACTIVE_ROLES, PageRequest.of(0, 11)))
                 .willReturn(members);
 
@@ -368,7 +369,7 @@ class RoomServiceTest {
             members.add(member);
         }
 
-        given(roomMemberRepository.findByUser_IdAndRoleInAndRoom_DeletedAtIsNullAndJoinedAtBeforeOrderByJoinedAtDesc(
+        given(roomMemberRepository.findByUser_IdAndRoleInAndJoinedAtBeforeOrderByJoinedAtDesc(
                 userId, ACTIVE_ROLES, cursor, PageRequest.of(0, 11)))
                 .willReturn(members);
 
@@ -393,7 +394,7 @@ class RoomServiceTest {
             members.add(member);
         }
 
-        given(roomMemberRepository.findByUser_IdAndRoleInAndRoom_DeletedAtIsNullOrderByJoinedAtDesc(
+        given(roomMemberRepository.findByUser_IdAndRoleInOrderByJoinedAtDesc(
                 userId, ACTIVE_ROLES, PageRequest.of(0, 11)))
                 .willReturn(members);
 

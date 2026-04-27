@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
 
@@ -31,7 +32,10 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
 
     long countByRoom_IdAndRoleIn(UUID roomId, List<RoomRole> roles);
 
+    //벌크 쿼리 사용
+    //jpa에서 기본 deletedByRoomId를 사용하면, select이후, delete 쿼리가 실행되어, N+1문제가 발생함.
+    //아래의 쿼리 형식을 사용하면, 1번의 쿼리로 삭제가 가능함.
     @Modifying
     @Query("DELETE FROM RoomMember rm WHERE rm.room.id = :roomId")
-    void deleteByRoomId(UUID roomId);
+    void deleteByRoomId(@Param("roomId") UUID roomId);
 }

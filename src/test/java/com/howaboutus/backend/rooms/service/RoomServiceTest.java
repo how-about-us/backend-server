@@ -13,8 +13,12 @@ import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.entity.RoomMember;
 import com.howaboutus.backend.rooms.entity.RoomRole;
+import com.howaboutus.backend.bookmarks.repository.BookmarkCategoryRepository;
+import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
 import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
+import com.howaboutus.backend.schedules.repository.ScheduleItemRepository;
+import com.howaboutus.backend.schedules.repository.ScheduleRepository;
 import com.howaboutus.backend.rooms.service.dto.RoomCreateCommand;
 import com.howaboutus.backend.rooms.service.dto.RoomDetailResult;
 import com.howaboutus.backend.rooms.service.dto.RoomListResult;
@@ -44,6 +48,10 @@ class RoomServiceTest {
     @Mock private RoomMemberRepository roomMemberRepository;
     @Mock private UserRepository userRepository;
     @Mock private InviteCodeGenerator inviteCodeGenerator;
+    @Mock private ScheduleItemRepository scheduleItemRepository;
+    @Mock private ScheduleRepository scheduleRepository;
+    @Mock private BookmarkRepository bookmarkRepository;
+    @Mock private BookmarkCategoryRepository bookmarkCategoryRepository;
     private RoomAuthorizationService roomAuthorizationService;
 
     private RoomService roomService;
@@ -52,7 +60,9 @@ class RoomServiceTest {
     void setUp() {
         roomAuthorizationService = new RoomAuthorizationService(roomMemberRepository);
         roomService = new RoomService(roomRepository, roomMemberRepository,
-                userRepository, inviteCodeGenerator, roomAuthorizationService);
+                userRepository, inviteCodeGenerator, roomAuthorizationService,
+                scheduleItemRepository, scheduleRepository,
+                bookmarkRepository, bookmarkCategoryRepository);
     }
 
     @Test

@@ -31,4 +31,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     int incrementVersionIfCurrent(@Param("scheduleId") Long scheduleId,
                                   @Param("roomId") UUID roomId,
                                   @Param("version") Long version);
+
+    @Modifying
+    @Query("DELETE FROM Schedule s WHERE s.room.id = :roomId")
+    void deleteAllByRoomId(@Param("roomId") UUID roomId);
 }

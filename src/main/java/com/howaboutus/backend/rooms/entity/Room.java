@@ -71,6 +71,7 @@ public class Room extends BaseTimeEntity {
             this.endDate = endDate;
         }
     }
+
     public void regenerateInviteCode(String newCode) {
         this.inviteCode = newCode;
     }

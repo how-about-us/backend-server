@@ -212,7 +212,7 @@ Google OAuth 기반 사용자 정보
 5. **장소 상세 캐시:** 자유도가 높은 검색어는 캐시 히트율이 낮을 수 있으므로 검색 결과는 캐시하지 않는다. 대신 Google Place 상세 조회 응답은 `google_place_id` 기준으로 Redis에 5분 TTL로 저장한다.
 6. **schedule_items.order_index:** D&D UI를 위한 정렬 인덱스. 재정렬 시 해당 컬럼만 업데이트.
 7. **이동 정보 프록시:** `travel_mode`(이동 수단 선호)만 DB에 저장. Google Maps Platform 정책상 `distance_meters`·`duration_seconds`는 DB에 영구 저장 불가 — 서버가 Routes API를 프록시하여 결과를 클라이언트에 직접 반환하고, Redis 3분 TTL로 임시 캐시.
-8. **방 Hard Delete:** 방 삭제 시 서비스 레이어에서 RoomMember를 먼저 물리 삭제한 후 Room을 물리 삭제한다. JPA Cascade 대신 명시적 서비스 레이어 삭제로 단방향 관계를 유지한다.
+8. **방 Hard Delete:** 방 삭제 시 서비스 레이어에서 FK 순서에 맞게 ScheduleItem → Schedule → Bookmark → BookmarkCategory → RoomMember → Room을 순차 물리 삭제한다. JPA Cascade 대신 명시적 서비스 레이어 삭제로 단방향 관계를 유지한다.
 
 ---
 

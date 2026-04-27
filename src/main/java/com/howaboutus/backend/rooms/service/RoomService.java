@@ -77,7 +77,8 @@ public class RoomService {
     public void delete(UUID roomId, Long userId) {
         Room room = getActiveRoom(roomId);
         roomAuthorizationService.requireHost(roomId, userId);
-        room.delete();
+        roomMemberRepository.deleteByRoom_Id(roomId);
+        roomRepository.delete(room);
     }
 
     public RoomListResult getMyRooms(Long userId, Instant cursor, int size) {
@@ -88,11 +89,11 @@ public class RoomService {
         List<RoomMember> members;
         if (cursor == null) {
             members = roomMemberRepository
-                    .findByUser_IdAndRoleInAndRoom_DeletedAtIsNullOrderByJoinedAtDesc(
+                    .findByUser_IdAndRoleInOrderByJoinedAtDesc(
                             userId, ACTIVE_ROLES, pageable);
         } else {
             members = roomMemberRepository
-                    .findByUser_IdAndRoleInAndRoom_DeletedAtIsNullAndJoinedAtBeforeOrderByJoinedAtDesc(
+                    .findByUser_IdAndRoleInAndJoinedAtBeforeOrderByJoinedAtDesc(
                             userId, ACTIVE_ROLES, cursor, pageable);
         }
 
@@ -122,7 +123,7 @@ public class RoomService {
     }
 
     private Room getActiveRoom(UUID roomId) {
-        return roomRepository.findByIdAndDeletedAtIsNull(roomId)
+        return roomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
     }
 

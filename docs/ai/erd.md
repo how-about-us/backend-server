@@ -39,7 +39,6 @@ Google OAuth 기반 사용자 정보
 | end_date | DATE | NULLABLE | 여행 종료일 |
 | invite_code | VARCHAR(50) | UNIQUE, NOT NULL | 초대 링크용 고정 코드 (방 생성 시 자동 발급) |
 | created_by | BIGINT | 사용자 ID 참조, NOT NULL | 방 생성자 (현재 구현은 users.id 값을 보관하지만 DB FK 제약은 두지 않음) |
-| deleted_at | TIMESTAMP | NULLABLE | Soft delete 시각 |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
 
@@ -213,7 +212,7 @@ Google OAuth 기반 사용자 정보
 5. **장소 상세 캐시:** 자유도가 높은 검색어는 캐시 히트율이 낮을 수 있으므로 검색 결과는 캐시하지 않는다. 대신 Google Place 상세 조회 응답은 `google_place_id` 기준으로 Redis에 5분 TTL로 저장한다.
 6. **schedule_items.order_index:** D&D UI를 위한 정렬 인덱스. 재정렬 시 해당 컬럼만 업데이트.
 7. **이동 정보 프록시:** `travel_mode`(이동 수단 선호)만 DB에 저장. Google Maps Platform 정책상 `distance_meters`·`duration_seconds`는 DB에 영구 저장 불가 — 서버가 Routes API를 프록시하여 결과를 클라이언트에 직접 반환하고, Redis 3분 TTL로 임시 캐시.
-8. **방 Soft Delete:** `rooms.deleted_at` 컬럼으로 방 삭제를 논리 삭제로 표현하고, active room 조회는 soft delete 된 방을 제외한다. 하위 데이터(room_members 등) 정리 정책(CASCADE, 비동기 정리 등)은 추후 논의한다.
+8. **방 Hard Delete:** 방 삭제 시 서비스 레이어에서 RoomMember를 먼저 물리 삭제한 후 Room을 물리 삭제한다. JPA Cascade 대신 명시적 서비스 레이어 삭제로 단방향 관계를 유지한다.
 
 ---
 
@@ -223,6 +222,6 @@ Google OAuth 기반 사용자 정보
 - [ ] 예산 정리 기능을 위한 expenses 테이블 추가 여부
 - [ ] 숙소/항공권 예약 연동 시 external_bookings 테이블 필요 여부
 - [ ] bookmark 투표 기능 추가 시 bookmark_votes 테이블 필요
-- [ ] 방 삭제 정책: soft delete vs hard delete + CASCADE
+- [x] 방 삭제 정책: hard delete 전환 완료 (서비스 레이어 명시적 삭제)
 - [ ] message 테이블 파티셔닝 전략 (방별, 날짜별 등)
 - [ ] 초대 링크 만료/사용 횟수 제한 필요 시 room_invitations 테이블 분리 검토

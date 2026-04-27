@@ -9,6 +9,8 @@ import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
 
@@ -29,5 +31,7 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
 
     long countByRoom_IdAndRoleIn(UUID roomId, List<RoomRole> roles);
 
-    void deleteByRoom_Id(UUID roomId);
+    @Modifying
+    @Query("DELETE FROM RoomMember rm WHERE rm.room.id = :roomId")
+    void deleteByRoomId(UUID roomId);
 }

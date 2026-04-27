@@ -77,7 +77,7 @@ public class RoomService {
     public void delete(UUID roomId, Long userId) {
         Room room = getActiveRoom(roomId);
         roomAuthorizationService.requireHost(roomId, userId);
-        roomMemberRepository.deleteByRoom_Id(roomId);
+        roomMemberRepository.deleteByRoomId(roomId);
         roomRepository.delete(room);
     }
 

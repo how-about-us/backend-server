@@ -294,7 +294,7 @@ class RoomServiceTest {
 
         roomService.delete(roomId, userId);
 
-        verify(roomMemberRepository).deleteByRoom_Id(roomId);
+        verify(roomMemberRepository).deleteByRoomId(roomId);
         verify(roomRepository).delete(room);
     }
 

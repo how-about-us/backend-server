@@ -20,12 +20,14 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
     Optional<RoomMember> findByIdAndRoom_Id(Long id, UUID roomId);
 
     @EntityGraph(attributePaths = "room")
-    List<RoomMember> findByUser_IdAndRoleInAndRoom_DeletedAtIsNullOrderByJoinedAtDesc(
+    List<RoomMember> findByUser_IdAndRoleInOrderByJoinedAtDesc(
             Long userId, List<RoomRole> roles, Pageable pageable);
 
     @EntityGraph(attributePaths = "room")
-    List<RoomMember> findByUser_IdAndRoleInAndRoom_DeletedAtIsNullAndJoinedAtBeforeOrderByJoinedAtDesc(
+    List<RoomMember> findByUser_IdAndRoleInAndJoinedAtBeforeOrderByJoinedAtDesc(
             Long userId, List<RoomRole> roles, Instant cursor, Pageable pageable);
 
     long countByRoom_IdAndRoleIn(UUID roomId, List<RoomRole> roles);
+
+    void deleteByRoom_Id(UUID roomId);
 }

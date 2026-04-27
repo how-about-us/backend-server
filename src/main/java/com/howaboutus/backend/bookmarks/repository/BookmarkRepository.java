@@ -25,7 +25,7 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
     void deleteAllByCategory_Id(Long categoryId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("DELETE FROM Bookmark b WHERE b.room.id = :roomId")
     void deleteAllByRoomId(@Param("roomId") UUID roomId);
 }

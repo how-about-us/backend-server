@@ -19,7 +19,7 @@ public interface BookmarkCategoryRepository extends JpaRepository<BookmarkCatego
 
     Optional<BookmarkCategory> findByIdAndRoom_Id(Long categoryId, UUID roomId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("DELETE FROM BookmarkCategory bc WHERE bc.room.id = :roomId")
     void deleteAllByRoomId(@Param("roomId") UUID roomId);
 }

@@ -304,6 +304,10 @@ class RoomServiceTest {
 
         roomService.delete(roomId, userId);
 
+        verify(scheduleItemRepository).deleteAllByRoomId(roomId);
+        verify(scheduleRepository).deleteAllByRoomId(roomId);
+        verify(bookmarkRepository).deleteAllByRoomId(roomId);
+        verify(bookmarkCategoryRepository).deleteAllByRoomId(roomId);
         verify(roomMemberRepository).deleteByRoomId(roomId);
         verify(roomRepository).delete(room);
     }

@@ -20,7 +20,7 @@ public interface ScheduleItemRepository extends JpaRepository<ScheduleItem, Long
 
     void deleteAllBySchedule_Id(Long scheduleId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("DELETE FROM ScheduleItem si WHERE si.schedule.id IN (SELECT s.id FROM Schedule s WHERE s.room.id = :roomId)")
     void deleteAllByRoomId(@Param("roomId") UUID roomId);
 }

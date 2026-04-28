@@ -40,7 +40,7 @@
 | `[x]` | 내 방 목록 조회 | 내가 참여 중인 방 목록 | rooms, room_members |
 | `[x]` | 방 상세 조회 | 방 메타정보 (제목, 여행지, 날짜, 멤버 수 등) | rooms |
 | `[x]` | 방 수정 | 방 제목, 여행지, 날짜 수정 (HOST만) | rooms |
-| `[x]` | 방 삭제 | 방 삭제 (HOST만, soft delete) | rooms |
+| `[x]` | 방 삭제 | 방 삭제 (HOST만, hard delete) | rooms, room_members |
 | `[x]` | 초대 코드 재발급 | 기존 invite_code 폐기 후 신규 발급 (HOST만) | rooms |
 | `[x]` | 초대 코드로 입장 요청 | invite_code로 PENDING 멤버 등록. 이미 멤버면 멱등 처리(200), 이미 PENDING이면 대기 상태 반환(202) | rooms, room_members |
 | `[x]` | 입장 상태 조회 | 입장 요청자가 자신의 승인 상태 확인 (pending / approved / 404=거절) | room_members |
@@ -156,5 +156,5 @@
 | 3 | schedule_items order_index 중복 방지 | UNIQUE 제약 vs gap 전략 | 미결 |
 | 4 | room_members 직접 참조 정합성 | sender_id, added_by → users 직접 vs room_members 참조 | 미결 |
 | 5 | 방장 위임 기능 | MVP 이후 진행 | 보류 |
-| 6 | 방 삭제 정책 | soft delete vs hard delete + CASCADE | 미결 |
+| 6 | 방 삭제 정책 | hard delete 전환 완료 (DB ON DELETE CASCADE) | 확정 |
 | 7 | 초대 링크 만료/횟수 제한 | room_invitations 테이블 분리 시점 기준 | 미결 |

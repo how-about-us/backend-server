@@ -84,7 +84,7 @@ public class RoomController {
         return RoomDetailResponse.from(roomService.update(roomId, request.toCommand(), userId));
     }
 
-    @Operation(summary = "방 삭제", description = "방을 삭제합니다 (soft delete). HOST만 가능합니다.")
+    @Operation(summary = "방 삭제", description = "방을 삭제합니다 (hard delete). HOST만 가능합니다.")
     @DeleteMapping("/{roomId}")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal Long userId,

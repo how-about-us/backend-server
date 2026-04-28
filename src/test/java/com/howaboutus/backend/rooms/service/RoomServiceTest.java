@@ -13,12 +13,8 @@ import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.entity.RoomMember;
 import com.howaboutus.backend.rooms.entity.RoomRole;
-import com.howaboutus.backend.bookmarks.repository.BookmarkCategoryRepository;
-import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
 import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
-import com.howaboutus.backend.schedules.repository.ScheduleItemRepository;
-import com.howaboutus.backend.schedules.repository.ScheduleRepository;
 import com.howaboutus.backend.rooms.service.dto.RoomCreateCommand;
 import com.howaboutus.backend.rooms.service.dto.RoomDetailResult;
 import com.howaboutus.backend.rooms.service.dto.RoomListResult;
@@ -48,10 +44,6 @@ class RoomServiceTest {
     @Mock private RoomMemberRepository roomMemberRepository;
     @Mock private UserRepository userRepository;
     @Mock private InviteCodeGenerator inviteCodeGenerator;
-    @Mock private ScheduleItemRepository scheduleItemRepository;
-    @Mock private ScheduleRepository scheduleRepository;
-    @Mock private BookmarkRepository bookmarkRepository;
-    @Mock private BookmarkCategoryRepository bookmarkCategoryRepository;
     private RoomAuthorizationService roomAuthorizationService;
 
     private RoomService roomService;
@@ -60,9 +52,7 @@ class RoomServiceTest {
     void setUp() {
         roomAuthorizationService = new RoomAuthorizationService(roomMemberRepository);
         roomService = new RoomService(roomRepository, roomMemberRepository,
-                userRepository, inviteCodeGenerator, roomAuthorizationService,
-                scheduleItemRepository, scheduleRepository,
-                bookmarkRepository, bookmarkCategoryRepository);
+                userRepository, inviteCodeGenerator, roomAuthorizationService);
     }
 
     @Test
@@ -288,7 +278,7 @@ class RoomServiceTest {
     }
 
     @Test
-    @DisplayName("HOST가 방을 삭제하면 RoomMember와 Room이 물리 삭제된다")
+    @DisplayName("HOST가 방을 삭제하면 Room이 물리 삭제된다")
     void deleteRoomSucceeds() {
         UUID roomId = UUID.randomUUID();
         Long userId = 1L;
@@ -304,11 +294,6 @@ class RoomServiceTest {
 
         roomService.delete(roomId, userId);
 
-        verify(scheduleItemRepository).deleteAllByRoomId(roomId);
-        verify(scheduleRepository).deleteAllByRoomId(roomId);
-        verify(bookmarkRepository).deleteAllByRoomId(roomId);
-        verify(bookmarkCategoryRepository).deleteAllByRoomId(roomId);
-        verify(roomMemberRepository).deleteByRoomId(roomId);
         verify(roomRepository).delete(room);
     }
 

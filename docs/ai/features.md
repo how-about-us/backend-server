@@ -153,5 +153,5 @@
 | 3 | schedule_items order_index 중복 방지 | UNIQUE 제약 vs gap 전략 | 미결 |
 | 4 | room_members 직접 참조 정합성 | sender_id, added_by → users 직접 vs room_members 참조 | 미결 |
 | 5 | 방장 위임 기능 | MVP 이후 진행 | 보류 |
-| 6 | 방 삭제 정책 | hard delete 전환 완료 (서비스 레이어 명시적 삭제) | 확정 |
+| 6 | 방 삭제 정책 | hard delete 전환 완료 (DB ON DELETE CASCADE) | 확정 |
 | 7 | 초대 링크 만료/횟수 제한 | room_invitations 테이블 분리 시점 기준 | 미결 |

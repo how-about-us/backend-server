@@ -212,7 +212,7 @@ Google OAuth 기반 사용자 정보
 5. **장소 상세 캐시:** 자유도가 높은 검색어는 캐시 히트율이 낮을 수 있으므로 검색 결과는 캐시하지 않는다. 대신 Google Place 상세 조회 응답은 `google_place_id` 기준으로 Redis에 5분 TTL로 저장한다.
 6. **schedule_items.order_index:** D&D UI를 위한 정렬 인덱스. 재정렬 시 해당 컬럼만 업데이트.
 7. **이동 정보 프록시:** `travel_mode`(이동 수단 선호)만 DB에 저장. Google Maps Platform 정책상 `distance_meters`·`duration_seconds`는 DB에 영구 저장 불가 — 서버가 Routes API를 프록시하여 결과를 클라이언트에 직접 반환하고, Redis 3분 TTL로 임시 캐시.
-8. **방 Hard Delete:** 방 삭제 시 서비스 레이어에서 FK 순서에 맞게 ScheduleItem → Schedule → Bookmark → BookmarkCategory → RoomMember → Room을 순차 물리 삭제한다. JPA Cascade 대신 명시적 서비스 레이어 삭제로 단방향 관계를 유지한다.
+8. **방 Hard Delete:** 모든 하위 엔티티 FK에 `@OnDelete(CASCADE)` (DB `ON DELETE CASCADE`)를 적용하여, `roomRepository.delete(room)` 한 줄로 Room과 하위 데이터를 삭제한다. 단방향 관계를 유지하면서 DB가 cascade 삭제를 처리한다.
 
 ---
 
@@ -222,6 +222,6 @@ Google OAuth 기반 사용자 정보
 - [ ] 예산 정리 기능을 위한 expenses 테이블 추가 여부
 - [ ] 숙소/항공권 예약 연동 시 external_bookings 테이블 필요 여부
 - [ ] bookmark 투표 기능 추가 시 bookmark_votes 테이블 필요
-- [x] 방 삭제 정책: hard delete 전환 완료 (서비스 레이어 명시적 삭제)
+- [x] 방 삭제 정책: hard delete 전환 완료 (DB ON DELETE CASCADE)
 - [ ] message 테이블 파티셔닝 전략 (방별, 날짜별 등)
 - [ ] 초대 링크 만료/사용 횟수 제한 필요 시 room_invitations 테이블 분리 검토

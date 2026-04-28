@@ -57,7 +57,7 @@
 | `[ ]` | 방 멤버 목록 조회 | 방 참여자 목록 + 역할(HOST/MEMBER) + 접속 상태 | room_members |
 | `[ ]` | 멤버 추방 | HOST가 특정 멤버 추방 (HOST는 추방 불가) | room_members |
 | `[ ]` | 방 나가기 | 본인이 방에서 탈퇴 | room_members |
-| `[x]` | 실시간 방 접속 상태 추적 | 유효한 access_token 쿠키가 있는 사용자만 WebSocket handshake를 허용한다. SockJS + STOMP 방 topic 구독 성공 시 Redis에 접속 유저를 기록하고 접속 이벤트를 브로드캐스트, 세션 종료 시 제거와 해제 이벤트 브로드캐스트 | Redis (connected_users) |
+| `[x]` | 실시간 방 접속 상태 추적 | 유효한 access_token 쿠키가 있는 사용자만 WebSocket handshake를 허용한다. SockJS + STOMP 방 topic 구독 성공 시 Redis에 접속 유저를 기록하고 접속 이벤트를 브로드캐스트한다. 새로 온라인이 된 유저의 접속 이벤트에는 `userId`, `nickname`, `profileImageUrl`을 포함해 클라이언트가 방 멤버 프로필 맵을 갱신할 수 있게 한다. 세션 종료 시 제거와 해제 이벤트를 브로드캐스트한다 | Redis (connected_users) |
 | `[ ]` | 현재 접속 중인 유저 조회 | 실시간 접속 유저 목록 | Redis (connected_users) |
 | `[-]` | 방장 위임 | 권한 이전 | room_members |
 
@@ -91,7 +91,7 @@
 | `[x]` | 보관함 카테고리 수정 | 기존 카테고리 이름과 색상 코드 수정 | bookmark_categories |
 | `[x]` | 보관함 카테고리 삭제 | 카테고리 삭제 시 소속 북마크도 함께 삭제 | bookmark_categories, bookmarks |
 | `[x]` | 보관함 카테고리 변경 | 항목 카테고리 수정 | bookmarks, bookmark_categories |
-| `[ ]` | 장소 채팅에 공유 | 보관함/검색 장소를 채팅 메시지로 전송 | bookmarks → messages |
+| `[x]` | 장소 채팅에 공유 | 보관함/검색 장소를 `PLACE_SHARE` 채팅 메시지로 전송. 서버는 장소 카드 표시용 스냅샷(`googlePlaceId`, `name`, `formattedAddress`, `latitude`, `longitude`, `rating`, `photoName`)을 metadata에 저장한다 | bookmarks → MongoDB messages |
 
 ---
 
@@ -128,22 +128,22 @@
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[ ]` | 메시지 전송 (WS) | 실시간 텍스트 채팅 | messages |
-| `[ ]` | 메시지 목록 조회 | 방 채팅 히스토리 (페이지네이션) | messages |
-| `[ ]` | 재접속 시 미수신 메시지 동기화 | 마지막 수신 message.id 이후 메시지 조회 | messages |
-| `[ ]` | 장소 카드 메시지 전송 | place 정보를 채팅에 공유 (message_type: PLACE_SHARE) | messages |
-| `[ ]` | 시스템 메시지 | 멤버 입퇴장 등 시스템 이벤트 알림 (message_type: SYSTEM) | messages |
+| `[x]` | 일반 채팅 메시지 전송 (WS) | 클라이언트가 `/app/rooms/{roomId}/messages/chat`로 `clientMessageId`, `content`를 전송하면 MongoDB `messages` 컬렉션에 `messageType=CHAT`, `metadata={}`로 저장 후 `/topic/rooms/{roomId}/messages`로 브로드캐스트. 실패 시 발신자에게만 `/user/queue/errors`로 전달 | MongoDB messages |
+| `[x]` | 메시지 목록 조회 | 방 채팅 히스토리 조회. `afterId`가 없으면 최근 메시지, 있으면 해당 Mongo `_id` 이후 메시지 조회 | MongoDB messages |
+| `[x]` | 재접속 시 미수신 메시지 동기화 | 마지막 수신 Mongo message `_id` 이후 메시지 조회 | MongoDB messages |
+| `[x]` | 장소 카드 메시지 전송 | 클라이언트가 `/app/rooms/{roomId}/messages/place`로 장소 스냅샷을 전송하면 MongoDB `messages` 컬렉션에 `messageType=PLACE_SHARE`로 저장 후 `/topic/rooms/{roomId}/messages`로 브로드캐스트 | MongoDB messages |
+| `[x]` | 시스템 메시지 | 입장 승인 같은 멤버십 변경 이벤트를 `messageType=SYSTEM`, `senderId=NULL` 메시지로 저장 후 브로드캐스트. WebSocket 접속/해제 presence 이벤트는 채팅 히스토리에 저장하지 않음 | MongoDB messages |
 
 ---
 
 ## 8. AI 기능
 
-> **미결:** AI 응답 이력을 messages 테이블로 관리할지 별도 테이블로 분리할지, 어떤 컨텍스트(방 일정, 보관함, 위치 등)를 전달할지 결정 필요.
+> **미결:** AI 응답 이력을 MongoDB `messages` 컬렉션의 `messageType=AI_RESPONSE`으로 관리할지 별도 컬렉션으로 분리할지, 어떤 컨텍스트(방 일정, 보관함, 위치 등)를 전달할지 결정 필요.
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[ ]` | AI 호출 (룰 기반 트리거) | 채팅창에서 AI 호출 버튼으로 질의 | messages (message_type: AI_RESPONSE) |
-| `[ ]` | AI 응답 채팅에 표시 | AI 응답을 sender_id=NULL 메시지로 채팅에 노출 | messages |
+| `[ ]` | AI 호출 (룰 기반 트리거) | 채팅창에서 AI 호출 버튼으로 질의 | MongoDB messages (messageType: AI_RESPONSE) |
+| `[ ]` | AI 응답 채팅에 표시 | AI 응답을 senderId=NULL 메시지로 채팅에 노출 | MongoDB messages |
 
 ---
 
@@ -151,7 +151,7 @@
 
 | # | 항목 | 선택지 | 현황 |
 |---|------|--------|------|
-| 1 | AI 응답 저장 방식 | messages.message_type vs ai_responses 별도 테이블 | 미결 |
+| 1 | AI 응답 저장 방식 | MongoDB messages.messageType vs ai_responses 별도 컬렉션 | 미결 |
 | 2 | schedules 기준값 | day_number, date 두 컬럼 모두 저장 | 결정 |
 | 3 | schedule_items order_index 중복 방지 | UNIQUE 제약 vs gap 전략 | 미결 |
 | 4 | room_members 직접 참조 정합성 | sender_id, added_by → users 직접 vs room_members 참조 | 미결 |

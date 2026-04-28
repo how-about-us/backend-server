@@ -18,6 +18,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final CorsProperties corsProperties;
     private final WebSocketHandshakeInterceptor webSocketHandshakeInterceptor;
+    private final UserIdHandshakeHandler userIdHandshakeHandler;
     private final StompAuthenticationInterceptor stompAuthenticationInterceptor;
     private final RoomSubscriptionInterceptor roomSubscriptionInterceptor;
 
@@ -26,13 +27,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws")
                 .setAllowedOrigins(corsProperties.allowedOrigins().toArray(String[]::new))
                 .addInterceptors(webSocketHandshakeInterceptor)
+                .setHandshakeHandler(userIdHandshakeHandler)
                 .withSockJS();
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic");
+        registry.enableSimpleBroker("/topic", "/queue");
         registry.setApplicationDestinationPrefixes("/app");
+        registry.setUserDestinationPrefix("/user");
     }
 
     @Override

@@ -6,6 +6,11 @@ import java.util.UUID;
 public record RoomPresenceChangedEvent(
         UUID roomId,
         Long userId,
-        RoomPresenceEventType type
+        RoomPresenceEventType type,
+        String nickname,
+        String profileImageUrl
 ) {
+    public RoomPresenceChangedEvent(UUID roomId, Long userId, RoomPresenceEventType type) {
+        this(roomId, userId, type, null, null);
+    }
 }

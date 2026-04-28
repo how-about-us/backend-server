@@ -32,14 +32,26 @@ class RoomPresenceBroadcasterTest {
         UUID roomId = UUID.randomUUID();
 
         broadcaster.handlePresenceChanged(
-                new RoomPresenceChangedEvent(roomId, 42L, RoomPresenceEventType.USER_CONNECTED)
+                new RoomPresenceChangedEvent(
+                        roomId,
+                        42L,
+                        RoomPresenceEventType.USER_CONNECTED,
+                        "민수",
+                        "https://example.com/profile.jpg"
+                )
         );
 
         ArgumentCaptor<RoomPresencePayload> eventCaptor = ArgumentCaptor.forClass(RoomPresencePayload.class);
         verify(messagingTemplate).convertAndSend(Mockito.eq("/topic/rooms/" + roomId + "/presence"),
                 eventCaptor.capture());
         assertThat(eventCaptor.getValue())
-                .isEqualTo(new RoomPresencePayload(roomId, 42L, RoomPresenceEventType.USER_CONNECTED));
+                .isEqualTo(new RoomPresencePayload(
+                        roomId,
+                        42L,
+                        RoomPresenceEventType.USER_CONNECTED,
+                        "민수",
+                        "https://example.com/profile.jpg"
+                ));
     }
 
     @Test

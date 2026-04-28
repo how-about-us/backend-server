@@ -2,6 +2,7 @@ package com.howaboutus.backend.rooms.service;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.realtime.event.MemberApprovedEvent;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.entity.RoomMember;
 import com.howaboutus.backend.rooms.entity.RoomRole;
@@ -17,6 +18,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,7 @@ public class RoomInviteService {
     private final UserRepository userRepository;
     private final InviteCodeGenerator inviteCodeGenerator;
     private final RoomAuthorizationService roomAuthorizationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 초대 코드 재생성
     @Transactional
@@ -114,6 +117,13 @@ public class RoomInviteService {
         }
 
         target.approve();
+        User joinedUser = target.getUser();
+        eventPublisher.publishEvent(new MemberApprovedEvent(
+                roomId,
+                joinedUser.getId(),
+                joinedUser.getNickname(),
+                joinedUser.getProfileImageUrl()
+        ));
     }
 
     // 입장 거절

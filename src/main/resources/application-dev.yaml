@@ -1,3 +1,4 @@
+#file: noinspection SpellCheckingInspection
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5433/${DB_NAME}
@@ -28,3 +29,9 @@ spring:
 cors:
   allowed-origins:
     - http://localhost:3000
+
+springwolf:
+  docket:
+    servers:
+      stomp-server:
+        host: localhost:8080/ws

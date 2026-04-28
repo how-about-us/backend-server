@@ -1,3 +1,4 @@
+#file: noinspection SpellCheckingInspection
 spring:
   application:
     name: how-about-us-backend
@@ -33,6 +34,23 @@ springdoc:
   swagger-ui:
     disable-swagger-default-url: true
     persist-authorization: true
+
+springwolf:
+  enabled: true
+  docket:
+    base-package: com.howaboutus.backend
+    info:
+      title: 우리어때 웹소켓 API
+      version: 1.0.0
+      description: WebSocket/STOMP 기반 실시간 이벤트 브로드캐스트 명세
+    servers:
+      stomp-server:
+        protocol: stomp
+        host: localhost:8080/ws
+  plugin:
+    stomp:
+      endpoint:
+        app: /app
 
 jwt:
   secret: ${JWT_SECRET}

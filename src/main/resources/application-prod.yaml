@@ -1,3 +1,4 @@
+#file: noinspection SpellCheckingInspection
 spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST}:5432/${DB_NAME}
@@ -22,3 +23,9 @@ spring:
 
 jwt:
   access-token-expiration: 1800000  # 30분 (밀리초)
+
+springwolf:
+  docket:
+    servers:
+      stomp-server:
+        host: ${APP_DOMAIN}/ws

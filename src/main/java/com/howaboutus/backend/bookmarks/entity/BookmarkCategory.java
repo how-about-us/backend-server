@@ -4,6 +4,8 @@ import com.howaboutus.backend.common.entity.BaseTimeEntity;
 import com.howaboutus.backend.rooms.entity.Room;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -28,6 +30,7 @@ public class BookmarkCategory extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "room_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Room room;
 
     @Column(name = "room_id", nullable = false, insertable = false, updatable = false)

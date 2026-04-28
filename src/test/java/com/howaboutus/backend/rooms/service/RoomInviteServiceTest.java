@@ -76,7 +76,7 @@ class RoomInviteServiceTest {
     @Test
     @DisplayName("HOST가 초대 코드를 재발급하면 새 코드를 반환한다")
     void regenerateInviteCodeSuccess() {
-        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomRepository.findById(ROOM_ID)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
                 .willReturn(Optional.of(hostMember));
         given(inviteCodeGenerator.generate()).willReturn("newCode9876");
@@ -90,7 +90,7 @@ class RoomInviteServiceTest {
     @Test
     @DisplayName("MEMBER가 초대 코드 재발급하면 NOT_ROOM_HOST 예외")
     void regenerateInviteCodeThrowsWhenNotHost() {
-        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomRepository.findById(ROOM_ID)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, MEMBER_ID))
                 .willReturn(Optional.of(regularMember));
 
@@ -103,7 +103,7 @@ class RoomInviteServiceTest {
     @Test
     @DisplayName("초대 코드로 입장 요청 시 PENDING 멤버로 등록한다")
     void requestJoinCreatesPendingMember() {
-        given(roomRepository.findByInviteCodeAndDeletedAtIsNull("aB3xK9mQ2w"))
+        given(roomRepository.findByInviteCode("aB3xK9mQ2w"))
                 .willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, STRANGER_ID))
                 .willReturn(Optional.empty());
@@ -121,7 +121,7 @@ class RoomInviteServiceTest {
     @Test
     @DisplayName("이미 MEMBER인 사용자가 입장 요청하면 ALREADY_MEMBER를 반환한다")
     void requestJoinReturnsAlreadyMemberWhenMember() {
-        given(roomRepository.findByInviteCodeAndDeletedAtIsNull("aB3xK9mQ2w"))
+        given(roomRepository.findByInviteCode("aB3xK9mQ2w"))
                 .willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, MEMBER_ID))
                 .willReturn(Optional.of(regularMember));
@@ -140,7 +140,7 @@ class RoomInviteServiceTest {
         ReflectionTestUtils.setField(pendingUser, "id", 3L);
         RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
 
-        given(roomRepository.findByInviteCodeAndDeletedAtIsNull("aB3xK9mQ2w"))
+        given(roomRepository.findByInviteCode("aB3xK9mQ2w"))
                 .willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, 3L))
                 .willReturn(Optional.of(pendingMember));
@@ -155,7 +155,7 @@ class RoomInviteServiceTest {
     @Test
     @DisplayName("존재하지 않는 초대 코드로 입장 요청하면 ROOM_NOT_FOUND 예외")
     void requestJoinThrowsWhenInvalidCode() {
-        given(roomRepository.findByInviteCodeAndDeletedAtIsNull("invalidCode"))
+        given(roomRepository.findByInviteCode("invalidCode"))
                 .willReturn(Optional.empty());
 
         assertThatThrownBy(() -> roomInviteService.requestJoin("invalidCode", STRANGER_ID))
@@ -173,7 +173,7 @@ class RoomInviteServiceTest {
         ReflectionTestUtils.setField(pendingUser, "id", 3L);
         RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID))
+        given(roomRepository.findById(ROOM_ID))
                 .willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, 3L))
                 .willReturn(Optional.of(pendingMember));
@@ -187,7 +187,7 @@ class RoomInviteServiceTest {
     @Test
     @DisplayName("승인된 사용자가 상태 조회하면 approved를 반환한다")
     void getJoinStatusReturnsApproved() {
-        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID))
+        given(roomRepository.findById(ROOM_ID))
                 .willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, MEMBER_ID))
                 .willReturn(Optional.of(regularMember));
@@ -201,7 +201,7 @@ class RoomInviteServiceTest {
     @Test
     @DisplayName("거절된(레코드 없는) 사용자가 상태 조회하면 JOIN_REQUEST_NOT_FOUND 예외")
     void getJoinStatusThrowsWhenRejected() {
-        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID))
+        given(roomRepository.findById(ROOM_ID))
                 .willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, STRANGER_ID))
                 .willReturn(Optional.empty());
@@ -222,7 +222,7 @@ class RoomInviteServiceTest {
         RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
         ReflectionTestUtils.setField(pendingMember, "id", 42L);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomRepository.findById(ROOM_ID)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
                 .willReturn(Optional.of(hostMember));
         given(roomMemberRepository.findByIdAndRoom_Id(42L, ROOM_ID))
@@ -266,7 +266,7 @@ class RoomInviteServiceTest {
         RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
         ReflectionTestUtils.setField(pendingMember, "id", 42L);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomRepository.findById(ROOM_ID)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
                 .willReturn(Optional.of(hostMember));
         given(roomMemberRepository.findByIdAndRoom_Id(42L, ROOM_ID))
@@ -280,7 +280,7 @@ class RoomInviteServiceTest {
     @Test
     @DisplayName("존재하지 않는 요청을 승인하면 JOIN_REQUEST_NOT_FOUND 예외")
     void approveThrowsWhenRequestNotFound() {
-        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomRepository.findById(ROOM_ID)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
                 .willReturn(Optional.of(hostMember));
         given(roomMemberRepository.findByIdAndRoom_Id(999L, ROOM_ID))
@@ -295,7 +295,7 @@ class RoomInviteServiceTest {
     @Test
     @DisplayName("MEMBER가 승인을 시도하면 NOT_ROOM_HOST 예외")
     void approveThrowsWhenNotHost() {
-        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomRepository.findById(ROOM_ID)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, MEMBER_ID))
                 .willReturn(Optional.of(regularMember));
 
@@ -315,7 +315,7 @@ class RoomInviteServiceTest {
         RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
         ReflectionTestUtils.setField(pendingMember, "id", 42L);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomRepository.findById(ROOM_ID)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
                 .willReturn(Optional.of(hostMember));
         given(roomMemberRepository.findByRoom_IdAndRole(ROOM_ID, RoomRole.PENDING))

@@ -1,0 +1,11 @@
+.gradle
+build
+bin
+.idea
+.git
+.github
+.agents
+.claude
+.serena
+*.md
+infra/caddy

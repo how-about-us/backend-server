@@ -52,8 +52,13 @@
 ### Docker Compose 수동 제어
 
 ```bash
-docker compose -f compose.yaml -f compose.dev.yaml up -d
-docker compose -f compose.yaml -f compose.dev.yaml down
+# DB만 (백엔드 개발자)
+docker compose --env-file .env.dev -f compose.db.dev.yaml up -d
+docker compose --env-file .env.dev -f compose.db.dev.yaml down
+
+# DB + 앱 (프론트엔드 개발자)
+docker compose --env-file .env.dev -f compose.db.dev.yaml -f compose.app.dev.yaml up -d --build
+docker compose --env-file .env.dev -f compose.db.dev.yaml -f compose.app.dev.yaml down
 ```
 
 ## Profiles

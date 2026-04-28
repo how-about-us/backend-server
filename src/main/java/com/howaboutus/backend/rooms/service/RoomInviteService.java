@@ -48,7 +48,7 @@ public class RoomInviteService {
     // 입장 요청
     @Transactional
     public JoinResult requestJoin(String inviteCode, Long userId) {
-        Room room = roomRepository.findByInviteCodeAndDeletedAtIsNull(inviteCode)
+        Room room = roomRepository.findByInviteCode(inviteCode)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
 
         Optional<RoomMember> existing = roomMemberRepository.findByRoom_IdAndUser_Id(room.getId(), userId);
@@ -144,7 +144,7 @@ public class RoomInviteService {
     // 활성 방 조회
     // 다른 메서드 호출전에, 해당 방이 존재하는지 확인하는 용도
     private Room getActiveRoom(UUID roomId) {
-        return roomRepository.findByIdAndDeletedAtIsNull(roomId)
+        return roomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
     }
 

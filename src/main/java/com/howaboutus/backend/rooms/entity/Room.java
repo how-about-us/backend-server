@@ -6,7 +6,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -43,9 +42,6 @@ public class Room extends BaseTimeEntity {
     @Column(name = "created_by", nullable = false)
     private Long createdBy;
 
-    @Column(name = "deleted_at")
-    private Instant deletedAt;
-
     private Room(String title, String destination, LocalDate startDate,
                  LocalDate endDate, String inviteCode, Long createdBy) {
         this.title = title;
@@ -74,13 +70,6 @@ public class Room extends BaseTimeEntity {
         if (endDate != null) {
             this.endDate = endDate;
         }
-    }
-    public void delete() {
-        this.deletedAt = Instant.now();
-    }
-
-    public boolean isDeleted() {
-        return this.deletedAt != null;
     }
 
     public void regenerateInviteCode(String newCode) {

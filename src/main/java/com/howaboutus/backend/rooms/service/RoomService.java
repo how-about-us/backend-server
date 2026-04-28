@@ -73,11 +73,13 @@ public class RoomService {
         return RoomDetailResult.of(room, RoomRole.HOST, memberCount);
     }
 
+    //방 삭제 (hard delete)
+    //방장만 가능하며, DB ON DELETE CASCADE로 하위 데이터가 자동 삭제된다.
     @Transactional
     public void delete(UUID roomId, Long userId) {
         Room room = getActiveRoom(roomId);
         roomAuthorizationService.requireHost(roomId, userId);
-        room.delete();
+        roomRepository.delete(room);
     }
 
     public RoomListResult getMyRooms(Long userId, Instant cursor, int size) {
@@ -88,11 +90,11 @@ public class RoomService {
         List<RoomMember> members;
         if (cursor == null) {
             members = roomMemberRepository
-                    .findByUser_IdAndRoleInAndRoom_DeletedAtIsNullOrderByJoinedAtDesc(
+                    .findByUser_IdAndRoleInOrderByJoinedAtDesc(
                             userId, ACTIVE_ROLES, pageable);
         } else {
             members = roomMemberRepository
-                    .findByUser_IdAndRoleInAndRoom_DeletedAtIsNullAndJoinedAtBeforeOrderByJoinedAtDesc(
+                    .findByUser_IdAndRoleInAndJoinedAtBeforeOrderByJoinedAtDesc(
                             userId, ACTIVE_ROLES, cursor, pageable);
         }
 
@@ -122,7 +124,7 @@ public class RoomService {
     }
 
     private Room getActiveRoom(UUID roomId) {
-        return roomRepository.findByIdAndDeletedAtIsNull(roomId)
+        return roomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOM_NOT_FOUND));
     }
 

@@ -7,7 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RoomRepository extends JpaRepository<Room, UUID> {
 
-    Optional<Room> findByIdAndDeletedAtIsNull(UUID id);
-
-    Optional<Room> findByInviteCodeAndDeletedAtIsNull(String inviteCode);
+    Optional<Room> findByInviteCode(String inviteCode);
 }

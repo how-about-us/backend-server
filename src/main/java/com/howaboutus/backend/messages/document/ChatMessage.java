@@ -47,4 +47,12 @@ public class ChatMessage {
     public static ChatMessage chat(UUID roomId, Long senderId, String content) {
         return new ChatMessage(roomId, senderId, MessageType.CHAT, content, Map.of(), Instant.now());
     }
+
+    public static ChatMessage placeShare(UUID roomId, Long senderId, String content, Map<String, Object> metadata) {
+        return new ChatMessage(roomId, senderId, MessageType.PLACE_SHARE, content, metadata, Instant.now());
+    }
+
+    public static ChatMessage system(UUID roomId, String content, Map<String, Object> metadata) {
+        return new ChatMessage(roomId, null, MessageType.SYSTEM, content, metadata, Instant.now());
+    }
 }

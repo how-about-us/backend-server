@@ -6,11 +6,14 @@ import com.howaboutus.backend.messages.document.ChatMessage;
 import com.howaboutus.backend.messages.repository.ChatMessageRepository;
 import com.howaboutus.backend.messages.service.dto.MessageResult;
 import com.howaboutus.backend.messages.service.dto.SendChatMessageCommand;
+import com.howaboutus.backend.messages.service.dto.SendPlaceMessageCommand;
 import com.howaboutus.backend.realtime.event.MessageSentEvent;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -34,6 +37,47 @@ public class MessageService {
         ChatMessage message = ChatMessage.chat(roomId, userId, content);
         ChatMessage savedMessage = chatMessageRepository.save(message);
         MessageResult result = MessageResult.from(savedMessage, command.clientMessageId());
+        eventPublisher.publishEvent(MessageSentEvent.from(result));
+        return result;
+    }
+
+    public MessageResult sharePlace(UUID roomId, SendPlaceMessageCommand command, long userId) {
+        roomAuthorizationService.requireActiveMember(roomId, userId);
+        String googlePlaceId = normalizeGooglePlaceId(command.googlePlaceId());
+        String name = normalizeContent(command.name());
+
+        Map<String, Object> metadata = nonNullMetadata(metadataEntries(
+                "googlePlaceId", googlePlaceId,
+                "name", name,
+                "formattedAddress", command.formattedAddress(),
+                "latitude", command.latitude(),
+                "longitude", command.longitude(),
+                "rating", command.rating(),
+                "photoName", command.photoName()
+        ));
+
+        ChatMessage message = ChatMessage.placeShare(roomId, userId, name, metadata);
+        ChatMessage savedMessage = chatMessageRepository.save(message);
+        MessageResult result = MessageResult.from(savedMessage, command.clientMessageId());
+        eventPublisher.publishEvent(MessageSentEvent.from(result));
+        return result;
+    }
+
+    public MessageResult sendMemberJoinedSystemMessage(UUID roomId,
+                                                       long joinedUserId,
+                                                       String nickname,
+                                                       String profileImageUrl) {
+        String normalizedNickname = normalizeContent(nickname);
+        Map<String, Object> metadata = nonNullMetadata(metadataEntries(
+                "eventType", "MEMBER_JOINED",
+                "userId", joinedUserId,
+                "nickname", normalizedNickname,
+                "profileImageUrl", profileImageUrl
+        ));
+
+        ChatMessage message = ChatMessage.system(roomId, normalizedNickname + "님이 방에 참여했습니다", metadata);
+        ChatMessage savedMessage = chatMessageRepository.save(message);
+        MessageResult result = MessageResult.from(savedMessage);
         eventPublisher.publishEvent(MessageSentEvent.from(result));
         return result;
     }
@@ -75,6 +119,31 @@ public class MessageService {
             throw new CustomException(ErrorCode.MESSAGE_CONTENT_TOO_LONG);
         }
         return normalized;
+    }
+
+    private String normalizeGooglePlaceId(String googlePlaceId) {
+        if (googlePlaceId == null || googlePlaceId.isBlank()) {
+            throw new CustomException(ErrorCode.MESSAGE_PLACE_ID_BLANK);
+        }
+        return googlePlaceId.trim();
+    }
+
+    private Map<String, Object> nonNullMetadata(Map<String, Object> metadata) {
+        Map<String, Object> filtered = new LinkedHashMap<>();
+        metadata.forEach((key, value) -> {
+            if (value != null) {
+                filtered.put(key, value);
+            }
+        });
+        return Map.copyOf(filtered);
+    }
+
+    private Map<String, Object> metadataEntries(Object... entries) {
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        for (int i = 0; i < entries.length; i += 2) {
+            metadata.put((String) entries[i], entries[i + 1]);
+        }
+        return metadata;
     }
 
     private void validatePageSize(int size) {

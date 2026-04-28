@@ -91,7 +91,7 @@
 | `[x]` | 보관함 카테고리 수정 | 기존 카테고리 이름과 색상 코드 수정 | bookmark_categories |
 | `[x]` | 보관함 카테고리 삭제 | 카테고리 삭제 시 소속 북마크도 함께 삭제 | bookmark_categories, bookmarks |
 | `[x]` | 보관함 카테고리 변경 | 항목 카테고리 수정 | bookmarks, bookmark_categories |
-| `[ ]` | 장소 채팅에 공유 | 보관함/검색 장소를 채팅 메시지로 전송 | bookmarks → MongoDB messages |
+| `[x]` | 장소 채팅에 공유 | 보관함/검색 장소를 `PLACE_SHARE` 채팅 메시지로 전송. 서버는 장소 카드 표시용 스냅샷(`googlePlaceId`, `name`, `formattedAddress`, `latitude`, `longitude`, `rating`, `photoName`)을 metadata에 저장한다 | bookmarks → MongoDB messages |
 
 ---
 
@@ -131,8 +131,8 @@
 | `[x]` | 일반 채팅 메시지 전송 (WS) | 클라이언트가 `/app/rooms/{roomId}/messages/chat`로 `clientMessageId`, `content`를 전송하면 MongoDB `messages` 컬렉션에 `messageType=CHAT`, `metadata={}`로 저장 후 `/topic/rooms/{roomId}/messages`로 브로드캐스트. 실패 시 발신자에게만 `/user/queue/errors`로 전달 | MongoDB messages |
 | `[x]` | 메시지 목록 조회 | 방 채팅 히스토리 조회. `afterId`가 없으면 최근 메시지, 있으면 해당 Mongo `_id` 이후 메시지 조회 | MongoDB messages |
 | `[x]` | 재접속 시 미수신 메시지 동기화 | 마지막 수신 Mongo message `_id` 이후 메시지 조회 | MongoDB messages |
-| `[ ]` | 장소 카드 메시지 전송 | place 정보를 채팅에 공유 (messageType: PLACE_SHARE) | MongoDB messages |
-| `[ ]` | 시스템 메시지 | 멤버 입퇴장 등 시스템 이벤트 알림 (messageType: SYSTEM) | MongoDB messages |
+| `[x]` | 장소 카드 메시지 전송 | 클라이언트가 `/app/rooms/{roomId}/messages/place`로 장소 스냅샷을 전송하면 MongoDB `messages` 컬렉션에 `messageType=PLACE_SHARE`로 저장 후 `/topic/rooms/{roomId}/messages`로 브로드캐스트 | MongoDB messages |
+| `[x]` | 시스템 메시지 | 입장 승인 같은 멤버십 변경 이벤트를 `messageType=SYSTEM`, `senderId=NULL` 메시지로 저장 후 브로드캐스트. WebSocket 접속/해제 presence 이벤트는 채팅 히스토리에 저장하지 않음 | MongoDB messages |
 
 ---
 

@@ -10,10 +10,12 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.messages.controller.dto.SendChatMessageRequest;
+import com.howaboutus.backend.messages.controller.dto.SendPlaceMessageRequest;
 import com.howaboutus.backend.messages.document.MessageType;
 import com.howaboutus.backend.messages.service.MessageService;
 import com.howaboutus.backend.messages.service.dto.MessageResult;
 import com.howaboutus.backend.messages.service.dto.SendChatMessageCommand;
+import com.howaboutus.backend.messages.service.dto.SendPlaceMessageCommand;
 import com.howaboutus.backend.realtime.event.MessageSendFailedEvent;
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -62,6 +64,21 @@ class MessageWebSocketControllerTest {
     }
 
     @Test
+    @DisplayName("장소 공유 메시지 전송은 place 전용 STOMP destination을 사용한다")
+    void sharePlaceUsesPlaceMessageDestination() throws NoSuchMethodException {
+        Method send = MessageWebSocketController.class.getDeclaredMethod(
+                "sharePlace",
+                UUID.class,
+                SendPlaceMessageRequest.class,
+                SimpMessageHeaderAccessor.class
+        );
+
+        MessageMapping messageMapping = send.getAnnotation(MessageMapping.class);
+
+        assertThat(messageMapping.value()).containsExactly("/rooms/{roomId}/messages/place");
+    }
+
+    @Test
     @DisplayName("메시지 전송 성공 시 서비스에 위임하고 컨트롤러에서는 이벤트를 발행하지 않는다")
     void sendDelegatesToServiceWithoutPublishingControllerEvent() {
         UUID roomId = UUID.randomUUID();
@@ -85,6 +102,47 @@ class MessageWebSocketControllerTest {
     }
 
     @Test
+    @DisplayName("장소 공유 메시지 전송 성공 시 서비스에 위임하고 컨트롤러에서는 이벤트를 발행하지 않는다")
+    void sharePlaceDelegatesToServiceWithoutPublishingControllerEvent() {
+        UUID roomId = UUID.randomUUID();
+        SendPlaceMessageRequest request = new SendPlaceMessageRequest(
+                "client-1",
+                "google-place-1",
+                "광안리 해수욕장",
+                "부산 수영구 광안해변로",
+                35.1532,
+                129.1186,
+                4.6,
+                "places/google-place-1/photos/photo-1"
+        );
+        MessageResult result = new MessageResult(
+                "6628f5f4c49a9f7b3772c222",
+                "client-1",
+                roomId,
+                42L,
+                MessageType.PLACE_SHARE,
+                "광안리 해수욕장",
+                Map.of("googlePlaceId", "google-place-1"),
+                Instant.parse("2026-04-28T00:00:00Z")
+        );
+        given(messageService.sharePlace(eq(roomId), any(SendPlaceMessageCommand.class), eq(42L))).willReturn(result);
+
+        controller.sharePlace(roomId, request, accessorWithUserId(42L));
+
+        verify(messageService).sharePlace(eq(roomId), eq(new SendPlaceMessageCommand(
+                "client-1",
+                "google-place-1",
+                "광안리 해수욕장",
+                "부산 수영구 광안해변로",
+                35.1532,
+                129.1186,
+                4.6,
+                "places/google-place-1/photos/photo-1"
+        )), eq(42L));
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
     @DisplayName("메시지 전송 실패 시 실패 이벤트를 발행한다")
     void sendPublishesFailureEventWhenMessageServiceFails() {
         UUID roomId = UUID.randomUUID();
@@ -98,6 +156,32 @@ class MessageWebSocketControllerTest {
                 42L,
                 "client-1",
                 ErrorCode.MESSAGE_CONTENT_BLANK
+        ));
+    }
+
+    @Test
+    @DisplayName("장소 공유 메시지 전송 실패 시 실패 이벤트를 발행한다")
+    void sharePlacePublishesFailureEventWhenMessageServiceFails() {
+        UUID roomId = UUID.randomUUID();
+        SendPlaceMessageRequest request = new SendPlaceMessageRequest(
+                "client-1",
+                " ",
+                "광안리 해수욕장",
+                "부산 수영구 광안해변로",
+                35.1532,
+                129.1186,
+                4.6,
+                "places/google-place-1/photos/photo-1"
+        );
+        given(messageService.sharePlace(eq(roomId), any(SendPlaceMessageCommand.class), eq(42L)))
+                .willThrow(new CustomException(ErrorCode.MESSAGE_PLACE_ID_BLANK));
+
+        controller.sharePlace(roomId, request, accessorWithUserId(42L));
+
+        verify(eventPublisher).publishEvent(MessageSendFailedEvent.messageSendFailure(
+                42L,
+                "client-1",
+                ErrorCode.MESSAGE_PLACE_ID_BLANK
         ));
     }
 

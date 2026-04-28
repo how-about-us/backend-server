@@ -2,6 +2,7 @@ package com.howaboutus.backend.messages.controller;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.messages.controller.dto.SendChatMessageRequest;
+import com.howaboutus.backend.messages.controller.dto.SendPlaceMessageRequest;
 import com.howaboutus.backend.messages.service.MessageService;
 import com.howaboutus.backend.realtime.config.WebSocketSessionAttributes;
 import com.howaboutus.backend.realtime.event.MessageSendFailedEvent;
@@ -37,6 +38,24 @@ public class MessageWebSocketController {
             );
         } catch (RuntimeException e) {
             log.warn("Failed to send chat message. roomId={}, userId={}", roomId, userId, e);
+            eventPublisher.publishEvent(MessageSendFailedEvent.retryableMessageSendFailure(userId, clientMessageId));
+        }
+    }
+
+    @MessageMapping("/rooms/{roomId}/messages/place")
+    public void sharePlace(@DestinationVariable UUID roomId,
+                           @Payload SendPlaceMessageRequest request,
+                           SimpMessageHeaderAccessor accessor) {
+        long userId = extractUserId(accessor);
+        String clientMessageId = request == null ? null : request.clientMessageId();
+        try {
+            messageService.sharePlace(roomId, SendPlaceMessageRequest.toCommand(request), userId);
+        } catch (CustomException e) {
+            eventPublisher.publishEvent(
+                    MessageSendFailedEvent.messageSendFailure(userId, clientMessageId, e.getErrorCode())
+            );
+        } catch (RuntimeException e) {
+            log.warn("Failed to send place message. roomId={}, userId={}", roomId, userId, e);
             eventPublisher.publishEvent(MessageSendFailedEvent.retryableMessageSendFailure(userId, clientMessageId));
         }
     }

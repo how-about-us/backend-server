@@ -70,7 +70,7 @@ Google OAuth 기반 사용자 정보
 
 ## 4. messages (MongoDB 채팅 메시지 컬렉션)
 
-실시간 채팅 메시지. 메시지별 metadata 구조가 달라질 수 있어 MongoDB 컬렉션으로 저장한다. 일반 채팅 요청은 클라이언트 metadata를 받지 않고 `metadata={}`로 저장하며, PLACE_SHARE / AI_RESPONSE / SYSTEM 같은 타입별 확장 데이터는 서버가 정형 요청 또는 내부 이벤트에서 구성한다. MongoDB `_id` 문자열을 클라이언트에 `id`로 노출하고 재접속 동기화 cursor로 사용한다.
+실시간 채팅 메시지. 메시지별 metadata 구조가 달라질 수 있어 MongoDB 컬렉션으로 저장한다. 일반 채팅 요청은 클라이언트 metadata를 받지 않고 `metadata={}`로 저장하며, PLACE_SHARE / AI_RESPONSE / SYSTEM 같은 타입별 확장 데이터는 서버가 정형 요청 또는 내부 이벤트에서 구성한다. PLACE_SHARE metadata는 장소 카드 표시용 스냅샷(`googlePlaceId`, `name`, `formattedAddress`, `latitude`, `longitude`, `rating`, `photoName`)을 담고, SYSTEM metadata는 이벤트 식별자와 대상 사용자 정보를 담는다. MongoDB `_id` 문자열을 클라이언트에 `id`로 노출하고 재접속 동기화 cursor로 사용한다.
 
 | 필드 | 타입 | 제약조건 | 설명 |
 |------|------|----------|------|

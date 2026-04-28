@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.messages.service.MessageService;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.entity.RoomMember;
 import com.howaboutus.backend.rooms.entity.RoomRole;
@@ -36,6 +37,7 @@ class RoomInviteServiceTest {
     @Mock private RoomMemberRepository roomMemberRepository;
     @Mock private UserRepository userRepository;
     @Mock private InviteCodeGenerator inviteCodeGenerator;
+    @Mock private MessageService messageService;
     private RoomAuthorizationService roomAuthorizationService;
 
     private RoomInviteService roomInviteService;
@@ -53,7 +55,8 @@ class RoomInviteServiceTest {
     void setUp() {
         roomAuthorizationService = new RoomAuthorizationService(roomMemberRepository);
         roomInviteService = new RoomInviteService(
-                roomRepository, roomMemberRepository, userRepository, inviteCodeGenerator, roomAuthorizationService);
+                roomRepository, roomMemberRepository, userRepository, inviteCodeGenerator, roomAuthorizationService,
+                messageService);
 
         room = Room.create("부산 여행", "부산", null, null, "oldCode123", HOST_ID);
         ReflectionTestUtils.setField(room, "id", ROOM_ID);
@@ -226,6 +229,30 @@ class RoomInviteServiceTest {
         roomInviteService.approve(ROOM_ID, 42L, HOST_ID);
 
         assertThat(pendingMember.getRole()).isEqualTo(RoomRole.MEMBER);
+    }
+
+    @Test
+    @DisplayName("HOST가 입장 요청을 승인하면 멤버 입장 시스템 메시지를 저장한다")
+    void approveSendsMemberJoinedSystemMessage() {
+        User pendingUser = User.ofGoogle("google-pending", "pending@test.com", "대기자", "https://example.com/p.png");
+        ReflectionTestUtils.setField(pendingUser, "id", 3L);
+        RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
+        ReflectionTestUtils.setField(pendingMember, "id", 42L);
+
+        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
+                .willReturn(Optional.of(hostMember));
+        given(roomMemberRepository.findByIdAndRoom_Id(42L, ROOM_ID))
+                .willReturn(Optional.of(pendingMember));
+
+        roomInviteService.approve(ROOM_ID, 42L, HOST_ID);
+
+        verify(messageService).sendMemberJoinedSystemMessage(
+                ROOM_ID,
+                3L,
+                "대기자",
+                "https://example.com/p.png"
+        );
     }
 
     @Test

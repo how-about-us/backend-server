@@ -13,6 +13,7 @@ public enum ErrorCode {
     INVALID_PAGE_SIZE(HttpStatus.BAD_REQUEST, "size는 1 이상이어야 합니다"),
     MESSAGE_CONTENT_BLANK(HttpStatus.BAD_REQUEST, "메시지는 공백일 수 없습니다"),
     MESSAGE_CONTENT_TOO_LONG(HttpStatus.BAD_REQUEST, "메시지는 1000자 이하여야 합니다"),
+    MESSAGE_PLACE_ID_BLANK(HttpStatus.BAD_REQUEST, "공유할 장소 ID는 공백일 수 없습니다"),
 
     // 401 UNAUTHORIZED
     GOOGLE_AUTH_FAILED(HttpStatus.UNAUTHORIZED, "Google 인증에 실패했습니다"),

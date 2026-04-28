@@ -2,6 +2,7 @@ package com.howaboutus.backend.rooms.service;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.messages.service.MessageService;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.entity.RoomMember;
 import com.howaboutus.backend.rooms.entity.RoomRole;
@@ -32,6 +33,7 @@ public class RoomInviteService {
     private final UserRepository userRepository;
     private final InviteCodeGenerator inviteCodeGenerator;
     private final RoomAuthorizationService roomAuthorizationService;
+    private final MessageService messageService;
 
     // 초대 코드 재생성
     @Transactional
@@ -114,6 +116,13 @@ public class RoomInviteService {
         }
 
         target.approve();
+        User joinedUser = target.getUser();
+        messageService.sendMemberJoinedSystemMessage(
+                roomId,
+                joinedUser.getId(),
+                joinedUser.getNickname(),
+                joinedUser.getProfileImageUrl()
+        );
     }
 
     // 입장 거절

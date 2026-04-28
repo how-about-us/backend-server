@@ -8,8 +8,10 @@ import com.howaboutus.backend.rooms.controller.dto.JoinResponse;
 import com.howaboutus.backend.rooms.controller.dto.JoinStatusResponse;
 import com.howaboutus.backend.rooms.controller.dto.RoomDetailResponse;
 import com.howaboutus.backend.rooms.controller.dto.RoomListResponse;
+import com.howaboutus.backend.rooms.controller.dto.RoomMemberListResponse;
 import com.howaboutus.backend.rooms.controller.dto.UpdateRoomRequest;
 import com.howaboutus.backend.rooms.service.RoomInviteService;
+import com.howaboutus.backend.rooms.service.RoomMemberService;
 import com.howaboutus.backend.rooms.service.RoomService;
 import com.howaboutus.backend.rooms.service.dto.JoinResult;
 import com.howaboutus.backend.rooms.service.dto.JoinStatus;
@@ -44,6 +46,7 @@ public class RoomController {
 
     private final RoomService roomService;
     private final RoomInviteService roomInviteService;
+    private final RoomMemberService roomMemberService;
 
     @Operation(summary = "방 생성", description = "새 여행 방을 생성합니다. 생성자는 자동으로 HOST가 됩니다.")
     @PostMapping
@@ -157,5 +160,14 @@ public class RoomController {
     ) {
         roomInviteService.reject(roomId, requestId, userId);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "멤버 목록 조회", description = "방의 멤버 목록과 접속 상태를 조회합니다. HOST 또는 MEMBER만 접근 가능합니다.")
+    @GetMapping("/{roomId}/members")
+    public RoomMemberListResponse getMembers(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable UUID roomId
+    ) {
+        return RoomMemberListResponse.from(roomMemberService.getMembers(roomId, userId));
     }
 }

@@ -2,7 +2,7 @@ package com.howaboutus.backend.realtime.service.dto;
 
 import java.util.UUID;
 
-public record RoomPresenceEvent(
+public record RoomPresencePayload(
         UUID roomId,
         Long userId,
         RoomPresenceEventType type

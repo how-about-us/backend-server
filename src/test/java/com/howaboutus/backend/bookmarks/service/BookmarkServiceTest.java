@@ -14,6 +14,8 @@ import com.howaboutus.backend.bookmarks.service.dto.BookmarkCreateCommand;
 import com.howaboutus.backend.bookmarks.service.dto.BookmarkResult;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.realtime.event.RoomBookmarkChangedEvent;
+import com.howaboutus.backend.realtime.service.dto.RoomBookmarkEventType;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
@@ -29,6 +31,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,12 +49,15 @@ class BookmarkServiceTest {
     @Mock
     private RoomAuthorizationService roomAuthorizationService;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private BookmarkService bookmarkService;
 
     @BeforeEach
     void setUp() {
         bookmarkService = new BookmarkService(roomRepository, bookmarkRepository, bookmarkCategoryRepository,
-                roomAuthorizationService);
+                roomAuthorizationService, eventPublisher);
     }
 
     @Test
@@ -81,6 +87,13 @@ class BookmarkServiceTest {
         verify(bookmarkRepository).saveAndFlush(bookmarkCaptor.capture());
         assertThat(bookmarkCaptor.getValue().getCategory()).isSameAs(category);
         assertThat(bookmarkCaptor.getValue().getAddedBy()).isNull();
+        verify(eventPublisher).publishEvent(new RoomBookmarkChangedEvent(
+                roomId,
+                1L,
+                RoomBookmarkEventType.BOOKMARK_CREATED,
+                11L,
+                10L
+        ));
     }
 
     @Test
@@ -214,6 +227,13 @@ class BookmarkServiceTest {
         assertThat(result.category()).isEqualTo("카페");
         assertThat(bookmark.getCategory()).isSameAs(newCategory);
         verify(bookmarkRepository).saveAndFlush(bookmark);
+        verify(eventPublisher).publishEvent(new RoomBookmarkChangedEvent(
+                roomId,
+                1L,
+                RoomBookmarkEventType.BOOKMARK_UPDATED,
+                12L,
+                11L
+        ));
     }
 
     @Test
@@ -271,6 +291,13 @@ class BookmarkServiceTest {
         bookmarkService.delete(roomId, 11L, 1L);
 
         verify(bookmarkRepository).delete(bookmark);
+        verify(eventPublisher).publishEvent(new RoomBookmarkChangedEvent(
+                roomId,
+                1L,
+                RoomBookmarkEventType.BOOKMARK_DELETED,
+                11L,
+                10L
+        ));
     }
 
     @Test

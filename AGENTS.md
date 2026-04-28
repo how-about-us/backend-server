@@ -79,6 +79,7 @@ src/main/resources/
 ## Coding Conventions
 
 - 서비스 레이어 간 또는 외부(컨트롤러 등)로 노출되는 DTO는 해당 도메인의 `service/dto/` 패키지에 별도 파일로 정의한다. 서비스 클래스 내부 `record`로 선언하지 않는다.
+- 단위 테스트에서 Mockito를 사용할 때는 `@ExtendWith(MockitoExtension.class)`와 `@Mock`/`@InjectMocks`를 우선 사용하고, 필요한 경우에만 `Mockito.mock(...)`으로 직접 생성한다.
 
 ## Gotchas
 

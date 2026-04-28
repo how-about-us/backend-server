@@ -61,6 +61,8 @@
 | `[ ]` | 현재 접속 중인 유저 조회 | 실시간 접속 유저 목록 | Redis (connected_users) |
 | `[-]` | 방장 위임 | 권한 이전 | room_members |
 
+> **실시간 협업 이벤트:** 방 진입 시 클라이언트는 HTTP 조회로 초기 상태를 가져오고, 이후 STOMP 이벤트로 변경분을 반영한다. 접속 상태는 `/topic/rooms/{roomId}/presence`, 보관함 변경은 `/topic/rooms/{roomId}/bookmarks`, 일정 변경은 `/topic/rooms/{roomId}/schedules`로 브로드캐스트한다.
+
 ---
 
 ## 4. 장소 (Places)

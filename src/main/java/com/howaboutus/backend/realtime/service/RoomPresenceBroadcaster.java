@@ -1,7 +1,7 @@
 package com.howaboutus.backend.realtime.service;
 
 import com.howaboutus.backend.realtime.event.RoomPresenceChangedEvent;
-import com.howaboutus.backend.realtime.service.dto.RoomPresenceEvent;
+import com.howaboutus.backend.realtime.service.dto.RoomPresencePayload;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -16,8 +16,8 @@ public class RoomPresenceBroadcaster {
     @EventListener
     public void handlePresenceChanged(RoomPresenceChangedEvent event) {
         messagingTemplate.convertAndSend(
-                "/topic/rooms/" + event.roomId(),
-                new RoomPresenceEvent(event.roomId(), event.userId(), event.type())
+                "/topic/rooms/" + event.roomId() + "/presence",
+                new RoomPresencePayload(event.roomId(), event.userId(), event.type())
         );
     }
 }

@@ -114,7 +114,7 @@ public class MessageService {
         if (afterId == null || afterId.isBlank()) {
             return getRecentMessages(roomId, userId, size);
         }
-        return chatMessageRepository.findByRoomIdAndIdGreaterThanOrderByCreatedAtAscIdAsc(
+        return chatMessageRepository.findByRoomIdAndIdGreaterThanOrderByIdAsc(
                         roomId,
                         afterId,
                         PageRequest.of(0, size)

@@ -6,11 +6,14 @@ import com.howaboutus.backend.messages.document.ChatMessage;
 import com.howaboutus.backend.messages.repository.ChatMessageRepository;
 import com.howaboutus.backend.messages.service.dto.MessageResult;
 import com.howaboutus.backend.messages.service.dto.SendMessageCommand;
+import com.howaboutus.backend.realtime.event.MessageSentEvent;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +25,7 @@ public class MessageService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final RoomAuthorizationService roomAuthorizationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public MessageResult send(UUID roomId, SendMessageCommand command, long userId) {
         roomAuthorizationService.requireActiveMember(roomId, userId);
@@ -29,7 +33,9 @@ public class MessageService {
 
         ChatMessage message = ChatMessage.chat(roomId, userId, content, command.metadata());
         ChatMessage savedMessage = chatMessageRepository.save(message);
-        return MessageResult.from(savedMessage, command.clientMessageId());
+        MessageResult result = MessageResult.from(savedMessage, command.clientMessageId());
+        eventPublisher.publishEvent(MessageSentEvent.from(result));
+        return result;
     }
 
     public List<MessageResult> getRecentMessages(UUID roomId, long userId, int size) {
@@ -38,13 +44,7 @@ public class MessageService {
         List<ChatMessage> messages = new ArrayList<>(
                 chatMessageRepository.findByRoomIdOrderByCreatedAtDescIdDesc(roomId, PageRequest.of(0, size))
         );
-        messages.sort((left, right) -> {
-            int createdAtCompare = left.getCreatedAt().compareTo(right.getCreatedAt());
-            if (createdAtCompare != 0) {
-                return createdAtCompare;
-            }
-            return left.getId().compareTo(right.getId());
-        });
+        messages.sort(Comparator.comparing(ChatMessage::getCreatedAt).thenComparing(ChatMessage::getId));
         return messages.stream()
                 .map(MessageResult::from)
                 .toList();

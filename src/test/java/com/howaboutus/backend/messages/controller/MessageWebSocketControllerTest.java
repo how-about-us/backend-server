@@ -4,16 +4,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.messages.controller.dto.SendMessageRequest;
 import com.howaboutus.backend.messages.document.MessageType;
-import com.howaboutus.backend.messages.realtime.MessageBroadcaster;
-import com.howaboutus.backend.messages.realtime.UserErrorPayload;
 import com.howaboutus.backend.messages.service.MessageService;
 import com.howaboutus.backend.messages.service.dto.MessageResult;
 import com.howaboutus.backend.messages.service.dto.SendMessageCommand;
+import com.howaboutus.backend.realtime.event.MessageSendFailedEvent;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,18 +34,18 @@ class MessageWebSocketControllerTest {
     private MessageService messageService;
 
     @Mock
-    private MessageBroadcaster messageBroadcaster;
+    private ApplicationEventPublisher eventPublisher;
 
     private MessageWebSocketController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new MessageWebSocketController(messageService, messageBroadcaster);
+        controller = new MessageWebSocketController(messageService, eventPublisher);
     }
 
     @Test
-    @DisplayName("메시지 전송 성공 시 저장 결과를 방 topic으로 브로드캐스트한다")
-    void sendBroadcastsSavedMessage() {
+    @DisplayName("메시지 전송 성공 시 서비스에 위임하고 컨트롤러에서는 이벤트를 발행하지 않는다")
+    void sendDelegatesToServiceWithoutPublishingControllerEvent() {
         UUID roomId = UUID.randomUUID();
         SendMessageRequest request = new SendMessageRequest("client-1", "안녕", Map.of());
         MessageResult result = new MessageResult(
@@ -61,12 +62,13 @@ class MessageWebSocketControllerTest {
 
         controller.send(roomId, request, accessorWithUserId(42L));
 
-        verify(messageBroadcaster).broadcast(result);
+        verify(messageService).send(eq(roomId), any(SendMessageCommand.class), eq(42L));
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
-    @DisplayName("메시지 전송 실패 시 발신자 개인 error queue로 에러를 전송한다")
-    void sendSendsUserErrorWhenMessageServiceFails() {
+    @DisplayName("메시지 전송 실패 시 실패 이벤트를 발행한다")
+    void sendPublishesFailureEventWhenMessageServiceFails() {
         UUID roomId = UUID.randomUUID();
         SendMessageRequest request = new SendMessageRequest("client-1", "   ", Map.of());
         given(messageService.send(eq(roomId), any(SendMessageCommand.class), eq(42L)))
@@ -74,14 +76,26 @@ class MessageWebSocketControllerTest {
 
         controller.send(roomId, request, accessorWithUserId(42L));
 
-        verify(messageBroadcaster).sendError(42L, new UserErrorPayload(
-                "MESSAGE",
-                "SEND",
+        verify(eventPublisher).publishEvent(MessageSendFailedEvent.messageSendFailure(
+                42L,
                 "client-1",
-                "MESSAGE_CONTENT_BLANK",
-                "메시지는 공백일 수 없습니다",
-                false
+                ErrorCode.MESSAGE_CONTENT_BLANK
         ));
+    }
+
+    @Test
+    @DisplayName("예상하지 못한 메시지 전송 실패 시 재시도 가능한 실패 이벤트를 발행한다")
+    void sendPublishesRetryableFailureEventWhenUnexpectedErrorOccurs() {
+        UUID roomId = UUID.randomUUID();
+        SendMessageRequest request = new SendMessageRequest("client-1", "안녕", Map.of());
+        given(messageService.send(eq(roomId), any(SendMessageCommand.class), eq(42L)))
+                .willThrow(new IllegalStateException("temporary failure"));
+
+        controller.send(roomId, request, accessorWithUserId(42L));
+
+        verify(eventPublisher).publishEvent(
+                MessageSendFailedEvent.retryableMessageSendFailure(42L, "client-1")
+        );
     }
 
     private SimpMessageHeaderAccessor accessorWithUserId(Long userId) {

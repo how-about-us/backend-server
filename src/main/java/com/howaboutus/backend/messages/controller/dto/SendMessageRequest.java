@@ -8,7 +8,11 @@ public record SendMessageRequest(
         String content,
         Map<String, Object> metadata
 ) {
-    public SendMessageCommand toCommand() {
-        return new SendMessageCommand(clientMessageId, content, metadata);
+
+    public static SendMessageCommand toCommand(SendMessageRequest request) {
+        if (request == null) {
+            return new SendMessageCommand(null, null, Map.of());
+        }
+        return new SendMessageCommand(request.clientMessageId, request.content, request.metadata);
     }
 }

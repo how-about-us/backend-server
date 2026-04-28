@@ -1,7 +1,5 @@
 package com.howaboutus.backend.realtime.config;
 
-import com.howaboutus.backend.common.error.CustomException;
-import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.realtime.event.RoomPresenceChangedEvent;
 import com.howaboutus.backend.realtime.service.RoomPresenceService;
 import com.howaboutus.backend.realtime.service.dto.RoomPresenceEventType;
@@ -76,14 +74,7 @@ public class RoomSubscriptionInterceptor implements ChannelInterceptor {
     }
 
     private Long extractUserId(Map<String, Object> sessionAttributes) {
-        if (sessionAttributes == null) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
-        Object userId = sessionAttributes.get(WebSocketSessionAttributes.USER_ID);
-        if (!(userId instanceof Long value)) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
-        return value;
+        return WebSocketSessionAttributes.requireUserId(sessionAttributes);
     }
 
     @SuppressWarnings("unchecked")

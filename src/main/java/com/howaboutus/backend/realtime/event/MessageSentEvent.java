@@ -1,12 +1,13 @@
-package com.howaboutus.backend.messages.realtime;
+package com.howaboutus.backend.realtime.event;
 
 import com.howaboutus.backend.messages.document.MessageType;
 import com.howaboutus.backend.messages.service.dto.MessageResult;
+
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-public record MessagePayload(
+public record MessageSentEvent(
         String id,
         String clientMessageId,
         UUID roomId,
@@ -16,8 +17,8 @@ public record MessagePayload(
         Map<String, Object> metadata,
         Instant createdAt
 ) {
-    public static MessagePayload from(MessageResult result) {
-        return new MessagePayload(
+    public static MessageSentEvent from(MessageResult result) {
+        return new MessageSentEvent(
                 result.id(),
                 result.clientMessageId(),
                 result.roomId(),

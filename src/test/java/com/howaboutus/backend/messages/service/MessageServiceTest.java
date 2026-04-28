@@ -13,6 +13,7 @@ import com.howaboutus.backend.messages.document.MessageType;
 import com.howaboutus.backend.messages.repository.ChatMessageRepository;
 import com.howaboutus.backend.messages.service.dto.MessageResult;
 import com.howaboutus.backend.messages.service.dto.SendMessageCommand;
+import com.howaboutus.backend.realtime.event.MessageSentEvent;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import java.util.Map;
 import java.util.UUID;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,11 +36,14 @@ class MessageServiceTest {
     @Mock
     private RoomAuthorizationService roomAuthorizationService;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private MessageService messageService;
 
     @BeforeEach
     void setUp() {
-        messageService = new MessageService(chatMessageRepository, roomAuthorizationService);
+        messageService = new MessageService(chatMessageRepository, roomAuthorizationService, eventPublisher);
     }
 
     @Test
@@ -66,6 +71,16 @@ class MessageServiceTest {
         ArgumentCaptor<ChatMessage> messageCaptor = ArgumentCaptor.forClass(ChatMessage.class);
         verify(chatMessageRepository).save(messageCaptor.capture());
         assertThat(messageCaptor.getValue().getContent()).isEqualTo("안녕");
+        verify(eventPublisher).publishEvent(new MessageSentEvent(
+                result.id(),
+                result.clientMessageId(),
+                result.roomId(),
+                result.senderId(),
+                result.messageType(),
+                result.content(),
+                result.metadata(),
+                result.createdAt()
+        ));
     }
 
     @Test

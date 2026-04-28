@@ -16,10 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MessageService {
@@ -37,7 +39,11 @@ public class MessageService {
         ChatMessage message = ChatMessage.chat(roomId, userId, content);
         ChatMessage savedMessage = chatMessageRepository.save(message);
         MessageResult result = MessageResult.from(savedMessage, command.clientMessageId());
-        eventPublisher.publishEvent(MessageSentEvent.from(result));
+        try {
+            eventPublisher.publishEvent(MessageSentEvent.from(result));
+        } catch (Exception e) {
+            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
+        }
         return result;
     }
 
@@ -59,7 +65,11 @@ public class MessageService {
         ChatMessage message = ChatMessage.placeShare(roomId, userId, name, metadata);
         ChatMessage savedMessage = chatMessageRepository.save(message);
         MessageResult result = MessageResult.from(savedMessage, command.clientMessageId());
-        eventPublisher.publishEvent(MessageSentEvent.from(result));
+        try {
+            eventPublisher.publishEvent(MessageSentEvent.from(result));
+        } catch (Exception e) {
+            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
+        }
         return result;
     }
 
@@ -78,7 +88,11 @@ public class MessageService {
         ChatMessage message = ChatMessage.system(roomId, normalizedNickname + "님이 방에 참여했습니다", metadata);
         ChatMessage savedMessage = chatMessageRepository.save(message);
         MessageResult result = MessageResult.from(savedMessage);
-        eventPublisher.publishEvent(MessageSentEvent.from(result));
+        try {
+            eventPublisher.publishEvent(MessageSentEvent.from(result));
+        } catch (Exception e) {
+            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
+        }
         return result;
     }
 

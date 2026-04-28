@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 import com.howaboutus.backend.common.error.CustomException;
@@ -158,6 +159,43 @@ class MessageServiceTest {
         verify(chatMessageRepository).save(messageCaptor.capture());
         assertThat(messageCaptor.getValue().getMessageType()).isEqualTo(MessageType.SYSTEM);
         verify(eventPublisher).publishEvent(MessageSentEvent.from(result));
+    }
+
+    @Test
+    @DisplayName("브로드캐스트 실패 시에도 send()는 저장 결과를 정상 반환한다")
+    void sendReturnsResultEvenWhenBroadcastFails() {
+        UUID roomId = UUID.randomUUID();
+        SendChatMessageCommand command = new SendChatMessageCommand("client-1", "안녕");
+
+        given(chatMessageRepository.save(any(ChatMessage.class))).willAnswer(invocation -> {
+            ChatMessage message = invocation.getArgument(0);
+            ReflectionTestUtils.setField(message, "id", "abc123");
+            return message;
+        });
+        doThrow(new RuntimeException("STOMP 연결 없음")).when(eventPublisher).publishEvent(any());
+
+        MessageResult result = messageService.send(roomId, command, 42L);
+
+        assertThat(result.id()).isEqualTo("abc123");
+    }
+
+    @Test
+    @DisplayName("브로드캐스트 실패 시에도 sharePlace()는 저장 결과를 정상 반환한다")
+    void sharePlaceReturnsResultEvenWhenBroadcastFails() {
+        UUID roomId = UUID.randomUUID();
+        SendPlaceMessageCommand command = new SendPlaceMessageCommand(
+                "client-1", "gplace-1", "광안리", null, null, null, null, null);
+
+        given(chatMessageRepository.save(any(ChatMessage.class))).willAnswer(invocation -> {
+            ChatMessage message = invocation.getArgument(0);
+            ReflectionTestUtils.setField(message, "id", "bcd234");
+            return message;
+        });
+        doThrow(new RuntimeException("STOMP 연결 없음")).when(eventPublisher).publishEvent(any());
+
+        MessageResult result = messageService.sharePlace(roomId, command, 42L);
+
+        assertThat(result.id()).isEqualTo("bcd234");
     }
 
     @Test

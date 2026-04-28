@@ -241,7 +241,7 @@ class RoomInviteServiceTest {
         RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
         ReflectionTestUtils.setField(pendingMember, "id", 42L);
 
-        given(roomRepository.findByIdAndDeletedAtIsNull(ROOM_ID)).willReturn(Optional.of(room));
+        given(roomRepository.findById(ROOM_ID)).willReturn(Optional.of(room));
         given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, HOST_ID))
                 .willReturn(Optional.of(hostMember));
         given(roomMemberRepository.findByIdAndRoom_Id(42L, ROOM_ID))
@@ -324,7 +324,7 @@ class RoomInviteServiceTest {
         List<JoinRequestResult> results = roomInviteService.getJoinRequests(ROOM_ID, HOST_ID);
 
         assertThat(results).hasSize(1);
-        assertThat(results.get(0).requestId()).isEqualTo(42L);
-        assertThat(results.get(0).nickname()).isEqualTo("대기자");
+        assertThat(results.getFirst().requestId()).isEqualTo(42L);
+        assertThat(results.getFirst().nickname()).isEqualTo("대기자");
     }
 }

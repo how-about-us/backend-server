@@ -14,8 +14,9 @@ spring:
       enabled: true
       lifecycle-management: start-and-stop
       file:
-        - compose.yaml
-        - compose.dev.yaml
+        - compose.db.dev.yaml
+      arguments:
+        - --env-file=.env.dev
 
   jpa:
     hibernate:

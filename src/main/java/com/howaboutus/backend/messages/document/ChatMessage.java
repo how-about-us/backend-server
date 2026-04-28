@@ -40,7 +40,11 @@ public class ChatMessage {
         this.senderId = senderId;
         this.messageType = messageType;
         this.content = content;
-        this.metadata = metadata == null ? Map.of() : Map.copyOf(metadata);
+        if (metadata == null) {
+            this.metadata = Map.of();
+        } else {
+            this.metadata = Map.copyOf(metadata);
+        }
         this.createdAt = createdAt;
     }
 

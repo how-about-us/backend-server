@@ -110,7 +110,12 @@ public class RoomController {
             @RequestBody @Valid JoinRequest request
     ) {
         JoinResult result = roomInviteService.requestJoin(request.inviteCode(), userId);
-        HttpStatus status = result.status() == JoinStatus.ALREADY_MEMBER ? HttpStatus.OK : HttpStatus.ACCEPTED;
+        HttpStatus status;
+        if (result.status() == JoinStatus.ALREADY_MEMBER) {
+            status = HttpStatus.OK;
+        } else {
+            status = HttpStatus.ACCEPTED;
+        }
         return ResponseEntity.status(status).body(JoinResponse.from(result));
     }
 

@@ -65,8 +65,14 @@ public class RoomService {
     public RoomDetailResult update(UUID roomId, RoomUpdateCommand command, Long userId) {
         Room room = getActiveRoom(roomId);
         roomAuthorizationService.requireHost(roomId, userId);
-        LocalDate effectiveStart = command.startDate() != null ? command.startDate() : room.getStartDate();
-        LocalDate effectiveEnd = command.endDate() != null ? command.endDate() : room.getEndDate();
+        LocalDate effectiveStart = command.startDate();
+        if (effectiveStart == null) {
+            effectiveStart = room.getStartDate();
+        }
+        LocalDate effectiveEnd = command.endDate();
+        if (effectiveEnd == null) {
+            effectiveEnd = room.getEndDate();
+        }
         validateDateRange(effectiveStart, effectiveEnd);
         room.update(command.title(), command.destination(), command.startDate(), command.endDate());
         long memberCount = roomMemberRepository.countByRoom_IdAndRoleIn(roomId, ACTIVE_ROLES);

@@ -14,10 +14,6 @@ import com.howaboutus.backend.rooms.service.dto.RoomDetailResult;
 import com.howaboutus.backend.rooms.service.dto.RoomListResult;
 import com.howaboutus.backend.rooms.service.dto.RoomListResult.RoomSummary;
 import com.howaboutus.backend.rooms.service.dto.RoomUpdateCommand;
-import com.howaboutus.backend.bookmarks.repository.BookmarkCategoryRepository;
-import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
-import com.howaboutus.backend.schedules.repository.ScheduleItemRepository;
-import com.howaboutus.backend.schedules.repository.ScheduleRepository;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -39,10 +35,6 @@ public class RoomService {
     private final UserRepository userRepository;
     private final InviteCodeGenerator inviteCodeGenerator;
     private final RoomAuthorizationService roomAuthorizationService;
-    private final ScheduleItemRepository scheduleItemRepository;
-    private final ScheduleRepository scheduleRepository;
-    private final BookmarkRepository bookmarkRepository;
-    private final BookmarkCategoryRepository bookmarkCategoryRepository;
 
     @Transactional
     public RoomDetailResult create(RoomCreateCommand command, Long userId) {
@@ -82,17 +74,11 @@ public class RoomService {
     }
 
     //방 삭제 (hard delete)
-    //방장만 가능하며, 방에 종속된 모든 하위 데이터를 FK 순서에 맞게 삭제한 뒤 Room을 삭제한다.
+    //방장만 가능하며, DB ON DELETE CASCADE로 하위 데이터가 자동 삭제된다.
     @Transactional
     public void delete(UUID roomId, Long userId) {
         Room room = getActiveRoom(roomId);
         roomAuthorizationService.requireHost(roomId, userId);
-
-        scheduleItemRepository.deleteAllByRoomId(roomId);
-        scheduleRepository.deleteAllByRoomId(roomId);
-        bookmarkRepository.deleteAllByRoomId(roomId);
-        bookmarkCategoryRepository.deleteAllByRoomId(roomId);
-        roomMemberRepository.deleteByRoomId(roomId);
         roomRepository.delete(room);
     }
 

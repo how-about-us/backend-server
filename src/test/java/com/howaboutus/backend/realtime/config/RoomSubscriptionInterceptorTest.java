@@ -10,7 +10,11 @@ import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.realtime.event.RoomPresenceChangedEvent;
 import com.howaboutus.backend.realtime.service.dto.RoomPresenceEventType;
 import com.howaboutus.backend.realtime.service.RoomPresenceService;
+import com.howaboutus.backend.rooms.entity.Room;
+import com.howaboutus.backend.rooms.entity.RoomMember;
+import com.howaboutus.backend.rooms.entity.RoomRole;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
+import com.howaboutus.backend.user.entity.User;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +32,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class RoomSubscriptionInterceptorTest {
@@ -53,6 +58,8 @@ class RoomSubscriptionInterceptorTest {
         UUID roomId = UUID.randomUUID();
         Map<String, Object> sessionAttributes = sessionAttributesWithUser(42L);
         Message<byte[]> message = subscribeMessage("/topic/rooms/" + roomId, sessionAttributes);
+        Mockito.when(roomAuthorizationService.requireActiveMember(roomId, 42L))
+                .thenReturn(activeMember(42L, "민수", "https://example.com/profile.jpg"));
         Mockito.when(roomPresenceService.connect(roomId, 42L, "session-1")).thenReturn(true);
 
         Message<?> result = interceptor.preSend(message, channel);
@@ -68,7 +75,13 @@ class RoomSubscriptionInterceptorTest {
                 WebSocketSessionAttributes.SUBSCRIBED_ROOM_IDS);
         assertThat(subscribedRoomIds).contains(roomId);
         verify(eventPublisher).publishEvent(
-                new RoomPresenceChangedEvent(roomId, 42L, RoomPresenceEventType.USER_CONNECTED)
+                new RoomPresenceChangedEvent(
+                        roomId,
+                        42L,
+                        RoomPresenceEventType.USER_CONNECTED,
+                        "민수",
+                        "https://example.com/profile.jpg"
+                )
         );
     }
 
@@ -78,6 +91,8 @@ class RoomSubscriptionInterceptorTest {
         UUID roomId = UUID.randomUUID();
         Map<String, Object> sessionAttributes = sessionAttributesWithUser(42L);
         Message<byte[]> message = subscribeMessage("/topic/rooms/" + roomId + "/presence", sessionAttributes);
+        Mockito.when(roomAuthorizationService.requireActiveMember(roomId, 42L))
+                .thenReturn(activeMember(42L, "민수", "https://example.com/profile.jpg"));
         Mockito.when(roomPresenceService.connect(roomId, 42L, "session-1")).thenReturn(true);
 
         interceptor.preSend(message, channel);
@@ -92,6 +107,8 @@ class RoomSubscriptionInterceptorTest {
         UUID roomId = UUID.randomUUID();
         Map<String, Object> sessionAttributes = sessionAttributesWithUser(42L);
         Message<byte[]> message = subscribeMessage("/topic/rooms/" + roomId, sessionAttributes);
+        Mockito.when(roomAuthorizationService.requireActiveMember(roomId, 42L))
+                .thenReturn(activeMember(42L, "민수", "https://example.com/profile.jpg"));
         Mockito.when(roomPresenceService.connect(roomId, 42L, "session-1")).thenReturn(false);
 
         interceptor.preSend(message, channel);
@@ -168,5 +185,12 @@ class RoomSubscriptionInterceptorTest {
         accessor.setDestination(destination);
         accessor.setSessionAttributes(sessionAttributes);
         return MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
+    }
+
+    private RoomMember activeMember(Long userId, String nickname, String profileImageUrl) {
+        User user = User.ofGoogle("google-" + userId, userId + "@test.com", nickname, profileImageUrl);
+        ReflectionTestUtils.setField(user, "id", userId);
+        Room room = Room.create("여행", "서울", null, null, "invite", 1L);
+        return RoomMember.of(room, user, RoomRole.MEMBER);
     }
 }

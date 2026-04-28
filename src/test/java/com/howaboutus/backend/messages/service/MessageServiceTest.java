@@ -12,7 +12,7 @@ import com.howaboutus.backend.messages.document.ChatMessage;
 import com.howaboutus.backend.messages.document.MessageType;
 import com.howaboutus.backend.messages.repository.ChatMessageRepository;
 import com.howaboutus.backend.messages.service.dto.MessageResult;
-import com.howaboutus.backend.messages.service.dto.SendMessageCommand;
+import com.howaboutus.backend.messages.service.dto.SendChatMessageCommand;
 import com.howaboutus.backend.realtime.event.MessageSentEvent;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import java.util.Map;
@@ -50,7 +50,7 @@ class MessageServiceTest {
     @DisplayName("활성 방 멤버는 채팅 메시지를 MongoDB에 저장할 수 있다")
     void sendStoresChatMessage() {
         UUID roomId = UUID.randomUUID();
-        SendMessageCommand command = new SendMessageCommand("client-1", " 안녕 ", Map.of());
+        SendChatMessageCommand command = new SendChatMessageCommand("client-1", " 안녕 ");
 
         given(chatMessageRepository.save(any(ChatMessage.class))).willAnswer(invocation -> {
             ChatMessage message = invocation.getArgument(0);
@@ -71,6 +71,7 @@ class MessageServiceTest {
         ArgumentCaptor<ChatMessage> messageCaptor = ArgumentCaptor.forClass(ChatMessage.class);
         verify(chatMessageRepository).save(messageCaptor.capture());
         assertThat(messageCaptor.getValue().getContent()).isEqualTo("안녕");
+        assertThat(messageCaptor.getValue().getMetadata()).isEmpty();
         verify(eventPublisher).publishEvent(new MessageSentEvent(
                 result.id(),
                 result.clientMessageId(),
@@ -87,7 +88,7 @@ class MessageServiceTest {
     @DisplayName("공백 메시지는 MESSAGE_CONTENT_BLANK 예외를 던진다")
     void sendThrowsWhenContentIsBlank() {
         UUID roomId = UUID.randomUUID();
-        SendMessageCommand command = new SendMessageCommand("client-1", "   ", Map.of());
+        SendChatMessageCommand command = new SendChatMessageCommand("client-1", "   ");
 
         assertThatThrownBy(() -> messageService.send(roomId, command, 42L))
                 .isInstanceOf(CustomException.class)
@@ -99,7 +100,7 @@ class MessageServiceTest {
     @DisplayName("1000자를 초과한 메시지는 MESSAGE_CONTENT_TOO_LONG 예외를 던진다")
     void sendThrowsWhenContentIsTooLong() {
         UUID roomId = UUID.randomUUID();
-        SendMessageCommand command = new SendMessageCommand("client-1", "a".repeat(1001), Map.of());
+        SendChatMessageCommand command = new SendChatMessageCommand("client-1", "a".repeat(1001));
 
         assertThatThrownBy(() -> messageService.send(roomId, command, 42L))
                 .isInstanceOf(CustomException.class)

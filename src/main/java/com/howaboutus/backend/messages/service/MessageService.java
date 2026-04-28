@@ -5,7 +5,7 @@ import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.messages.document.ChatMessage;
 import com.howaboutus.backend.messages.repository.ChatMessageRepository;
 import com.howaboutus.backend.messages.service.dto.MessageResult;
-import com.howaboutus.backend.messages.service.dto.SendMessageCommand;
+import com.howaboutus.backend.messages.service.dto.SendChatMessageCommand;
 import com.howaboutus.backend.realtime.event.MessageSentEvent;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
 import java.util.ArrayList;
@@ -27,11 +27,11 @@ public class MessageService {
     private final RoomAuthorizationService roomAuthorizationService;
     private final ApplicationEventPublisher eventPublisher;
 
-    public MessageResult send(UUID roomId, SendMessageCommand command, long userId) {
+    public MessageResult send(UUID roomId, SendChatMessageCommand command, long userId) {
         roomAuthorizationService.requireActiveMember(roomId, userId);
         String content = normalizeContent(command.content());
 
-        ChatMessage message = ChatMessage.chat(roomId, userId, content, command.metadata());
+        ChatMessage message = ChatMessage.chat(roomId, userId, content);
         ChatMessage savedMessage = chatMessageRepository.save(message);
         MessageResult result = MessageResult.from(savedMessage, command.clientMessageId());
         eventPublisher.publishEvent(MessageSentEvent.from(result));

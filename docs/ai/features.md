@@ -57,7 +57,7 @@
 | `[ ]` | 방 멤버 목록 조회 | 방 참여자 목록 + 역할(HOST/MEMBER) + 접속 상태 | room_members |
 | `[ ]` | 멤버 추방 | HOST가 특정 멤버 추방 (HOST는 추방 불가) | room_members |
 | `[ ]` | 방 나가기 | 본인이 방에서 탈퇴 | room_members |
-| `[x]` | 실시간 방 접속 상태 추적 | 유효한 access_token 쿠키가 있는 사용자만 WebSocket handshake를 허용한다. SockJS + STOMP 방 topic 구독 성공 시 Redis에 접속 유저를 기록하고 접속 이벤트를 브로드캐스트, 세션 종료 시 제거와 해제 이벤트 브로드캐스트 | Redis (connected_users) |
+| `[x]` | 실시간 방 접속 상태 추적 | 유효한 access_token 쿠키가 있는 사용자만 WebSocket handshake를 허용한다. SockJS + STOMP 방 topic 구독 성공 시 Redis에 접속 유저를 기록하고 접속 이벤트를 브로드캐스트한다. 새로 온라인이 된 유저의 접속 이벤트에는 `userId`, `nickname`, `profileImageUrl`을 포함해 클라이언트가 방 멤버 프로필 맵을 갱신할 수 있게 한다. 세션 종료 시 제거와 해제 이벤트를 브로드캐스트한다 | Redis (connected_users) |
 | `[ ]` | 현재 접속 중인 유저 조회 | 실시간 접속 유저 목록 | Redis (connected_users) |
 | `[-]` | 방장 위임 | 권한 이전 | room_members |
 
@@ -128,7 +128,7 @@
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[x]` | 메시지 전송 (WS) | 클라이언트가 `/app/rooms/{roomId}/messages`로 전송하면 MongoDB `messages` 컬렉션에 저장 후 `/topic/rooms/{roomId}/messages`로 브로드캐스트. 실패 시 발신자에게만 `/user/queue/errors`로 전달 | MongoDB messages |
+| `[x]` | 일반 채팅 메시지 전송 (WS) | 클라이언트가 `/app/rooms/{roomId}/messages/chat`로 `clientMessageId`, `content`를 전송하면 MongoDB `messages` 컬렉션에 `messageType=CHAT`, `metadata={}`로 저장 후 `/topic/rooms/{roomId}/messages`로 브로드캐스트. 실패 시 발신자에게만 `/user/queue/errors`로 전달 | MongoDB messages |
 | `[x]` | 메시지 목록 조회 | 방 채팅 히스토리 조회. `afterId`가 없으면 최근 메시지, 있으면 해당 Mongo `_id` 이후 메시지 조회 | MongoDB messages |
 | `[x]` | 재접속 시 미수신 메시지 동기화 | 마지막 수신 Mongo message `_id` 이후 메시지 조회 | MongoDB messages |
 | `[ ]` | 장소 카드 메시지 전송 | place 정보를 채팅에 공유 (messageType: PLACE_SHARE) | MongoDB messages |

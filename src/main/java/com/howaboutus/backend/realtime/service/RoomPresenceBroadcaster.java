@@ -25,7 +25,13 @@ public class RoomPresenceBroadcaster {
     public void handlePresenceChanged(RoomPresenceChangedEvent event) {
         messagingTemplate.convertAndSend(
                 "/topic/rooms/" + event.roomId() + "/presence",
-                new RoomPresencePayload(event.roomId(), event.userId(), event.type())
+                new RoomPresencePayload(
+                        event.roomId(),
+                        event.userId(),
+                        event.type(),
+                        event.nickname(),
+                        event.profileImageUrl()
+                )
         );
     }
 }

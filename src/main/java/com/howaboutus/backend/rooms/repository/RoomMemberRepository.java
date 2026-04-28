@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
 
+    @EntityGraph(attributePaths = "user")
     Optional<RoomMember> findByRoom_IdAndUser_Id(UUID roomId, Long userId);
 
     @EntityGraph(attributePaths = "user")

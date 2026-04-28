@@ -44,7 +44,7 @@ public class ChatMessage {
         this.createdAt = createdAt;
     }
 
-    public static ChatMessage chat(UUID roomId, Long senderId, String content, Map<String, Object> metadata) {
-        return new ChatMessage(roomId, senderId, MessageType.CHAT, content, metadata, Instant.now());
+    public static ChatMessage chat(UUID roomId, Long senderId, String content) {
+        return new ChatMessage(roomId, senderId, MessageType.CHAT, content, Map.of(), Instant.now());
     }
 }

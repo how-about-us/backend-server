@@ -34,6 +34,8 @@ springdoc:
   swagger-ui:
     disable-swagger-default-url: true
     persist-authorization: true
+  paths-to-exclude:
+    - /springwolf/**
 
 springwolf:
   enabled: true

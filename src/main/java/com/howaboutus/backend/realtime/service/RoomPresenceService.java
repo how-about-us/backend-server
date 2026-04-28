@@ -1,6 +1,7 @@
 package com.howaboutus.backend.realtime.service;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -23,7 +24,10 @@ public class RoomPresenceService {
     // TODO: 나중에 Lua Script로 옮기자
     public boolean disconnect(UUID roomId, Long userId, String sessionId) {
         String userSessionsKey = userSessionsKey(roomId, userId);
-        redisTemplate.opsForSet().remove(userSessionsKey, sessionId);
+        Long removedCount = redisTemplate.opsForSet().remove(userSessionsKey, sessionId);
+        if (removedCount == null || removedCount == 0) {
+            return false;
+        }
 
         Long remainingSessions = redisTemplate.opsForSet().size(userSessionsKey);
         if (remainingSessions == null || remainingSessions == 0) {
@@ -40,8 +44,17 @@ public class RoomPresenceService {
             return Collections.emptySet();
         }
         return userIds.stream()
-                .map(Long::valueOf)
+                .map(this::parseUserId)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    private Long parseUserId(String raw) {
+        try {
+            return Long.valueOf(raw);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private String connectedUsersKey(UUID roomId) {

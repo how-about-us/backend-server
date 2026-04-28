@@ -24,11 +24,15 @@ public class StompAuthenticationInterceptor implements ChannelInterceptor {
         return message;
     }
 
-    private Object userId(StompHeaderAccessor accessor) {
+    private Long userId(StompHeaderAccessor accessor) {
         Map<String, Object> attributes = accessor.getSessionAttributes();
         if (attributes == null) {
             return null;
         }
-        return attributes.get(WebSocketSessionAttributes.USER_ID);
+        Object userId = attributes.get(WebSocketSessionAttributes.USER_ID);
+        if (!(userId instanceof Long value)) {
+            return null;
+        }
+        return value;
     }
 }

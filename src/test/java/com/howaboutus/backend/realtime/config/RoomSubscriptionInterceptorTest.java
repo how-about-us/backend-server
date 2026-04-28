@@ -2,7 +2,6 @@ package com.howaboutus.backend.realtime.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -16,10 +15,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -27,26 +29,23 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 
+@ExtendWith(MockitoExtension.class)
 class RoomSubscriptionInterceptorTest {
 
+    @Mock
     private RoomAuthorizationService roomAuthorizationService;
+
+    @Mock
     private RoomPresenceService roomPresenceService;
+
+    @Mock
     private ApplicationEventPublisher eventPublisher;
-    private RoomSubscriptionInterceptor interceptor;
+
+    @Mock
     private MessageChannel channel;
 
-    @BeforeEach
-    void setUp() {
-        roomAuthorizationService = mock(RoomAuthorizationService.class);
-        roomPresenceService = mock(RoomPresenceService.class);
-        eventPublisher = mock(ApplicationEventPublisher.class);
-        interceptor = new RoomSubscriptionInterceptor(
-                roomAuthorizationService,
-                roomPresenceService,
-                eventPublisher
-        );
-        channel = mock(MessageChannel.class);
-    }
+    @InjectMocks
+    private RoomSubscriptionInterceptor interceptor;
 
     @Test
     @DisplayName("방 topic 구독은 active member 권한을 확인하고 presence를 저장한다")
@@ -67,11 +66,24 @@ class RoomSubscriptionInterceptorTest {
         @SuppressWarnings("unchecked")
         Set<UUID> subscribedRoomIds = (Set<UUID>) sessionAttributes.get(
                 WebSocketSessionAttributes.SUBSCRIBED_ROOM_IDS);
-        assertThat(subscribedRoomIds)
-                .contains(roomId);
+        assertThat(subscribedRoomIds).contains(roomId);
         verify(eventPublisher).publishEvent(
                 new RoomPresenceChangedEvent(roomId, 42L, RoomPresenceEventType.USER_CONNECTED)
         );
+    }
+
+    @Test
+    @DisplayName("방 하위 topic 구독도 active member 권한을 확인하고 presence를 저장한다")
+    void authorizesSubTopicSubscriptionAndStoresPresence() {
+        UUID roomId = UUID.randomUUID();
+        Map<String, Object> sessionAttributes = sessionAttributesWithUser(42L);
+        Message<byte[]> message = subscribeMessage("/topic/rooms/" + roomId + "/presence", sessionAttributes);
+        Mockito.when(roomPresenceService.connect(roomId, 42L, "session-1")).thenReturn(true);
+
+        interceptor.preSend(message, channel);
+
+        verify(roomAuthorizationService).requireActiveMember(roomId, 42L);
+        verify(roomPresenceService).connect(roomId, 42L, "session-1");
     }
 
     @Test
@@ -131,6 +143,17 @@ class RoomSubscriptionInterceptorTest {
         verify(roomAuthorizationService, never()).requireActiveMember(Mockito.any(), Mockito.any());
         verify(roomPresenceService, never()).connect(Mockito.any(), Mockito.any(), Mockito.any());
         verify(eventPublisher, never()).publishEvent(Mockito.any(RoomPresenceChangedEvent.class));
+    }
+
+    @Test
+    @DisplayName("UUID가 아닌 roomId를 포함한 topic 구독은 권한 확인 없이 통과한다")
+    void ignoresSubscriptionWithMalformedRoomId() {
+        Message<byte[]> message = subscribeMessage("/topic/rooms/not-a-uuid/presence", new HashMap<>());
+
+        Message<?> result = interceptor.preSend(message, channel);
+
+        assertThat(result).isSameAs(message);
+        verify(roomAuthorizationService, never()).requireActiveMember(Mockito.any(), Mockito.any());
     }
 
     private Map<String, Object> sessionAttributesWithUser(Long userId) {

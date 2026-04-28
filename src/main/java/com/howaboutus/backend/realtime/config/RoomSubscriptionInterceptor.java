@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RoomSubscriptionInterceptor implements ChannelInterceptor {
 
-    private static final Pattern ROOM_TOPIC_PATTERN = Pattern.compile("^/topic/rooms/([^/]+)$");
+    private static final Pattern ROOM_TOPIC_PATTERN = Pattern.compile("^/topic/rooms/([^/]+)(?:/.*)?$");
 
     private final RoomAuthorizationService roomAuthorizationService;
     private final RoomPresenceService roomPresenceService;
@@ -68,7 +68,11 @@ public class RoomSubscriptionInterceptor implements ChannelInterceptor {
         if (!matcher.matches()) {
             return null;
         }
-        return UUID.fromString(matcher.group(1));
+        try {
+            return UUID.fromString(matcher.group(1));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private Long extractUserId(Map<String, Object> sessionAttributes) {

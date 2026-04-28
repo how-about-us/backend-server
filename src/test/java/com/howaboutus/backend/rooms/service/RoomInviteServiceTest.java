@@ -7,7 +7,7 @@ import static org.mockito.Mockito.verify;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
-import com.howaboutus.backend.messages.service.MessageService;
+import com.howaboutus.backend.realtime.event.MemberApprovedEvent;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.entity.RoomMember;
 import com.howaboutus.backend.rooms.entity.RoomRole;
@@ -26,8 +26,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,7 +39,7 @@ class RoomInviteServiceTest {
     @Mock private RoomMemberRepository roomMemberRepository;
     @Mock private UserRepository userRepository;
     @Mock private InviteCodeGenerator inviteCodeGenerator;
-    @Mock private MessageService messageService;
+    @Mock private ApplicationEventPublisher eventPublisher;
     private RoomAuthorizationService roomAuthorizationService;
 
     private RoomInviteService roomInviteService;
@@ -56,7 +58,7 @@ class RoomInviteServiceTest {
         roomAuthorizationService = new RoomAuthorizationService(roomMemberRepository);
         roomInviteService = new RoomInviteService(
                 roomRepository, roomMemberRepository, userRepository, inviteCodeGenerator, roomAuthorizationService,
-                messageService);
+                eventPublisher);
 
         room = Room.create("부산 여행", "부산", null, null, "oldCode123", HOST_ID);
         ReflectionTestUtils.setField(room, "id", ROOM_ID);
@@ -232,8 +234,8 @@ class RoomInviteServiceTest {
     }
 
     @Test
-    @DisplayName("HOST가 입장 요청을 승인하면 멤버 입장 시스템 메시지를 저장한다")
-    void approveSendsMemberJoinedSystemMessage() {
+    @DisplayName("HOST가 입장 요청을 승인하면 MemberApprovedEvent를 발행한다")
+    void approvePublishesMemberApprovedEvent() {
         User pendingUser = User.ofGoogle("google-pending", "pending@test.com", "대기자", "https://example.com/p.png");
         ReflectionTestUtils.setField(pendingUser, "id", 3L);
         RoomMember pendingMember = RoomMember.of(room, pendingUser, RoomRole.PENDING);
@@ -247,12 +249,13 @@ class RoomInviteServiceTest {
 
         roomInviteService.approve(ROOM_ID, 42L, HOST_ID);
 
-        verify(messageService).sendMemberJoinedSystemMessage(
-                ROOM_ID,
-                3L,
-                "대기자",
-                "https://example.com/p.png"
-        );
+        ArgumentCaptor<MemberApprovedEvent> captor = ArgumentCaptor.forClass(MemberApprovedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        MemberApprovedEvent event = captor.getValue();
+        assertThat(event.roomId()).isEqualTo(ROOM_ID);
+        assertThat(event.joinedUserId()).isEqualTo(3L);
+        assertThat(event.nickname()).isEqualTo("대기자");
+        assertThat(event.profileImageUrl()).isEqualTo("https://example.com/p.png");
     }
 
     @Test

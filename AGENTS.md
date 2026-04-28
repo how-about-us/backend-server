@@ -118,6 +118,12 @@ src/main/resources/
 - 테이블, 컬럼, 관계, 제약조건을 변경했으면 `docs/ai/erd.md`를 함께 갱신한다.
 - 중요한 설계 선택이나 구조적 결정이 확정되었으면 `docs/ai/decisions/`에 결정 기록을 남긴다.
 
+## gstack 스킬 규칙
+- 세션 시작 시 `docs/gstack/overview.md`를 먼저 읽고 제품 맥락을 파악한다.
+- 기획 디자인 문서는 `docs/gstack/specs/`에 작성한다.
+- 구현 계획 문서는 `docs/gstack/plans/`에 작성한다.
+- 세션 종료 시 `docs/gstack/overview.md`의 세션 이력 테이블을 갱신한다.
+
 ## Agent Boundaries
 
 - **자율 가능**: 파일 읽기/수정, 로컬 빌드·테스트 실행, 커밋

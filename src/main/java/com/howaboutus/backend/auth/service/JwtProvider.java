@@ -33,7 +33,7 @@ public class JwtProvider {
             return Long.valueOf(subject);
         } catch (ExpiredJwtException e) {
             throw new CustomException(ErrorCode.ACCESS_TOKEN_EXPIRED, e);
-        } catch (JwtException e) {
+        } catch (JwtException | NumberFormatException e) {
             throw new CustomException(ErrorCode.INVALID_TOKEN, e);
         }
     }

@@ -9,6 +9,8 @@ import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
 import com.howaboutus.backend.bookmarks.repository.dto.CategoryBookmarkCount;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.realtime.event.RoomBookmarkChangedEvent;
+import com.howaboutus.backend.realtime.service.dto.RoomBookmarkEventType;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
@@ -17,6 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +33,7 @@ public class BookmarkCategoryService {
     private final BookmarkCategoryRepository bookmarkCategoryRepository;
     private final BookmarkRepository bookmarkRepository;
     private final RoomAuthorizationService roomAuthorizationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public BookmarkCategoryResult create(UUID roomId, BookmarkCategoryCreateCommand command, Long userId) {
@@ -44,7 +48,9 @@ public class BookmarkCategoryService {
 
         BookmarkCategory category = BookmarkCategory.create(room, name, colorCode, null);
         try {
-            return BookmarkCategoryResult.from(bookmarkCategoryRepository.saveAndFlush(category));
+            BookmarkCategoryResult result = BookmarkCategoryResult.from(bookmarkCategoryRepository.saveAndFlush(category));
+            publishChanged(roomId, userId, RoomBookmarkEventType.CATEGORY_CREATED, result.categoryId());
+            return result;
         } catch (DataIntegrityViolationException e) {
             throw new CustomException(ErrorCode.BOOKMARK_CATEGORY_ALREADY_EXISTS, e);
         }
@@ -75,7 +81,9 @@ public class BookmarkCategoryService {
 
         category.update(name, colorCode);
         try {
-            return BookmarkCategoryResult.from(bookmarkCategoryRepository.saveAndFlush(category));
+            BookmarkCategoryResult result = BookmarkCategoryResult.from(bookmarkCategoryRepository.saveAndFlush(category));
+            publishChanged(roomId, userId, RoomBookmarkEventType.CATEGORY_UPDATED, result.categoryId());
+            return result;
         } catch (DataIntegrityViolationException e) {
             throw new CustomException(ErrorCode.BOOKMARK_CATEGORY_ALREADY_EXISTS, e);
         }
@@ -88,6 +96,7 @@ public class BookmarkCategoryService {
         BookmarkCategory category = getCategoryInRoom(roomId, categoryId);
         bookmarkRepository.deleteAllByCategory_Id(categoryId);
         bookmarkCategoryRepository.delete(category);
+        publishChanged(roomId, userId, RoomBookmarkEventType.CATEGORY_DELETED, categoryId);
     }
 
     private Room getRoom(UUID roomId) {
@@ -98,6 +107,10 @@ public class BookmarkCategoryService {
     private BookmarkCategory getCategoryInRoom(UUID roomId, long categoryId) {
         return bookmarkCategoryRepository.findByIdAndRoom_Id(categoryId, roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BOOKMARK_CATEGORY_NOT_FOUND));
+    }
+
+    private void publishChanged(UUID roomId, Long actorUserId, RoomBookmarkEventType type, Long categoryId) {
+        eventPublisher.publishEvent(new RoomBookmarkChangedEvent(roomId, actorUserId, type, null, categoryId));
     }
 
 }

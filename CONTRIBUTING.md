@@ -79,6 +79,8 @@ com.howaboutus.backend.
     └── entity/       ← JPA Entity
 ```
 
+단, `realtime`처럼 WebSocket/STOMP 연결·구독·생명주기 이벤트가 도메인 기능의 핵심인 경우에는 도메인 하위에 `config/`, `event/`, `listener/`를 둘 수 있다. 이 예외는 해당 도메인에 직접 속한 실시간 통신 경계에만 적용하고, 공통 설정은 계속 `common/config`에 둔다.
+
 ### 문서 구조
 
 - Markdown 문서를 새로 추가하거나 디렉토리를 정리할 때는 도메인 기준이 아니라 aggregate 기준으로 나눈다.

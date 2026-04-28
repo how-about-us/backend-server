@@ -2,6 +2,8 @@ package com.howaboutus.backend.schedules.service;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.realtime.event.RoomScheduleChangedEvent;
+import com.howaboutus.backend.realtime.service.dto.RoomScheduleEventType;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
@@ -19,6 +21,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.time.LocalTime;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +36,7 @@ public class ScheduleItemService {
     private final ScheduleItemRepository scheduleItemRepository;
     private final RoomAuthorizationService roomAuthorizationService;
     private final RouteService routeService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ScheduleItemResult create(UUID roomId, Long scheduleId, ScheduleItemCreateCommand command, Long userId) {
@@ -50,7 +54,9 @@ public class ScheduleItemService {
                 command.durationMinutes(),
                 nextOrderIndex
         );
-        return ScheduleItemResult.from(scheduleItemRepository.saveAndFlush(scheduleItem));
+        ScheduleItemResult result = ScheduleItemResult.from(scheduleItemRepository.saveAndFlush(scheduleItem));
+        publishChanged(roomId, userId, RoomScheduleEventType.SCHEDULE_ITEM_CREATED, scheduleId, result.itemId());
+        return result;
     }
 
     public List<ScheduleItemResult> getItems(UUID roomId, Long scheduleId, Long userId) {
@@ -76,7 +82,9 @@ public class ScheduleItemService {
                 ? command.durationMinutes()
                 : scheduleItem.getDurationMinutes();
         scheduleItem.updateTimeInfo(startTime, durationMinutes);
-        return ScheduleItemResult.from(scheduleItemRepository.saveAndFlush(scheduleItem));
+        ScheduleItemResult result = ScheduleItemResult.from(scheduleItemRepository.saveAndFlush(scheduleItem));
+        publishChanged(roomId, userId, RoomScheduleEventType.SCHEDULE_ITEM_UPDATED, scheduleId, itemId);
+        return result;
     }
 
     @Transactional
@@ -88,6 +96,7 @@ public class ScheduleItemService {
 
         scheduleItemRepository.delete(scheduleItem);
         reorderRemainingItems(scheduleId, itemId);
+        publishChanged(roomId, userId, RoomScheduleEventType.SCHEDULE_ITEM_DELETED, scheduleId, itemId);
     }
 
     @Transactional
@@ -119,7 +128,9 @@ public class ScheduleItemService {
             items.get(i).changeOrderIndex(i);
         }
 
-        return items.stream().map(ScheduleItemResult::from).toList();
+        List<ScheduleItemResult> results = items.stream().map(ScheduleItemResult::from).toList();
+        publishChanged(roomId, userId, RoomScheduleEventType.SCHEDULE_ITEMS_REORDERED, scheduleId, itemId);
+        return results;
     }
 
     @Transactional
@@ -129,7 +140,9 @@ public class ScheduleItemService {
         getScheduleForWrite(roomId, scheduleId);
         ScheduleItem scheduleItem = getScheduleItem(scheduleId, itemId);
         scheduleItem.updateTravelMode(travelMode);
-        return ScheduleItemResult.from(scheduleItemRepository.saveAndFlush(scheduleItem));
+        ScheduleItemResult result = ScheduleItemResult.from(scheduleItemRepository.saveAndFlush(scheduleItem));
+        publishChanged(roomId, userId, RoomScheduleEventType.SCHEDULE_ITEM_TRAVEL_MODE_UPDATED, scheduleId, itemId);
+        return result;
     }
 
     public Optional<RouteResult> getRouteForItem(UUID roomId, Long scheduleId, Long itemId, String travelModeOverride, Long userId) {
@@ -198,5 +211,10 @@ public class ScheduleItemService {
     private ScheduleItem getScheduleItem(Long scheduleId, Long itemId) {
         return scheduleItemRepository.findByIdAndSchedule_Id(itemId, scheduleId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SCHEDULE_ITEM_NOT_FOUND));
+    }
+
+    private void publishChanged(UUID roomId, Long actorUserId, RoomScheduleEventType type, Long scheduleId,
+                                Long itemId) {
+        eventPublisher.publishEvent(new RoomScheduleChangedEvent(roomId, actorUserId, type, scheduleId, itemId));
     }
 }

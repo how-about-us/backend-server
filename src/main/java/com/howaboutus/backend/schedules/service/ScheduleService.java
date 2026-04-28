@@ -2,6 +2,8 @@ package com.howaboutus.backend.schedules.service;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.realtime.event.RoomScheduleChangedEvent;
+import com.howaboutus.backend.realtime.service.dto.RoomScheduleEventType;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
@@ -13,6 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +29,7 @@ public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
     private final ScheduleItemService scheduleItemService;
     private final RoomAuthorizationService roomAuthorizationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ScheduleResult create(UUID roomId, ScheduleCreateCommand command, Long userId) {
@@ -39,7 +43,9 @@ public class ScheduleService {
 
         Schedule schedule = Schedule.create(room, command.dayNumber(), command.date());
         try {
-            return ScheduleResult.from(scheduleRepository.saveAndFlush(schedule));
+            ScheduleResult result = ScheduleResult.from(scheduleRepository.saveAndFlush(schedule));
+            publishChanged(roomId, userId, RoomScheduleEventType.SCHEDULE_CREATED, result.scheduleId(), null);
+            return result;
         } catch (DataIntegrityViolationException e) {
             throw new CustomException(ErrorCode.SCHEDULE_ALREADY_EXISTS, e);
         }
@@ -62,6 +68,7 @@ public class ScheduleService {
                 .orElseThrow(() -> new CustomException(ErrorCode.SCHEDULE_NOT_FOUND));
         scheduleItemService.deleteAllByScheduleId(scheduleId);
         scheduleRepository.delete(schedule);
+        publishChanged(roomId, userId, RoomScheduleEventType.SCHEDULE_DELETED, scheduleId, null);
     }
 
     private Room getRoom(UUID roomId) {
@@ -84,5 +91,10 @@ public class ScheduleService {
         if (!expectedDate.equals(date)) {
             throw new CustomException(ErrorCode.SCHEDULE_DATE_MISMATCH);
         }
+    }
+
+    private void publishChanged(UUID roomId, Long actorUserId, RoomScheduleEventType type, Long scheduleId,
+                                Long itemId) {
+        eventPublisher.publishEvent(new RoomScheduleChangedEvent(roomId, actorUserId, type, scheduleId, itemId));
     }
 }

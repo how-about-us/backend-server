@@ -9,6 +9,8 @@ import static org.mockito.Mockito.verify;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.realtime.event.RoomScheduleChangedEvent;
+import com.howaboutus.backend.realtime.service.dto.RoomScheduleEventType;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
@@ -34,6 +36,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -55,12 +58,15 @@ class ScheduleItemServiceTest {
     @Mock
     private RouteService routeService;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private ScheduleItemService scheduleItemService;
 
     @BeforeEach
     void setUp() {
         scheduleItemService = new ScheduleItemService(roomRepository, scheduleRepository, scheduleItemRepository,
-                roomAuthorizationService, routeService);
+                roomAuthorizationService, routeService, eventPublisher);
     }
 
     @Test
@@ -104,6 +110,13 @@ class ScheduleItemServiceTest {
         verify(scheduleRepository).incrementVersionIfCurrent(100L, roomId, 0L);
         assertThat(captor.getValue().getSchedule()).isSameAs(schedule);
         assertThat(captor.getValue().getOrderIndex()).isEqualTo(3);
+        verify(eventPublisher).publishEvent(new RoomScheduleChangedEvent(
+                roomId,
+                1L,
+                RoomScheduleEventType.SCHEDULE_ITEM_CREATED,
+                100L,
+                200L
+        ));
     }
 
     @Test
@@ -129,6 +142,13 @@ class ScheduleItemServiceTest {
         verify(scheduleItemRepository).delete(second);
         assertThat(first.getOrderIndex()).isZero();
         assertThat(third.getOrderIndex()).isEqualTo(1);
+        verify(eventPublisher).publishEvent(new RoomScheduleChangedEvent(
+                roomId,
+                1L,
+                RoomScheduleEventType.SCHEDULE_ITEM_DELETED,
+                100L,
+                11L
+        ));
     }
 
     @Test
@@ -168,6 +188,13 @@ class ScheduleItemServiceTest {
         verify(scheduleRepository).incrementVersionIfCurrent(100L, roomId, 0L);
         assertThat(item.getStartTime()).isEqualTo(LocalTime.of(9, 0));
         assertThat(item.getDurationMinutes()).isEqualTo(90);
+        verify(eventPublisher).publishEvent(new RoomScheduleChangedEvent(
+                roomId,
+                1L,
+                RoomScheduleEventType.SCHEDULE_ITEM_UPDATED,
+                100L,
+                10L
+        ));
     }
 
     @Test
@@ -323,6 +350,13 @@ class ScheduleItemServiceTest {
         assertThat(results.get(1).googlePlaceId()).isEqualTo("place-3");
         assertThat(results.get(2).googlePlaceId()).isEqualTo("place-1");
         assertThat(results.get(2).orderIndex()).isEqualTo(2);
+        verify(eventPublisher).publishEvent(new RoomScheduleChangedEvent(
+                roomId,
+                1L,
+                RoomScheduleEventType.SCHEDULE_ITEMS_REORDERED,
+                100L,
+                10L
+        ));
     }
 
     @Test
@@ -362,6 +396,13 @@ class ScheduleItemServiceTest {
 
         assertThat(result.travelMode()).isEqualTo("WALKING");
         assertThat(item.getTravelMode()).isEqualTo("WALKING");
+        verify(eventPublisher).publishEvent(new RoomScheduleChangedEvent(
+                roomId,
+                1L,
+                RoomScheduleEventType.SCHEDULE_ITEM_TRAVEL_MODE_UPDATED,
+                100L,
+                10L
+        ));
     }
 
     @Test

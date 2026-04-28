@@ -16,6 +16,8 @@ import com.howaboutus.backend.bookmarks.repository.BookmarkRepository;
 import com.howaboutus.backend.bookmarks.repository.dto.CategoryBookmarkCount;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.realtime.event.RoomBookmarkChangedEvent;
+import com.howaboutus.backend.realtime.service.dto.RoomBookmarkEventType;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
@@ -32,6 +34,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,12 +52,15 @@ class BookmarkCategoryServiceTest {
     @Mock
     private RoomAuthorizationService roomAuthorizationService;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private BookmarkCategoryService bookmarkCategoryService;
 
     @BeforeEach
     void setUp() {
         bookmarkCategoryService = new BookmarkCategoryService(roomRepository, bookmarkCategoryRepository,
-                bookmarkRepository, roomAuthorizationService);
+                bookmarkRepository, roomAuthorizationService, eventPublisher);
     }
 
     @Test
@@ -82,6 +88,13 @@ class BookmarkCategoryServiceTest {
         assertThat(captor.getValue().getRoom()).isSameAs(room);
         assertThat(captor.getValue().getColorCode()).isEqualTo("#FF8800");
         assertThat(captor.getValue().getCreatedBy()).isNull();
+        verify(eventPublisher).publishEvent(new RoomBookmarkChangedEvent(
+                roomId,
+                1L,
+                RoomBookmarkEventType.CATEGORY_CREATED,
+                null,
+                10L
+        ));
     }
 
     @Test
@@ -165,6 +178,13 @@ class BookmarkCategoryServiceTest {
         assertThat(result).isEqualTo(BookmarkCategoryResult.from(category));
         assertThat(category.getName()).isEqualTo("카페");
         assertThat(category.getColorCode()).isEqualTo("#3366FF");
+        verify(eventPublisher).publishEvent(new RoomBookmarkChangedEvent(
+                roomId,
+                1L,
+                RoomBookmarkEventType.CATEGORY_UPDATED,
+                null,
+                10L
+        ));
     }
 
     @Test
@@ -229,6 +249,13 @@ class BookmarkCategoryServiceTest {
         InOrder inOrder = inOrder(bookmarkRepository, bookmarkCategoryRepository);
         inOrder.verify(bookmarkRepository).deleteAllByCategory_Id(10L);
         inOrder.verify(bookmarkCategoryRepository).delete(category);
+        verify(eventPublisher).publishEvent(new RoomBookmarkChangedEvent(
+                roomId,
+                1L,
+                RoomBookmarkEventType.CATEGORY_DELETED,
+                null,
+                10L
+        ));
     }
 
     @Test

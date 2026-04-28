@@ -12,6 +12,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.realtime.event.RoomScheduleChangedEvent;
+import com.howaboutus.backend.realtime.service.dto.RoomScheduleEventType;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
 import com.howaboutus.backend.rooms.service.RoomAuthorizationService;
@@ -35,6 +37,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import java.util.stream.Stream;
 
@@ -53,12 +56,15 @@ class ScheduleServiceTest {
     @Mock
     private RoomAuthorizationService roomAuthorizationService;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private ScheduleService scheduleService;
 
     @BeforeEach
     void setUp() {
         scheduleService = new ScheduleService(roomRepository, scheduleRepository, scheduleItemService,
-                roomAuthorizationService);
+                roomAuthorizationService, eventPublisher);
     }
 
     @Test
@@ -95,6 +101,13 @@ class ScheduleServiceTest {
         assertThat(scheduleCaptor.getValue().getRoom()).isSameAs(room);
         assertThat(scheduleCaptor.getValue().getDayNumber()).isEqualTo(2);
         assertThat(scheduleCaptor.getValue().getDate()).isEqualTo(LocalDate.of(2026, 4, 21));
+        verify(eventPublisher).publishEvent(new RoomScheduleChangedEvent(
+                roomId,
+                1L,
+                RoomScheduleEventType.SCHEDULE_CREATED,
+                10L,
+                null
+        ));
     }
 
     @Test
@@ -307,6 +320,13 @@ class ScheduleServiceTest {
         order.verify(scheduleRepository).findByIdAndRoom_Id(10L, roomId);
         order.verify(scheduleItemService).deleteAllByScheduleId(10L);
         order.verify(scheduleRepository).delete(schedule);
+        verify(eventPublisher).publishEvent(new RoomScheduleChangedEvent(
+                roomId,
+                1L,
+                RoomScheduleEventType.SCHEDULE_DELETED,
+                10L,
+                null
+        ));
     }
 
     @Test

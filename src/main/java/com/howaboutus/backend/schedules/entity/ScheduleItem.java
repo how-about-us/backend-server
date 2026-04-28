@@ -11,6 +11,8 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import java.time.LocalTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -34,6 +36,7 @@ public class ScheduleItem extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "schedule_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Schedule schedule;
 
     @Column(name = "google_place_id", nullable = false, length = 300)

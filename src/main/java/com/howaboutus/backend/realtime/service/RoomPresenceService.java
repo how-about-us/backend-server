@@ -20,6 +20,7 @@ public class RoomPresenceService {
         return addedUsers != null && addedUsers > 0;
     }
 
+    // TODO: 나중에 Lua Script로 옮기자
     public boolean disconnect(UUID roomId, Long userId, String sessionId) {
         String userSessionsKey = userSessionsKey(roomId, userId);
         redisTemplate.opsForSet().remove(userSessionsKey, sessionId);

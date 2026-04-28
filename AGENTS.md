@@ -23,12 +23,12 @@
 ## Tech Stack
 
 - **Framework**: Spring Boot 4.0.5, Java 21
-- **Database**: PostgreSQL 17 + PostGIS 3.5
+- **Database**: PostgreSQL 17 + PostGIS 3.5, MongoDB 8
 - **Cache**: Redis 8
 - **Auth**: Spring Security
 - **Realtime**: WebSocket + STOMP
 - **Build**: Gradle
-- **기타**: Lombok, Spring Data JPA, `hibernate-spatial`
+- **기타**: Lombok, Spring Data JPA, Spring Data MongoDB, `hibernate-spatial`
 
 ## Commands
 
@@ -36,7 +36,7 @@
 
 ```bash
 # dev 프로파일로 실행
-# Spring Boot의 spring.docker.compose.enabled 기능으로 Docker Compose(PostgreSQL, Redis)가 자동으로 함께 실행됨
+# Spring Boot의 spring.docker.compose.enabled 기능으로 Docker Compose(PostgreSQL, Redis, MongoDB)가 자동으로 함께 실행됨
 # 실행 전 .env.dev 파일이 필요함
 ./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
@@ -60,7 +60,7 @@ docker compose -f compose.yaml -f compose.dev.yaml down
 
 | 프로파일 | 용도 | 설명 |
 | --- | --- | --- |
-| `dev` | 로컬 개발 | Docker Compose 자동 start/stop, PostgreSQL 포트 `5433` |
+| `dev` | 로컬 개발 | Docker Compose 자동 start/stop, PostgreSQL 포트 `5433`, MongoDB 포트 `27017` |
 | `prod` | AWS Lightsail 배포 | 외부 DB/Redis 연결, `application-prod.yaml` 적용 |
 
 ## Architecture
@@ -84,6 +84,7 @@ src/main/resources/
 ## Gotchas
 
 - PostgreSQL 이미지는 `postgis/postgis:17-3.5`를 사용한다.
+- MongoDB 이미지는 `mongo:8`을 사용하며 채팅 메시지 저장소로 사용한다.
 - 공간 데이터 엔티티에는 `hibernate-spatial` 타입을 사용한다.
 - dev 환경의 PostgreSQL 포트는 `5433`이다.
 - `spring.jpa.open-in-view=false`가 설정되어 있다.

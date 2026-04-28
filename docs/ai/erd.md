@@ -2,8 +2,8 @@
 
 > **초안 문서입니다.** 구현 과정에서 컬럼 및 관계가 변경될 수 있습니다.
 
-- **기술 스택:** PostgreSQL + PostGIS, Redis (세션/토큰)
-- **ID 전략:** roomId → UUID (초대 URL 보안), messageId → auto-increment (재접속 동기화용), 나머지 → BIGINT auto-increment
+- **기술 스택:** PostgreSQL + PostGIS, MongoDB (채팅 메시지), Redis (세션/토큰)
+- **ID 전략:** roomId → UUID (초대 URL 보안), MongoDB message `_id` → 재접속 동기화 cursor, PostgreSQL 엔티티 → BIGINT auto-increment
 
 ---
 
@@ -58,7 +58,7 @@ Google OAuth 기반 사용자 정보
 | user_id | BIGINT | FK → users.id, NOT NULL | |
 | role | VARCHAR(20) | NOT NULL | HOST / MEMBER / PENDING (DEFAULT 없이 명시적 지정) |
 | joined_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 참여 일시 |
-| last_read_message_id | BIGINT | NULLABLE | 마지막으로 읽은 메시지 ID |
+| last_read_message_id | VARCHAR(24) | NULLABLE | 마지막으로 읽은 MongoDB 메시지 `_id` |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
 
@@ -68,25 +68,25 @@ Google OAuth 기반 사용자 정보
 
 ---
 
-## 4. messages (채팅 메시지)
+## 4. messages (MongoDB 채팅 메시지 컬렉션)
 
-실시간 채팅 메시지. auto-increment ID로 재접속 시 동기화 기준점 활용.
+실시간 채팅 메시지. 메시지별 metadata 구조가 달라질 수 있어 MongoDB 컬렉션으로 저장한다. MongoDB `_id` 문자열을 클라이언트에 `id`로 노출하고 재접속 동기화 cursor로 사용한다.
 
-| 컬럼 | 타입 | 제약조건 | 설명 |
+| 필드 | 타입 | 제약조건 | 설명 |
 |------|------|----------|------|
-| id | BIGINT | PK, AUTO_INCREMENT | 순차 비교용 |
-| room_id | UUID | FK → rooms.id, NOT NULL | |
-| sender_id | BIGINT | FK → users.id, NULLABLE | NULL = 시스템/AI 메시지 |
-| content | TEXT | NOT NULL | 메시지 내용 |
-| message_type | VARCHAR(30) | NOT NULL, DEFAULT 'CHAT' | CHAT / AI_RESPONSE / PLACE_SHARE / SYSTEM |
-| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 생성일시 |
-| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | 수정일시 |
+| _id | ObjectId | PK | 클라이언트 응답에서는 문자열 `id` |
+| roomId | UUID | NOT NULL | PostgreSQL rooms.id 논리 참조 |
+| senderId | BIGINT | NULLABLE | PostgreSQL users.id 논리 참조, NULL = 시스템/AI 메시지 |
+| messageType | STRING | NOT NULL, DEFAULT 'CHAT' | CHAT / AI_RESPONSE / PLACE_SHARE / SYSTEM |
+| content | STRING | NOT NULL | 메시지 내용 |
+| metadata | DOCUMENT | NOT NULL, DEFAULT `{}` | 장소 공유, AI 응답 등 메시지 타입별 확장 데이터 |
+| createdAt | DATE | NOT NULL | 생성일시 |
 
-**인덱스:** (room_id, id) — 방 내 메시지 순차 조회용
+**인덱스:** `{ roomId: 1, createdAt: -1, _id: -1 }` — 최근 메시지 조회용, `{ roomId: 1, _id: 1 }` — 재접속 이후 메시지 조회용
 
-> 재접속 시 클라이언트가 마지막으로 수신한 message.id를 보내면, 서버는 해당 ID 이후의 메시지만 전달합니다.
+> 재접속 시 클라이언트가 마지막으로 수신한 MongoDB message `_id`를 `afterId`로 보내면, 서버는 해당 ID 이후의 메시지만 전달합니다.
 
-**미결:** AI 응답 이력을 이 테이블의 message_type으로 관리할지, 별도 ai_responses 테이블로 분리할지 결정 필요.
+**미결:** AI 응답 이력을 이 컬렉션의 `messageType=AI_RESPONSE`로 관리할지, 별도 컬렉션으로 분리할지 결정 필요.
 
 ---
 
@@ -180,9 +180,9 @@ Google OAuth 기반 사용자 정보
 |------|------|------|
 | users ↔ rooms | 1:N | 한 유저가 여러 방 생성 가능 |
 | users ↔ room_members | 1:N | 한 유저가 여러 방에 참여 |
-| users ↔ messages | 1:N | 한 유저가 여러 메시지 입력 가능 |
+| users ↔ messages | 1:N | 한 유저가 여러 메시지 입력 가능 (MongoDB `senderId` 논리 참조) |
 | rooms ↔ room_members | 1:N | 한 방에 여러 멤버 |
-| rooms ↔ messages | 1:N | 한 방에 여러 메시지 |
+| rooms ↔ messages | 1:N | 한 방에 여러 메시지 (MongoDB `roomId` 논리 참조) |
 | rooms ↔ bookmark_categories | 1:N | 한 방에 여러 북마크 카테고리 |
 | rooms ↔ bookmarks | 1:N | 한 방에 여러 후보지 |
 | bookmark_categories ↔ bookmarks | 1:N | 한 카테고리에 여러 후보지 |
@@ -209,7 +209,7 @@ Google OAuth 기반 사용자 정보
 
 1. **초대 코드 고정 방식:** 방 생성 시 invite_code가 1개 자동 발급. 링크 유출 시 방장이 코드를 재발급. 별도 room_invitations 테이블 없이 단순하게 유지.
 2. **google_place_id 직접 참조:** places 중간 테이블 없이 bookmarks·schedule_items에서 google_place_id(VARCHAR)를 직접 저장한다. 단순 검색 결과를 DB에 eager insert할 필요가 없고, 북마크/일정 추가 시점에만 장소 식별자가 기록된다. 각 테이블의 google_place_id 컬럼에 인덱스를 부여해 조회 성능을 확보한다.
-3. **message.id auto-increment:** WebSocket 재접속 시 마지막 수신 ID 기반 미수신 메시지 조회 패턴에 최적화.
+3. **MongoDB message `_id` cursor:** WebSocket 재접속 시 마지막 수신 MongoDB `_id` 기반으로 미수신 메시지를 조회한다.
 4. **room.id UUID:** 초대 URL에 노출되므로 추측 불가능한 UUID 사용.
 5. **장소 상세 캐시:** 자유도가 높은 검색어는 캐시 히트율이 낮을 수 있으므로 검색 결과는 캐시하지 않는다. 대신 Google Place 상세 조회 응답은 `google_place_id` 기준으로 Redis에 5분 TTL로 저장한다.
 6. **schedule_items.order_index:** D&D UI를 위한 정렬 인덱스. 재정렬 시 해당 컬럼만 업데이트.
@@ -220,10 +220,10 @@ Google OAuth 기반 사용자 정보
 
 ## TODO / 논의 필요 사항
 
-- [ ] AI 응답 이력을 별도 테이블로 분리할지, messages.message_type으로 관리할지
+- [ ] AI 응답 이력을 별도 컬렉션으로 분리할지, messages.messageType으로 관리할지
 - [ ] 예산 정리 기능을 위한 expenses 테이블 추가 여부
 - [ ] 숙소/항공권 예약 연동 시 external_bookings 테이블 필요 여부
 - [ ] bookmark 투표 기능 추가 시 bookmark_votes 테이블 필요
 - [ ] 방 삭제 정책: soft delete vs hard delete + CASCADE
-- [ ] message 테이블 파티셔닝 전략 (방별, 날짜별 등)
+- [ ] messages 컬렉션 샤딩/보관 주기 전략 (방별, 날짜별 등)
 - [ ] 초대 링크 만료/사용 횟수 제한 필요 시 room_invitations 테이블 분리 검토

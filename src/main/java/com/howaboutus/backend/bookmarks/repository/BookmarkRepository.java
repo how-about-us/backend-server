@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -24,8 +23,4 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     Optional<Bookmark> findByIdAndRoom_Id(Long bookmarkId, UUID roomId);
 
     void deleteAllByCategory_Id(Long categoryId);
-
-    @Modifying(clearAutomatically = true)
-    @Query("DELETE FROM Bookmark b WHERE b.room.id = :roomId")
-    void deleteAllByRoomId(@Param("roomId") UUID roomId);
 }

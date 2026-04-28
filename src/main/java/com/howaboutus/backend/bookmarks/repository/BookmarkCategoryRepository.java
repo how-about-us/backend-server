@@ -5,9 +5,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 public interface BookmarkCategoryRepository extends JpaRepository<BookmarkCategory, Long> {
 
@@ -18,8 +15,4 @@ public interface BookmarkCategoryRepository extends JpaRepository<BookmarkCatego
     List<BookmarkCategory> findAllByRoom_IdOrderByCreatedAtAsc(UUID roomId);
 
     Optional<BookmarkCategory> findByIdAndRoom_Id(Long categoryId, UUID roomId);
-
-    @Modifying(clearAutomatically = true)
-    @Query("DELETE FROM BookmarkCategory bc WHERE bc.room.id = :roomId")
-    void deleteAllByRoomId(@Param("roomId") UUID roomId);
 }

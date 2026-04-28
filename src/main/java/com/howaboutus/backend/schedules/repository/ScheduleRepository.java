@@ -32,7 +32,4 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                                   @Param("roomId") UUID roomId,
                                   @Param("version") Long version);
 
-    @Modifying(clearAutomatically = true)
-    @Query("DELETE FROM Schedule s WHERE s.room.id = :roomId")
-    void deleteAllByRoomId(@Param("roomId") UUID roomId);
 }

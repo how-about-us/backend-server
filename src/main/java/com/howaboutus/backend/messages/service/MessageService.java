@@ -142,6 +142,35 @@ public class MessageService {
         return result;
     }
 
+    public MessageResult sendHostDelegatedSystemMessage(UUID roomId,
+                                                        long previousHostUserId,
+                                                        String previousHostNickname,
+                                                        long newHostUserId,
+                                                        String newHostNickname) {
+        String normalizedPrevNickname = normalizeContent(previousHostNickname);
+        String normalizedNewNickname = normalizeContent(newHostNickname);
+        Map<String, Object> metadata = nonNullMetadata(metadataEntries(
+                "eventType", "HOST_DELEGATED",
+                "previousHostUserId", previousHostUserId,
+                "previousHostNickname", normalizedPrevNickname,
+                "newHostUserId", newHostUserId,
+                "newHostNickname", normalizedNewNickname
+        ));
+
+        ChatMessage message = ChatMessage.system(
+                roomId,
+                normalizedPrevNickname + "님이 " + normalizedNewNickname + "님에게 방장을 위임했습니다",
+                metadata);
+        ChatMessage savedMessage = chatMessageRepository.save(message);
+        MessageResult result = MessageResult.from(savedMessage);
+        try {
+            eventPublisher.publishEvent(MessageSentEvent.from(result));
+        } catch (Exception e) {
+            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
+        }
+        return result;
+    }
+
     public List<MessageResult> getRecentMessages(UUID roomId, long userId, int size) {
         roomAuthorizationService.requireActiveMember(roomId, userId);
         validatePageSize(size);

@@ -6,18 +6,24 @@ import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResp
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
 
+@ExtendWith(MockitoExtension.class)
 class PlaceSearchServiceTest {
 
-    private final GooglePlaceSearchClient googlePlaceSearchClient = mock(GooglePlaceSearchClient.class);
-    private final PlaceSearchService placeSearchService = new PlaceSearchService(googlePlaceSearchClient);
+    @Mock
+    private GooglePlaceSearchClient googlePlaceSearchClient;
+    @InjectMocks
+    private PlaceSearchService placeSearchService;
 
     @Test
     @DisplayName("Google 장소 응답을 검색 결과 목록으로 변환한다")

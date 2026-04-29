@@ -3,6 +3,7 @@ package com.howaboutus.backend.rooms.service;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.realtime.event.MemberKickedEvent;
+import com.howaboutus.backend.realtime.event.MemberLeftEvent;
 import com.howaboutus.backend.realtime.service.RoomPresenceService;
 import com.howaboutus.backend.rooms.entity.RoomMember;
 import com.howaboutus.backend.rooms.entity.RoomRole;
@@ -68,6 +69,23 @@ public class RoomMemberService {
                 target.getUser().getId(),
                 target.getUser().getNickname(),
                 target.getUser().getProfileImageUrl()
+        ));
+    }
+
+    @Transactional
+    public void leave(UUID roomId, Long userId) {
+        RoomMember member = roomAuthorizationService.requireActiveMember(roomId, userId);
+
+        if (member.getRole() == RoomRole.HOST) {
+            throw new CustomException(ErrorCode.CANNOT_LEAVE_AS_HOST);
+        }
+
+        roomMemberRepository.delete(member);
+        eventPublisher.publishEvent(new MemberLeftEvent(
+                roomId,
+                member.getUser().getId(),
+                member.getUser().getNickname(),
+                member.getUser().getProfileImageUrl()
         ));
     }
 

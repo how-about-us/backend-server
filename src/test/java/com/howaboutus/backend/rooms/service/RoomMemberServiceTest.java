@@ -9,6 +9,7 @@ import static org.mockito.BDDMockito.then;
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.realtime.event.MemberKickedEvent;
+import com.howaboutus.backend.realtime.event.MemberLeftEvent;
 import com.howaboutus.backend.realtime.service.RoomPresenceService;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.entity.RoomMember;
@@ -225,6 +226,58 @@ class RoomMemberServiceTest {
 
         assertThatThrownBy(() -> roomMemberService.kick(ROOM_ID, TARGET_USER_ID, HOST_USER_ID))
                 .isInstanceOf(CustomException.class);
+    }
+
+    @Test
+    @DisplayName("leave 성공 - 멤버 삭제 + 이벤트 발행")
+    void leaveDeletesMemberAndPublishesEvent() {
+        User member = User.ofGoogle("g2", "member@test.com", "멤버", "https://img/member.jpg");
+        ReflectionTestUtils.setField(member, "id", TARGET_USER_ID);
+
+        Room room = Room.create("여행", "부산", null, null, "invite1", HOST_USER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+
+        RoomMember regularMember = RoomMember.of(room, member, RoomRole.MEMBER);
+
+        given(roomAuthorizationService.requireActiveMember(ROOM_ID, TARGET_USER_ID))
+                .willReturn(regularMember);
+
+        roomMemberService.leave(ROOM_ID, TARGET_USER_ID);
+
+        then(roomMemberRepository).should().delete(regularMember);
+        then(eventPublisher).should().publishEvent(any(MemberLeftEvent.class));
+    }
+
+    @Test
+    @DisplayName("leave - HOST가 나가려 하면 CANNOT_LEAVE_AS_HOST")
+    void leaveThrowsWhenUserIsHost() {
+        User host = User.ofGoogle("g1", "host@test.com", "호스트", null);
+        ReflectionTestUtils.setField(host, "id", HOST_USER_ID);
+
+        Room room = Room.create("여행", "부산", null, null, "invite1", HOST_USER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+
+        RoomMember hostMember = RoomMember.of(room, host, RoomRole.HOST);
+
+        given(roomAuthorizationService.requireActiveMember(ROOM_ID, HOST_USER_ID))
+                .willReturn(hostMember);
+
+        assertThatThrownBy(() -> roomMemberService.leave(ROOM_ID, HOST_USER_ID))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.CANNOT_LEAVE_AS_HOST));
+    }
+
+    @Test
+    @DisplayName("leave - 비멤버가 나가려 하면 NOT_ROOM_MEMBER")
+    void leaveThrowsWhenNotMember() {
+        given(roomAuthorizationService.requireActiveMember(ROOM_ID, TARGET_USER_ID))
+                .willThrow(new CustomException(ErrorCode.NOT_ROOM_MEMBER));
+
+        assertThatThrownBy(() -> roomMemberService.leave(ROOM_ID, TARGET_USER_ID))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.NOT_ROOM_MEMBER));
     }
 
     @Test

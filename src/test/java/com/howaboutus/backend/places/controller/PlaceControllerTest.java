@@ -87,9 +87,13 @@ class PlaceControllerTest {
                 "https://maps.google.com/?cid=123",
                 new PlaceDetailResult.RegularOpeningHours(
                         true,
+                        "DRIVE_THROUGH",
+                        List.of(new PlaceDetailResult.SpecialDay(
+                                new PlaceDetailResult.Date(2026, 5, 5)
+                        )),
                         List.of(new PlaceDetailResult.Period(
-                                new PlaceDetailResult.TimePoint(1, 9, 0, null),
-                                new PlaceDetailResult.TimePoint(1, 18, 0, null)
+                                new PlaceDetailResult.TimePoint(1, 9, 0, null, false),
+                                new PlaceDetailResult.TimePoint(1, 18, 0, null, true)
                         )),
                         List.of("월요일: 09:00~18:00"),
                         "2026-04-30T00:00:00Z",
@@ -327,7 +331,11 @@ class PlaceControllerTest {
                 .andExpect(jsonPath("$.googlePlaceId").value("ChIJ123"))
                 .andExpect(jsonPath("$.phoneNumber").value("02-123-4567"))
                 .andExpect(jsonPath("$.regularOpeningHours.openNow").value(true))
+                .andExpect(jsonPath("$.regularOpeningHours.secondaryHoursType").value("DRIVE_THROUGH"))
+                .andExpect(jsonPath("$.regularOpeningHours.specialDays[0].date.month").value(5))
                 .andExpect(jsonPath("$.regularOpeningHours.periods[0].open.hour").value(9))
+                .andExpect(jsonPath("$.regularOpeningHours.periods[0].open.truncated").value(false))
+                .andExpect(jsonPath("$.regularOpeningHours.periods[0].close.truncated").value(true))
                 .andExpect(jsonPath("$.weekdayDescriptions[0]").value("월요일: 09:00~18:00"))
                 .andExpect(jsonPath("$.reviewSummary").value("디저트와 분위기가 좋아요"))
                 .andExpect(jsonPath("$.reviews[0].rating").value(5.0))

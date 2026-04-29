@@ -26,6 +26,8 @@ public record GooglePlaceDetailResponse(
 
     public record RegularOpeningHours(
             Boolean openNow,
+            String secondaryHoursType,
+            List<SpecialDay> specialDays,
             List<Period> periods,
             List<String> weekdayDescriptions,
             String nextOpenTime,
@@ -36,7 +38,10 @@ public record GooglePlaceDetailResponse(
     public record Period(TimePoint open, TimePoint close) {
     }
 
-    public record TimePoint(Integer day, Integer hour, Integer minute, Date date) {
+    public record TimePoint(Integer day, Integer hour, Integer minute, Date date, Boolean truncated) {
+    }
+
+    public record SpecialDay(Date date) {
     }
 
     public record Date(Integer year, Integer month, Integer day) {

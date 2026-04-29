@@ -56,10 +56,14 @@ class GooglePlaceDetailClientTest {
                           "displayName": {"text": "Cafe Layered", "languageCode": "ko"},
                           "regularOpeningHours": {
                             "openNow": true,
+                            "secondaryHoursType": "DRIVE_THROUGH",
+                            "specialDays": [
+                              {"date": {"year": 2026, "month": 5, "day": 5}}
+                            ],
                             "periods": [
                               {
-                                "open": {"day": 1, "hour": 9, "minute": 0},
-                                "close": {"day": 1, "hour": 18, "minute": 0}
+                                "open": {"day": 1, "hour": 9, "minute": 0, "truncated": false},
+                                "close": {"day": 1, "hour": 18, "minute": 0, "truncated": true}
                               }
                             ],
                             "weekdayDescriptions": ["월요일: 09:00~18:00"],
@@ -87,7 +91,11 @@ class GooglePlaceDetailClientTest {
         assertThat(result.id()).isEqualTo("places/ChIJ123");
         assertThat(result.displayName().text()).isEqualTo("Cafe Layered");
         assertThat(result.regularOpeningHours().openNow()).isTrue();
+        assertThat(result.regularOpeningHours().secondaryHoursType()).isEqualTo("DRIVE_THROUGH");
+        assertThat(result.regularOpeningHours().specialDays().getFirst().date().month()).isEqualTo(5);
         assertThat(result.regularOpeningHours().periods().getFirst().open().hour()).isEqualTo(9);
+        assertThat(result.regularOpeningHours().periods().getFirst().open().truncated()).isFalse();
+        assertThat(result.regularOpeningHours().periods().getFirst().close().truncated()).isTrue();
         assertThat(result.regularOpeningHours().weekdayDescriptions()).containsExactly("월요일: 09:00~18:00");
         assertThat(result.reviewSummary().text().text()).isEqualTo("디저트와 분위기가 좋아요");
         assertThat(result.reviews().getFirst().rating()).isEqualTo(5.0);

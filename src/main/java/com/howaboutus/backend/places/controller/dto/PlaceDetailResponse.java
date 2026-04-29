@@ -53,11 +53,22 @@ public record PlaceDetailResponse(
             PlaceDetailResult.RegularOpeningHours regularOpeningHours) {
         return new RegularOpeningHours(
                 regularOpeningHours.openNow(),
+                regularOpeningHours.secondaryHoursType(),
+                toSpecialDays(regularOpeningHours.specialDays()),
                 toPeriods(regularOpeningHours.periods()),
                 regularOpeningHours.weekdayDescriptions(),
                 regularOpeningHours.nextOpenTime(),
                 regularOpeningHours.nextCloseTime()
         );
+    }
+
+    private static List<SpecialDay> toSpecialDays(List<PlaceDetailResult.SpecialDay> specialDays) {
+        if (specialDays == null) {
+            return List.of();
+        }
+        return specialDays.stream()
+                .map(specialDay -> new SpecialDay(toDate(specialDay.date())))
+                .toList();
     }
 
     private static List<Period> toPeriods(List<PlaceDetailResult.Period> periods) {
@@ -77,7 +88,8 @@ public record PlaceDetailResponse(
                 timePoint.day(),
                 timePoint.hour(),
                 timePoint.minute(),
-                toDate(timePoint.date())
+                toDate(timePoint.date()),
+                timePoint.truncated()
         );
     }
 
@@ -108,6 +120,8 @@ public record PlaceDetailResponse(
 
     public record RegularOpeningHours(
             Boolean openNow,
+            String secondaryHoursType,
+            List<SpecialDay> specialDays,
             List<Period> periods,
             List<String> weekdayDescriptions,
             String nextOpenTime,
@@ -118,7 +132,10 @@ public record PlaceDetailResponse(
     public record Period(TimePoint open, TimePoint close) {
     }
 
-    public record TimePoint(Integer day, Integer hour, Integer minute, Date date) {
+    public record TimePoint(Integer day, Integer hour, Integer minute, Date date, Boolean truncated) {
+    }
+
+    public record SpecialDay(Date date) {
     }
 
     public record Date(Integer year, Integer month, Integer day) {

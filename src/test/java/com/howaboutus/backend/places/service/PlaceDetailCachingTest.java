@@ -63,6 +63,8 @@ class PlaceDetailCachingTest extends BaseIntegrationTest {
                 new GooglePlaceDetailResponse.RegularOpeningHours(
                         null,
                         null,
+                        null,
+                        null,
                         List.of("월요일: 09:00~18:00"),
                         null,
                         null

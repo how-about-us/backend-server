@@ -24,9 +24,13 @@ class PlaceDetailResultTest {
                 "https://maps.google.com/?cid=123",
                 new GooglePlaceDetailResponse.RegularOpeningHours(
                         true,
+                        "DRIVE_THROUGH",
+                        List.of(new GooglePlaceDetailResponse.SpecialDay(
+                                new GooglePlaceDetailResponse.Date(2026, 5, 5)
+                        )),
                         List.of(new GooglePlaceDetailResponse.Period(
-                                new GooglePlaceDetailResponse.TimePoint(1, 9, 0, null),
-                                new GooglePlaceDetailResponse.TimePoint(1, 18, 0, null)
+                                new GooglePlaceDetailResponse.TimePoint(1, 9, 0, null, false),
+                                new GooglePlaceDetailResponse.TimePoint(1, 18, 0, null, true)
                         )),
                         List.of("월요일: 09:00~18:00"),
                         "2026-04-30T00:00:00Z",
@@ -67,9 +71,13 @@ class PlaceDetailResultTest {
         assertThat(result.googleMapsUri()).isEqualTo("https://maps.google.com/?cid=123");
         assertThat(result.regularOpeningHours()).isEqualTo(new PlaceDetailResult.RegularOpeningHours(
                 true,
+                "DRIVE_THROUGH",
+                List.of(new PlaceDetailResult.SpecialDay(
+                        new PlaceDetailResult.Date(2026, 5, 5)
+                )),
                 List.of(new PlaceDetailResult.Period(
-                        new PlaceDetailResult.TimePoint(1, 9, 0, null),
-                        new PlaceDetailResult.TimePoint(1, 18, 0, null)
+                        new PlaceDetailResult.TimePoint(1, 9, 0, null, false),
+                        new PlaceDetailResult.TimePoint(1, 18, 0, null, true)
                 )),
                 List.of("월요일: 09:00~18:00"),
                 "2026-04-30T00:00:00Z",

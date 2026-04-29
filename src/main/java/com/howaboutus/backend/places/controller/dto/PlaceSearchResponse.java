@@ -9,6 +9,8 @@ public record PlaceSearchResponse(
         Location location,
         String primaryType,
         Double rating,
+        Boolean openNow,
+        String reviewSummary,
         String photoName
 ) {
     public record Location(Double lat, Double lng) {
@@ -27,6 +29,8 @@ public record PlaceSearchResponse(
                 location,
                 result.primaryType(),
                 result.rating(),
+                result.openNow(),
+                result.reviewSummary(),
                 result.photoName()
         );
     }

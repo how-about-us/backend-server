@@ -9,6 +9,8 @@ public record PlaceSearchResult(
         Location location,
         String primaryType,
         Double rating,
+        Boolean openNow,
+        String reviewSummary,
         String photoName
 ) {
     public static PlaceSearchResult from(GoogleTextSearchResponse.PlaceItem place) {
@@ -27,6 +29,16 @@ public record PlaceSearchResult(
             photoName = place.photos().getFirst().name();
         }
 
+        Boolean openNow = null;
+        if (place.regularOpeningHours() != null) {
+            openNow = place.regularOpeningHours().openNow();
+        }
+
+        String reviewSummary = null;
+        if (place.reviewSummary() != null && place.reviewSummary().text() != null) {
+            reviewSummary = place.reviewSummary().text().text();
+        }
+
         return new PlaceSearchResult(
                 place.id(),
                 name,
@@ -34,6 +46,8 @@ public record PlaceSearchResult(
                 location,
                 place.primaryType(),
                 place.rating(),
+                openNow,
+                reviewSummary,
                 photoName
         );
     }

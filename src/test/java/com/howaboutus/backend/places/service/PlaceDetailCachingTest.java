@@ -60,8 +60,16 @@ class PlaceDetailCachingTest extends BaseIntegrationTest {
                 "02-123-4567",
                 "https://layered.example",
                 "https://maps.google.com/?cid=123",
-                new GooglePlaceDetailResponse.RegularOpeningHours(List.of("월요일: 09:00~18:00")),
-                List.of(new GooglePlaceDetailResponse.Photo("places/ChIJ123/photos/a"))
+                new GooglePlaceDetailResponse.RegularOpeningHours(
+                        null,
+                        null,
+                        List.of("월요일: 09:00~18:00"),
+                        null,
+                        null
+                ),
+                List.of(new GooglePlaceDetailResponse.Photo("places/ChIJ123/photos/a")),
+                null,
+                null
         );
     }
 }

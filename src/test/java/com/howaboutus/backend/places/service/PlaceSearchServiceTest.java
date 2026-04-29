@@ -28,6 +28,8 @@ class PlaceSearchServiceTest {
                 new GoogleTextSearchResponse.Location(37.57, 126.98),
                 "cafe",
                 4.5,
+                null,
+                null,
                 List.of(new GoogleTextSearchResponse.Photo("places/ChIJ123/photos/abc"))
         );
         given(googlePlaceSearchClient.search("seoul cafe", 37.5, 127.0, 5000.0))

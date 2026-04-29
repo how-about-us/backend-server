@@ -19,6 +19,10 @@ class PlaceSearchResultTest {
                 new GoogleTextSearchResponse.Location(37.57, 126.98),
                 "cafe",
                 4.5,
+                new GoogleTextSearchResponse.RegularOpeningHours(true),
+                new GoogleTextSearchResponse.ReviewSummary(
+                        new GoogleTextSearchResponse.LocalizedText("방문객들이 디저트를 좋아해요", "ko")
+                ),
                 List.of(new GoogleTextSearchResponse.Photo("places/ChIJ123/photos/abc"))
         );
 
@@ -30,6 +34,8 @@ class PlaceSearchResultTest {
         assertThat(result.location()).isEqualTo(new PlaceSearchResult.Location(37.57, 126.98));
         assertThat(result.primaryType()).isEqualTo("cafe");
         assertThat(result.rating()).isEqualTo(4.5);
+        assertThat(result.openNow()).isTrue();
+        assertThat(result.reviewSummary()).isEqualTo("방문객들이 디저트를 좋아해요");
         assertThat(result.photoName()).isEqualTo("places/ChIJ123/photos/abc");
     }
 
@@ -43,6 +49,8 @@ class PlaceSearchResultTest {
                 null,
                 "cafe",
                 null,
+                null,
+                null,
                 null
         );
 
@@ -52,6 +60,8 @@ class PlaceSearchResultTest {
         assertThat(result.name()).isNull();
         assertThat(result.location()).isNull();
         assertThat(result.rating()).isNull();
+        assertThat(result.openNow()).isNull();
+        assertThat(result.reviewSummary()).isNull();
         assertThat(result.photoName()).isNull();
     }
 }

@@ -11,6 +11,8 @@ public record GoogleTextSearchResponse(List<PlaceItem> places) {
             Location location,
             String primaryType,
             Double rating,
+            RegularOpeningHours regularOpeningHours,
+            ReviewSummary reviewSummary,
             List<Photo> photos
     ) {
     }
@@ -19,6 +21,15 @@ public record GoogleTextSearchResponse(List<PlaceItem> places) {
     }
 
     public record Location(Double latitude, Double longitude) {
+    }
+
+    public record RegularOpeningHours(Boolean openNow) {
+    }
+
+    public record ReviewSummary(LocalizedText text) {
+    }
+
+    public record LocalizedText(String text, String languageCode) {
     }
 
     public record Photo(String name) {

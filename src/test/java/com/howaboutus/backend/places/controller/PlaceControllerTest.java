@@ -71,6 +71,8 @@ class PlaceControllerTest {
                 new PlaceSearchResult.Location(37.57, 126.98),
                 "cafe",
                 4.5,
+                true,
+                "방문객들이 디저트를 좋아해요",
                 "places/ChIJ123/photos/abc"
         );
         placeDetailResult = new PlaceDetailResult(
@@ -83,8 +85,26 @@ class PlaceControllerTest {
                 "02-123-4567",
                 "https://layered.example",
                 "https://maps.google.com/?cid=123",
+                new PlaceDetailResult.RegularOpeningHours(
+                        true,
+                        List.of(new PlaceDetailResult.Period(
+                                new PlaceDetailResult.TimePoint(1, 9, 0, null),
+                                new PlaceDetailResult.TimePoint(1, 18, 0, null)
+                        )),
+                        List.of("월요일: 09:00~18:00"),
+                        "2026-04-30T00:00:00Z",
+                        "2026-04-29T09:00:00Z"
+                ),
                 List.of("월요일: 09:00~18:00"),
-                List.of("places/ChIJ123/photos/a", "places/ChIJ123/photos/b")
+                List.of("places/ChIJ123/photos/a", "places/ChIJ123/photos/b"),
+                "디저트와 분위기가 좋아요",
+                List.of(new PlaceDetailResult.Review(
+                        5.0,
+                        "케이크가 맛있어요",
+                        "홍길동",
+                        "2026-04-01T12:34:56Z",
+                        "2주 전"
+                ))
         );
     }
 
@@ -206,7 +226,9 @@ class PlaceControllerTest {
         mockMvc.perform(searchRequest(VALID_QUERY))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].googlePlaceId").value("ChIJ123"))
-                .andExpect(jsonPath("$[0].name").value("Cafe Layered"));
+                .andExpect(jsonPath("$[0].name").value("Cafe Layered"))
+                .andExpect(jsonPath("$[0].openNow").value(true))
+                .andExpect(jsonPath("$[0].reviewSummary").value("방문객들이 디저트를 좋아해요"));
 
         then(placeSearchService).should().search(VALID_QUERY, DEFAULT_LAT, DEFAULT_LNG, 5000.0);
     }
@@ -255,6 +277,8 @@ class PlaceControllerTest {
                 null,
                 "cafe",
                 4.5,
+                null,
+                null,
                 "places/ChIJ123/photos/abc"
         );
         given(placeSearchService.search(VALID_QUERY, DEFAULT_LAT, DEFAULT_LNG, 5000.0))
@@ -302,6 +326,15 @@ class PlaceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.googlePlaceId").value("ChIJ123"))
                 .andExpect(jsonPath("$.phoneNumber").value("02-123-4567"))
+                .andExpect(jsonPath("$.regularOpeningHours.openNow").value(true))
+                .andExpect(jsonPath("$.regularOpeningHours.periods[0].open.hour").value(9))
+                .andExpect(jsonPath("$.weekdayDescriptions[0]").value("월요일: 09:00~18:00"))
+                .andExpect(jsonPath("$.reviewSummary").value("디저트와 분위기가 좋아요"))
+                .andExpect(jsonPath("$.reviews[0].rating").value(5.0))
+                .andExpect(jsonPath("$.reviews[0].text").value("케이크가 맛있어요"))
+                .andExpect(jsonPath("$.reviews[0].authorDisplayName").value("홍길동"))
+                .andExpect(jsonPath("$.reviews[0].publishTime").value("2026-04-01T12:34:56Z"))
+                .andExpect(jsonPath("$.reviews[0].relativePublishTimeDescription").value("2주 전"))
                 .andExpect(jsonPath("$.photoNames[0]").value("places/ChIJ123/photos/a"));
 
         then(placeDetailService).should().getDetail("ChIJ123");

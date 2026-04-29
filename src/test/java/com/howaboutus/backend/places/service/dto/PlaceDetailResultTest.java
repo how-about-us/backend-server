@@ -22,11 +22,36 @@ class PlaceDetailResultTest {
                 "02-123-4567",
                 "https://layered.example",
                 "https://maps.google.com/?cid=123",
-                new GooglePlaceDetailResponse.RegularOpeningHours(List.of("월요일: 09:00~18:00")),
+                new GooglePlaceDetailResponse.RegularOpeningHours(
+                        true,
+                        List.of(new GooglePlaceDetailResponse.Period(
+                                new GooglePlaceDetailResponse.TimePoint(1, 9, 0, null),
+                                new GooglePlaceDetailResponse.TimePoint(1, 18, 0, null)
+                        )),
+                        List.of("월요일: 09:00~18:00"),
+                        "2026-04-30T00:00:00Z",
+                        "2026-04-29T09:00:00Z"
+                ),
                 List.of(
                         new GooglePlaceDetailResponse.Photo("places/ChIJ123/photos/a"),
                         new GooglePlaceDetailResponse.Photo("places/ChIJ123/photos/b")
-                )
+                ),
+                new GooglePlaceDetailResponse.ReviewSummary(
+                        new GooglePlaceDetailResponse.LocalizedText("디저트와 분위기가 좋아요", "ko")
+                ),
+                List.of(new GooglePlaceDetailResponse.Review(
+                        "places/ChIJ123/reviews/1",
+                        "2주 전",
+                        5.0,
+                        new GooglePlaceDetailResponse.LocalizedText("케이크가 맛있어요", "ko"),
+                        new GooglePlaceDetailResponse.LocalizedText("The cake is delicious", "en"),
+                        new GooglePlaceDetailResponse.AuthorAttribution(
+                                "홍길동",
+                                "https://maps.google.com/user/1",
+                                "https://lh3.googleusercontent.com/a/1"
+                        ),
+                        "2026-04-01T12:34:56Z"
+                ))
         );
 
         PlaceDetailResult result = PlaceDetailResult.from(place);
@@ -40,11 +65,29 @@ class PlaceDetailResultTest {
         assertThat(result.phoneNumber()).isEqualTo("02-123-4567");
         assertThat(result.websiteUri()).isEqualTo("https://layered.example");
         assertThat(result.googleMapsUri()).isEqualTo("https://maps.google.com/?cid=123");
+        assertThat(result.regularOpeningHours()).isEqualTo(new PlaceDetailResult.RegularOpeningHours(
+                true,
+                List.of(new PlaceDetailResult.Period(
+                        new PlaceDetailResult.TimePoint(1, 9, 0, null),
+                        new PlaceDetailResult.TimePoint(1, 18, 0, null)
+                )),
+                List.of("월요일: 09:00~18:00"),
+                "2026-04-30T00:00:00Z",
+                "2026-04-29T09:00:00Z"
+        ));
         assertThat(result.weekdayDescriptions()).containsExactly("월요일: 09:00~18:00");
         assertThat(result.photoNames()).containsExactly(
                 "places/ChIJ123/photos/a",
                 "places/ChIJ123/photos/b"
         );
+        assertThat(result.reviewSummary()).isEqualTo("디저트와 분위기가 좋아요");
+        assertThat(result.reviews()).containsExactly(new PlaceDetailResult.Review(
+                5.0,
+                "케이크가 맛있어요",
+                "홍길동",
+                "2026-04-01T12:34:56Z",
+                "2주 전"
+        ));
     }
 
     @Test
@@ -54,6 +97,8 @@ class PlaceDetailResultTest {
                 "places/ChIJ999",
                 null,
                 "서울 중구 ...",
+                null,
+                null,
                 null,
                 null,
                 null,
@@ -74,7 +119,10 @@ class PlaceDetailResultTest {
         assertThat(result.phoneNumber()).isNull();
         assertThat(result.websiteUri()).isNull();
         assertThat(result.googleMapsUri()).isNull();
+        assertThat(result.regularOpeningHours()).isNull();
         assertThat(result.weekdayDescriptions()).isEmpty();
         assertThat(result.photoNames()).isEmpty();
+        assertThat(result.reviewSummary()).isNull();
+        assertThat(result.reviews()).isEmpty();
     }
 }

@@ -13,7 +13,9 @@ public record GooglePlaceDetailResponse(
         String websiteUri,
         String googleMapsUri,
         RegularOpeningHours regularOpeningHours,
-        List<Photo> photos
+        List<Photo> photos,
+        ReviewSummary reviewSummary,
+        List<Review> reviews
 ) {
 
     public record DisplayName(String text, String languageCode) {
@@ -22,9 +24,44 @@ public record GooglePlaceDetailResponse(
     public record Location(Double latitude, Double longitude) {
     }
 
-    public record RegularOpeningHours(List<String> weekdayDescriptions) {
+    public record RegularOpeningHours(
+            Boolean openNow,
+            List<Period> periods,
+            List<String> weekdayDescriptions,
+            String nextOpenTime,
+            String nextCloseTime
+    ) {
+    }
+
+    public record Period(TimePoint open, TimePoint close) {
+    }
+
+    public record TimePoint(Integer day, Integer hour, Integer minute, Date date) {
+    }
+
+    public record Date(Integer year, Integer month, Integer day) {
     }
 
     public record Photo(String name) {
+    }
+
+    public record ReviewSummary(LocalizedText text) {
+    }
+
+    public record Review(
+            String name,
+            String relativePublishTimeDescription,
+            Double rating,
+            LocalizedText text,
+            LocalizedText originalText,
+            AuthorAttribution authorAttribution,
+            String publishTime
+    ) {
+    }
+
+    public record LocalizedText(String text, String languageCode) {
+    }
+
+    public record AuthorAttribution(String displayName, String uri, String photoUri) {
     }
 }

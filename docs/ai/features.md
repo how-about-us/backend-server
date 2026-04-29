@@ -54,12 +54,12 @@
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[ ]` | 방 멤버 목록 조회 | 방 참여자 목록 + 역할(HOST/MEMBER) + 접속 상태 | room_members |
-| `[ ]` | 멤버 추방 | HOST가 특정 멤버 추방 (HOST는 추방 불가) | room_members |
-| `[ ]` | 방 나가기 | 본인이 방에서 탈퇴 | room_members |
+| `[x]` | 방 멤버 목록 조회 | 방 참여자 목록 + 역할(HOST/MEMBER) + 접속 상태 | room_members |
+| `[x]` | 멤버 추방 | HOST가 특정 멤버 추방 (HOST는 추방 불가) | room_members |
+| `[x]` | 방 나가기 | 본인이 방에서 탈퇴 | room_members |
 | `[x]` | 실시간 방 접속 상태 추적 | 유효한 access_token 쿠키가 있는 사용자만 WebSocket handshake를 허용한다. SockJS + STOMP 방 topic 구독 성공 시 Redis에 접속 유저를 기록하고 접속 이벤트를 브로드캐스트한다. 새로 온라인이 된 유저의 접속 이벤트에는 `userId`, `nickname`, `profileImageUrl`을 포함해 클라이언트가 방 멤버 프로필 맵을 갱신할 수 있게 한다. 세션 종료 시 제거와 해제 이벤트를 브로드캐스트한다 | Redis (connected_users) |
-| `[ ]` | 현재 접속 중인 유저 조회 | 실시간 접속 유저 목록 | Redis (connected_users) |
-| `[-]` | 방장 위임 | 권한 이전 | room_members |
+| `[x]` | 현재 접속 중인 유저 조회 | 멤버 목록 API(`GET /rooms/{roomId}/members`)의 `isOnline` 필드로 접속 상태 포함 | Redis (connected_users) |
+| `[x]` | 방장 위임 | HOST가 특정 MEMBER에게 방장 권한 위임 (PATCH /rooms/{roomId}/host) | room_members |
 
 > **실시간 협업 이벤트:** 방 진입 시 클라이언트는 HTTP 조회로 초기 상태를 가져오고, 이후 STOMP 이벤트로 변경분을 반영한다. 접속 상태는 `/topic/rooms/{roomId}/presence`, 보관함 변경은 `/topic/rooms/{roomId}/bookmarks`, 일정 변경은 `/topic/rooms/{roomId}/schedules`로 브로드캐스트한다.
 
@@ -155,6 +155,6 @@
 | 2 | schedules 기준값 | day_number, date 두 컬럼 모두 저장 | 결정 |
 | 3 | schedule_items order_index 중복 방지 | UNIQUE 제약 vs gap 전략 | 미결 |
 | 4 | room_members 직접 참조 정합성 | sender_id, added_by → users 직접 vs room_members 참조 | 미결 |
-| 5 | 방장 위임 기능 | MVP 이후 진행 | 보류 |
+| 5 | 방장 위임 기능 | 구현 완료 (PATCH /rooms/{roomId}/host) | 확정 |
 | 6 | 방 삭제 정책 | hard delete 전환 완료 (DB ON DELETE CASCADE) | 확정 |
 | 7 | 초대 링크 만료/횟수 제한 | room_invitations 테이블 분리 시점 기준 | 미결 |

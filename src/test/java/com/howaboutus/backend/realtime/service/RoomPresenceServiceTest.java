@@ -2,6 +2,7 @@ package com.howaboutus.backend.realtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -123,5 +124,34 @@ class RoomPresenceServiceTest {
         Set<Long> result = roomPresenceService.getOnlineUserIds(roomId);
 
         assertThat(result).containsExactly(42L);
+    }
+
+    @Test
+    @DisplayName("removeAllSessions - 세션 키 삭제 + connected_users에서 제거")
+    void removeAllSessionsDeletesKeysAndRemovesFromSet() {
+        UUID roomId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        Long userId = 1L;
+
+        roomPresenceService.removeAllSessions(roomId, userId);
+
+        String userSessionsKey = "room:" + roomId + ":sessions:" + userId;
+        String connectedUsersKey = "room:" + roomId + ":connected_users";
+
+        then(redisTemplate).should().delete(userSessionsKey);
+        then(setOperations).should().remove(connectedUsersKey, String.valueOf(userId));
+    }
+
+    @Test
+    @DisplayName("removeAllSessions - 세션 없는 유저도 에러 없이 정상 처리")
+    void removeAllSessionsHandlesNonExistentUser() {
+        UUID roomId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+        roomPresenceService.removeAllSessions(roomId, 999L);
+
+        String userSessionsKey = "room:" + roomId + ":sessions:999";
+        String connectedUsersKey = "room:" + roomId + ":connected_users";
+
+        then(redisTemplate).should().delete(userSessionsKey);
+        then(setOperations).should().remove(connectedUsersKey, "999");
     }
 }

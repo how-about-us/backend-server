@@ -4,6 +4,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -21,6 +23,7 @@ import com.howaboutus.backend.common.error.GlobalExceptionHandler;
 import com.howaboutus.backend.common.security.JwtAuthenticationEntryPoint;
 import com.howaboutus.backend.rooms.entity.RoomRole;
 import com.howaboutus.backend.rooms.service.RoomInviteService;
+import com.howaboutus.backend.rooms.service.RoomMemberService;
 import com.howaboutus.backend.rooms.service.RoomService;
 import com.howaboutus.backend.rooms.service.dto.JoinRequestResult;
 import com.howaboutus.backend.rooms.service.dto.JoinResult;
@@ -28,6 +31,7 @@ import com.howaboutus.backend.rooms.service.dto.JoinStatusResult;
 import com.howaboutus.backend.rooms.service.dto.RoomCreateCommand;
 import com.howaboutus.backend.rooms.service.dto.RoomDetailResult;
 import com.howaboutus.backend.rooms.service.dto.RoomListResult;
+import com.howaboutus.backend.rooms.service.dto.RoomMemberResult;
 import com.howaboutus.backend.rooms.service.dto.RoomUpdateCommand;
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
@@ -59,6 +63,9 @@ class RoomControllerTest {
 
     @MockitoBean
     private RoomInviteService roomInviteService;
+
+    @MockitoBean
+    private RoomMemberService roomMemberService;
 
     private static final UUID ROOM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final Long USER_ID = 1L;
@@ -282,5 +289,92 @@ class RoomControllerTest {
                 .andExpect(status().isOk());
 
         then(roomInviteService).should().reject(ROOM_ID, 42L, USER_ID);
+    }
+
+    @Test
+    @DisplayName("멤버 목록 조회 성공 시 200을 반환한다")
+    void getMembersReturns200() throws Exception {
+        List<RoomMemberResult> results = List.of(
+                new RoomMemberResult(1L, "호스트", "https://img/host.jpg", RoomRole.HOST, true,
+                        Instant.parse("2026-04-20T00:00:00Z")),
+                new RoomMemberResult(2L, "멤버", null, RoomRole.MEMBER, false,
+                        Instant.parse("2026-04-21T00:00:00Z"))
+        );
+        given(roomMemberService.getMembers(ROOM_ID, USER_ID)).willReturn(results);
+
+        mockMvc.perform(get("/rooms/{roomId}/members", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.members").isArray())
+                .andExpect(jsonPath("$.members.length()").value(2))
+                .andExpect(jsonPath("$.members[0].userId").value(1))
+                .andExpect(jsonPath("$.members[0].nickname").value("호스트"))
+                .andExpect(jsonPath("$.members[0].role").value("HOST"))
+                .andExpect(jsonPath("$.members[0].isOnline").value(true))
+                .andExpect(jsonPath("$.members[1].userId").value(2))
+                .andExpect(jsonPath("$.members[1].isOnline").value(false));
+    }
+
+    @Test
+    @DisplayName("비멤버가 멤버 목록 조회 시 403을 반환한다")
+    void getMembersReturns403ForNonMember() throws Exception {
+        given(roomMemberService.getMembers(ROOM_ID, USER_ID))
+                .willThrow(new CustomException(ErrorCode.NOT_ROOM_MEMBER));
+
+        mockMvc.perform(get("/rooms/{roomId}/members", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("방장 위임 성공 시 200을 반환한다")
+    void delegateHostReturns200() throws Exception {
+        willDoNothing().given(roomMemberService).delegateHost(ROOM_ID, 2L, USER_ID);
+
+        mockMvc.perform(patch("/rooms/{roomId}/host", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetUserId\": 2}"))
+                .andExpect(status().isOk());
+
+        then(roomMemberService).should().delegateHost(ROOM_ID, 2L, USER_ID);
+    }
+
+    @Test
+    @DisplayName("HOST가 아닌 사용자가 위임 시도 시 403을 반환한다")
+    void delegateHostReturns403ForNonHost() throws Exception {
+        willThrow(new CustomException(ErrorCode.NOT_ROOM_HOST))
+                .given(roomMemberService).delegateHost(ROOM_ID, 2L, USER_ID);
+
+        mockMvc.perform(patch("/rooms/{roomId}/host", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetUserId\": 2}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("자기 자신에게 위임 시 400을 반환한다")
+    void delegateHostReturns400ForSelfDelegation() throws Exception {
+        willThrow(new CustomException(ErrorCode.CANNOT_DELEGATE_TO_SELF))
+                .given(roomMemberService).delegateHost(ROOM_ID, 1L, USER_ID);
+
+        mockMvc.perform(patch("/rooms/{roomId}/host", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetUserId\": 1}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("targetUserId 누락 시 400을 반환한다")
+    void delegateHostReturns400WhenTargetUserIdMissing() throws Exception {
+        mockMvc.perform(patch("/rooms/{roomId}/host", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(roomMemberService);
     }
 }

@@ -18,6 +18,9 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
     @EntityGraph(attributePaths = "user")
     List<RoomMember> findByRoom_IdAndRole(UUID roomId, RoomRole role);
 
+    @EntityGraph(attributePaths = "user")
+    List<RoomMember> findByRoom_IdAndRoleIn(UUID roomId, List<RoomRole> roles);
+
     Optional<RoomMember> findByIdAndRoom_Id(Long id, UUID roomId);
 
     @EntityGraph(attributePaths = "room")

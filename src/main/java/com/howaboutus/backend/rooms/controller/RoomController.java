@@ -1,6 +1,7 @@
 package com.howaboutus.backend.rooms.controller;
 
 import com.howaboutus.backend.rooms.controller.dto.CreateRoomRequest;
+import com.howaboutus.backend.rooms.controller.dto.DelegateHostRequest;
 import com.howaboutus.backend.rooms.controller.dto.InviteCodeResponse;
 import com.howaboutus.backend.rooms.controller.dto.JoinRequest;
 import com.howaboutus.backend.rooms.controller.dto.JoinRequestListResponse;
@@ -8,8 +9,10 @@ import com.howaboutus.backend.rooms.controller.dto.JoinResponse;
 import com.howaboutus.backend.rooms.controller.dto.JoinStatusResponse;
 import com.howaboutus.backend.rooms.controller.dto.RoomDetailResponse;
 import com.howaboutus.backend.rooms.controller.dto.RoomListResponse;
+import com.howaboutus.backend.rooms.controller.dto.RoomMemberListResponse;
 import com.howaboutus.backend.rooms.controller.dto.UpdateRoomRequest;
 import com.howaboutus.backend.rooms.service.RoomInviteService;
+import com.howaboutus.backend.rooms.service.RoomMemberService;
 import com.howaboutus.backend.rooms.service.RoomService;
 import com.howaboutus.backend.rooms.service.dto.JoinResult;
 import com.howaboutus.backend.rooms.service.dto.JoinStatus;
@@ -44,6 +47,7 @@ public class RoomController {
 
     private final RoomService roomService;
     private final RoomInviteService roomInviteService;
+    private final RoomMemberService roomMemberService;
 
     @Operation(summary = "방 생성", description = "새 여행 방을 생성합니다. 생성자는 자동으로 HOST가 됩니다.")
     @PostMapping
@@ -156,6 +160,47 @@ public class RoomController {
             @PathVariable Long requestId
     ) {
         roomInviteService.reject(roomId, requestId, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "멤버 목록 조회", description = "방의 멤버 목록과 접속 상태를 조회합니다. HOST 또는 MEMBER만 접근 가능합니다.")
+    @GetMapping("/{roomId}/members")
+    public RoomMemberListResponse getMembers(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable UUID roomId
+    ) {
+        return RoomMemberListResponse.from(roomMemberService.getMembers(roomId, userId));
+    }
+
+    @Operation(summary = "방 나가기", description = "방에서 나갑니다. MEMBER만 가능합니다. HOST는 나갈 수 없습니다.")
+    @DeleteMapping("/{roomId}/members/me")
+    public ResponseEntity<Void> leaveRoom(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable UUID roomId
+    ) {
+        roomMemberService.leave(roomId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "멤버 추방", description = "방에서 멤버를 추방합니다. HOST만 가능합니다.")
+    @DeleteMapping("/{roomId}/members/{userId}")
+    public ResponseEntity<Void> kickMember(
+            @AuthenticationPrincipal Long hostUserId,
+            @PathVariable UUID roomId,
+            @PathVariable Long userId
+    ) {
+        roomMemberService.kick(roomId, userId, hostUserId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "방장 위임", description = "방장 권한을 다른 멤버에게 위임합니다. HOST만 가능합니다.")
+    @PatchMapping("/{roomId}/host")
+    public ResponseEntity<Void> delegateHost(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable UUID roomId,
+            @RequestBody @Valid DelegateHostRequest request
+    ) {
+        roomMemberService.delegateHost(roomId, request.targetUserId(), userId);
         return ResponseEntity.ok().build();
     }
 }

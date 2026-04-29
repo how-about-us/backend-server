@@ -38,6 +38,11 @@ public class RoomPresenceService {
         return false;
     }
 
+    public void removeAllSessions(UUID roomId, Long userId) {
+        redisTemplate.delete(userSessionsKey(roomId, userId));
+        redisTemplate.opsForSet().remove(connectedUsersKey(roomId), String.valueOf(userId));
+    }
+
     public Set<Long> getOnlineUserIds(UUID roomId) {
         Set<String> userIds = redisTemplate.opsForSet().members(connectedUsersKey(roomId));
         if (userIds == null) {

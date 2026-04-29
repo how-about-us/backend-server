@@ -96,6 +96,52 @@ public class MessageService {
         return result;
     }
 
+    public MessageResult sendMemberKickedSystemMessage(UUID roomId,
+                                                    long kickedUserId,
+                                                    String nickname,
+                                                    String profileImageUrl) {
+        String normalizedNickname = normalizeContent(nickname);
+        Map<String, Object> metadata = nonNullMetadata(metadataEntries(
+                "eventType", "MEMBER_KICKED",
+                "userId", kickedUserId,
+                "nickname", normalizedNickname,
+                "profileImageUrl", profileImageUrl
+        ));
+
+        ChatMessage message = ChatMessage.system(roomId, normalizedNickname + "님이 방에서 내보내졌습니다", metadata);
+        ChatMessage savedMessage = chatMessageRepository.save(message);
+        MessageResult result = MessageResult.from(savedMessage);
+        try {
+            eventPublisher.publishEvent(MessageSentEvent.from(result));
+        } catch (Exception e) {
+            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
+        }
+        return result;
+    }
+
+    public MessageResult sendMemberLeftSystemMessage(UUID roomId,
+                                                  long leftUserId,
+                                                  String nickname,
+                                                  String profileImageUrl) {
+        String normalizedNickname = normalizeContent(nickname);
+        Map<String, Object> metadata = nonNullMetadata(metadataEntries(
+                "eventType", "MEMBER_LEFT",
+                "userId", leftUserId,
+                "nickname", normalizedNickname,
+                "profileImageUrl", profileImageUrl
+        ));
+
+        ChatMessage message = ChatMessage.system(roomId, normalizedNickname + "님이 방을 나갔습니다", metadata);
+        ChatMessage savedMessage = chatMessageRepository.save(message);
+        MessageResult result = MessageResult.from(savedMessage);
+        try {
+            eventPublisher.publishEvent(MessageSentEvent.from(result));
+        } catch (Exception e) {
+            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
+        }
+        return result;
+    }
+
     public List<MessageResult> getRecentMessages(UUID roomId, long userId, int size) {
         roomAuthorizationService.requireActiveMember(roomId, userId);
         validatePageSize(size);

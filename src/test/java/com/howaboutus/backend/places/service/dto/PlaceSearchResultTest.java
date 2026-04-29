@@ -1,5 +1,6 @@
 package com.howaboutus.backend.places.service.dto;
 
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDetailResponse;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -14,18 +15,18 @@ class PlaceSearchResultTest {
     void createsSearchResultFromPlaceItem() {
         GoogleTextSearchResponse.PlaceItem placeItem = new GoogleTextSearchResponse.PlaceItem(
                 "ChIJ123",
-                new GoogleTextSearchResponse.DisplayName("Cafe Layered", "ko"),
+                new GooglePlaceDetailResponse.DisplayName("Cafe Layered", "ko"),
                 "서울 종로구 ...",
-                new GoogleTextSearchResponse.Location(37.57, 126.98),
+                new GooglePlaceDetailResponse.Location(37.57, 126.98),
                 "cafe",
-                new GoogleTextSearchResponse.LocalizedText("카페", "ko"),
+                new GooglePlaceDetailResponse.LocalizedText("카페", "ko"),
                 4.5,
                 128,
                 new GoogleTextSearchResponse.RegularOpeningHours(true),
-                new GoogleTextSearchResponse.ReviewSummary(
-                        new GoogleTextSearchResponse.LocalizedText("방문객들이 디저트를 좋아해요", "ko")
+                new GooglePlaceDetailResponse.ReviewSummary(
+                        new GooglePlaceDetailResponse.LocalizedText("방문객들이 디저트를 좋아해요", "ko")
                 ),
-                List.of(new GoogleTextSearchResponse.Photo("places/ChIJ123/photos/abc"))
+                List.of(new GooglePlaceDetailResponse.Photo("places/ChIJ123/photos/abc"))
         );
 
         PlaceSearchResult result = PlaceSearchResult.from(placeItem);

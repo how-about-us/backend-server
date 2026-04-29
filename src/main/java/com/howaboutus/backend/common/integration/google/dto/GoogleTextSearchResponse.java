@@ -6,34 +6,19 @@ public record GoogleTextSearchResponse(List<PlaceItem> places) {
 
     public record PlaceItem(
             String id,
-            DisplayName displayName,
+            GooglePlaceDetailResponse.DisplayName displayName,
             String formattedAddress,
-            Location location,
+            GooglePlaceDetailResponse.Location location,
             String primaryType,
-            LocalizedText primaryTypeDisplayName,
+            GooglePlaceDetailResponse.LocalizedText primaryTypeDisplayName,
             Double rating,
             Integer userRatingCount,
             RegularOpeningHours regularOpeningHours,
-            ReviewSummary reviewSummary,
-            List<Photo> photos
+            GooglePlaceDetailResponse.ReviewSummary reviewSummary,
+            List<GooglePlaceDetailResponse.Photo> photos
     ) {
     }
 
-    public record DisplayName(String text, String languageCode) {
-    }
-
-    public record Location(Double latitude, Double longitude) {
-    }
-
     public record RegularOpeningHours(Boolean openNow) {
-    }
-
-    public record ReviewSummary(LocalizedText text) {
-    }
-
-    public record LocalizedText(String text, String languageCode) {
-    }
-
-    public record Photo(String name) {
     }
 }

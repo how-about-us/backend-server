@@ -1,6 +1,7 @@
 package com.howaboutus.backend.places.service;
 
 import com.howaboutus.backend.common.integration.google.GooglePlaceSearchClient;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDetailResponse;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 import org.junit.jupiter.api.DisplayName;
@@ -23,16 +24,16 @@ class PlaceSearchServiceTest {
     void returnsMappedSearchResults() {
         GoogleTextSearchResponse.PlaceItem placeItem = new GoogleTextSearchResponse.PlaceItem(
                 "ChIJ123",
-                new GoogleTextSearchResponse.DisplayName("Cafe Layered", "ko"),
+                new GooglePlaceDetailResponse.DisplayName("Cafe Layered", "ko"),
                 "서울 종로구 ...",
-                new GoogleTextSearchResponse.Location(37.57, 126.98),
+                new GooglePlaceDetailResponse.Location(37.57, 126.98),
                 "cafe",
-                new GoogleTextSearchResponse.LocalizedText("카페", "ko"),
+                new GooglePlaceDetailResponse.LocalizedText("카페", "ko"),
                 4.5,
                 128,
                 null,
                 null,
-                List.of(new GoogleTextSearchResponse.Photo("places/ChIJ123/photos/abc"))
+                List.of(new GooglePlaceDetailResponse.Photo("places/ChIJ123/photos/abc"))
         );
         given(googlePlaceSearchClient.search("seoul cafe", 37.5, 127.0, 5000.0))
                 .willReturn(List.of(placeItem));

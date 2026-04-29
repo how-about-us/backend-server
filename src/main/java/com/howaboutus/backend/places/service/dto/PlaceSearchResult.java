@@ -1,5 +1,6 @@
 package com.howaboutus.backend.places.service.dto;
 
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDetailResponse;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 
 public record PlaceSearchResult(
@@ -56,7 +57,7 @@ public record PlaceSearchResult(
         );
     }
 
-    private static String toText(GoogleTextSearchResponse.LocalizedText localizedText) {
+    private static String toText(GooglePlaceDetailResponse.LocalizedText localizedText) {
         if (localizedText == null) {
             return null;
         }

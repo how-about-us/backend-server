@@ -13,6 +13,7 @@ import com.howaboutus.backend.rooms.service.dto.RoomMemberResult;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import org.springframework.dao.DataAccessException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -120,7 +121,7 @@ public class RoomMemberService {
     private Set<Long> getOnlineUserIdsSafe(UUID roomId) {
         try {
             return roomPresenceService.getOnlineUserIds(roomId);
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             log.warn("Redis 접속 상태 조회 실패, 모든 멤버를 offline으로 처리: roomId={}", roomId, e);
             return Collections.emptySet();
         }

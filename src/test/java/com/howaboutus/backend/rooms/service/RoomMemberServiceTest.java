@@ -108,7 +108,7 @@ class RoomMemberServiceTest {
         given(roomMemberRepository.findByRoom_IdAndRoleIn(ROOM_ID, ACTIVE_ROLES))
                 .willReturn(List.of(hostMember));
         given(roomPresenceService.getOnlineUserIds(ROOM_ID))
-                .willThrow(new RuntimeException("Redis connection refused"));
+                .willThrow(new org.springframework.dao.QueryTimeoutException("Redis connection refused"));
 
         List<RoomMemberResult> results = roomMemberService.getMembers(ROOM_ID, USER_ID);
 

@@ -19,7 +19,6 @@ public record PlaceDetailResult(
         String websiteUri,
         String googleMapsUri,
         RegularOpeningHours regularOpeningHours,
-        List<String> weekdayDescriptions,
         List<String> photoNames,
         String reviewSummary,
         List<Review> reviews
@@ -38,11 +37,6 @@ public record PlaceDetailResult(
         Location location = null;
         if (place.location() != null) {
             location = new Location(place.location().latitude(), place.location().longitude());
-        }
-
-        List<String> weekdayDescriptions = List.of();
-        if (place.regularOpeningHours() != null && place.regularOpeningHours().weekdayDescriptions() != null) {
-            weekdayDescriptions = place.regularOpeningHours().weekdayDescriptions();
         }
 
         RegularOpeningHours regularOpeningHours = null;
@@ -82,7 +76,6 @@ public record PlaceDetailResult(
                 place.websiteUri(),
                 place.googleMapsUri(),
                 regularOpeningHours,
-                weekdayDescriptions,
                 photoNames,
                 reviewSummary,
                 reviews

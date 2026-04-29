@@ -93,7 +93,7 @@ class PlaceDetailResultTest {
                 "2026-04-30T00:00:00Z",
                 "2026-04-29T09:00:00Z"
         ));
-        assertThat(result.weekdayDescriptions()).containsExactly("월요일: 09:00~18:00");
+        assertThat(result.regularOpeningHours().weekdayDescriptions()).containsExactly("월요일: 09:00~18:00");
         assertThat(result.photoNames()).containsExactly(
                 "places/ChIJ123/photos/a",
                 "places/ChIJ123/photos/b"
@@ -142,7 +142,6 @@ class PlaceDetailResultTest {
         assertThat(result.websiteUri()).isNull();
         assertThat(result.googleMapsUri()).isNull();
         assertThat(result.regularOpeningHours()).isNull();
-        assertThat(result.weekdayDescriptions()).isEmpty();
         assertThat(result.photoNames()).isEmpty();
         assertThat(result.reviewSummary()).isNull();
         assertThat(result.reviews()).isEmpty();

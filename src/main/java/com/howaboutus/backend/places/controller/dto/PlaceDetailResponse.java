@@ -16,7 +16,6 @@ public record PlaceDetailResponse(
         String websiteUri,
         String googleMapsUri,
         PlaceDetailResult.RegularOpeningHours regularOpeningHours,
-        List<String> weekdayDescriptions,
         List<String> photoNames,
         String reviewSummary,
         List<PlaceDetailResult.Review> reviews
@@ -35,7 +34,6 @@ public record PlaceDetailResponse(
                 result.websiteUri(),
                 result.googleMapsUri(),
                 result.regularOpeningHours(),
-                result.weekdayDescriptions() != null ? result.weekdayDescriptions() : List.of(),
                 result.photoNames() != null ? result.photoNames() : List.of(),
                 result.reviewSummary(),
                 result.reviews() != null ? result.reviews() : List.of()

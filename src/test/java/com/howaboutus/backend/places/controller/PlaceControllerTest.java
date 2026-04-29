@@ -103,7 +103,6 @@ class PlaceControllerTest {
                         "2026-04-30T00:00:00Z",
                         "2026-04-29T09:00:00Z"
                 ),
-                List.of("월요일: 09:00~18:00"),
                 List.of("places/ChIJ123/photos/a", "places/ChIJ123/photos/b"),
                 "디저트와 분위기가 좋아요",
                 List.of(new PlaceDetailResult.Review(
@@ -346,7 +345,8 @@ class PlaceControllerTest {
                 .andExpect(jsonPath("$.regularOpeningHours.periods[0].open.hour").value(9))
                 .andExpect(jsonPath("$.regularOpeningHours.periods[0].open.truncated").value(false))
                 .andExpect(jsonPath("$.regularOpeningHours.periods[0].close.truncated").value(true))
-                .andExpect(jsonPath("$.weekdayDescriptions[0]").value("월요일: 09:00~18:00"))
+                .andExpect(jsonPath("$.regularOpeningHours.weekdayDescriptions[0]").value("월요일: 09:00~18:00"))
+                .andExpect(jsonPath("$.weekdayDescriptions").doesNotExist())
                 .andExpect(jsonPath("$.reviewSummary").value("디저트와 분위기가 좋아요"))
                 .andExpect(jsonPath("$.reviews[0].rating").value(5.0))
                 .andExpect(jsonPath("$.reviews[0].text").value("케이크가 맛있어요"))

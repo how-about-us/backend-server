@@ -4,6 +4,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -322,5 +324,57 @@ class RoomControllerTest {
         mockMvc.perform(get("/rooms/{roomId}/members", ROOM_ID)
                         .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("방장 위임 성공 시 200을 반환한다")
+    void delegateHostReturns200() throws Exception {
+        willDoNothing().given(roomMemberService).delegateHost(ROOM_ID, 2L, USER_ID);
+
+        mockMvc.perform(patch("/rooms/{roomId}/host", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetUserId\": 2}"))
+                .andExpect(status().isOk());
+
+        then(roomMemberService).should().delegateHost(ROOM_ID, 2L, USER_ID);
+    }
+
+    @Test
+    @DisplayName("HOST가 아닌 사용자가 위임 시도 시 403을 반환한다")
+    void delegateHostReturns403ForNonHost() throws Exception {
+        willThrow(new CustomException(ErrorCode.NOT_ROOM_HOST))
+                .given(roomMemberService).delegateHost(ROOM_ID, 2L, USER_ID);
+
+        mockMvc.perform(patch("/rooms/{roomId}/host", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetUserId\": 2}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("자기 자신에게 위임 시 400을 반환한다")
+    void delegateHostReturns400ForSelfDelegation() throws Exception {
+        willThrow(new CustomException(ErrorCode.CANNOT_DELEGATE_TO_SELF))
+                .given(roomMemberService).delegateHost(ROOM_ID, 1L, USER_ID);
+
+        mockMvc.perform(patch("/rooms/{roomId}/host", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetUserId\": 1}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("targetUserId 누락 시 400을 반환한다")
+    void delegateHostReturns400WhenTargetUserIdMissing() throws Exception {
+        mockMvc.perform(patch("/rooms/{roomId}/host", ROOM_ID)
+                        .cookie(new Cookie("access_token", VALID_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(roomMemberService);
     }
 }

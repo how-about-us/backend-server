@@ -1,6 +1,7 @@
 package com.howaboutus.backend.rooms.controller;
 
 import com.howaboutus.backend.rooms.controller.dto.CreateRoomRequest;
+import com.howaboutus.backend.rooms.controller.dto.DelegateHostRequest;
 import com.howaboutus.backend.rooms.controller.dto.InviteCodeResponse;
 import com.howaboutus.backend.rooms.controller.dto.JoinRequest;
 import com.howaboutus.backend.rooms.controller.dto.JoinRequestListResponse;
@@ -190,5 +191,16 @@ public class RoomController {
     ) {
         roomMemberService.kick(roomId, userId, hostUserId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "방장 위임", description = "방장 권한을 다른 멤버에게 위임합니다. HOST만 가능합니다.")
+    @PatchMapping("/{roomId}/host")
+    public ResponseEntity<Void> delegateHost(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable UUID roomId,
+            @RequestBody @Valid DelegateHostRequest request
+    ) {
+        roomMemberService.delegateHost(roomId, request.targetUserId(), userId);
+        return ResponseEntity.ok().build();
     }
 }

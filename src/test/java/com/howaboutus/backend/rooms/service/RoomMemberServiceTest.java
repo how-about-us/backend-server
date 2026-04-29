@@ -117,6 +117,12 @@ class RoomMemberServiceTest {
     }
 
     @Test
+    @DisplayName("CI 실패 알림 테스트용 - 반드시 삭제할 것")
+    void ciFailureTest() {
+        assertThat(true).isFalse();
+    }
+
+    @Test
     @DisplayName("멤버가 없으면 빈 리스트를 반환한다")
     void getMembersReturnsEmptyList() {
         RoomMember dummyMember = createDummyMember();

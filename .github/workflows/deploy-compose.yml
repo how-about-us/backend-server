@@ -123,3 +123,20 @@ jobs:
           cd "$DEPLOY_PATH"
           docker compose --env-file .env.prod -f compose.app.prod.yaml up -d caddy
           docker compose --env-file .env.prod -f compose.app.prod.yaml ps
+
+  notify-failure:
+    if: failure()
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discord 실패 알림 전송
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          title: "배포 실패"
+          description: |
+            **${{ github.workflow }}** 워크플로우가 실패했습니다.
+            커밋: `${{ github.sha }}`
+            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          color: 0xED4245
+          username: GitHub

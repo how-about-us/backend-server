@@ -2,10 +2,13 @@ package com.howaboutus.backend.rooms.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.realtime.event.MemberKickedEvent;
 import com.howaboutus.backend.realtime.service.RoomPresenceService;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.entity.RoomMember;
@@ -14,6 +17,7 @@ import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.service.dto.RoomMemberResult;
 import com.howaboutus.backend.user.entity.User;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,18 +34,21 @@ class RoomMemberServiceTest {
 
     private static final UUID ROOM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final Long USER_ID = 1L;
+    private static final Long HOST_USER_ID = 1L;
+    private static final Long TARGET_USER_ID = 2L;
     private static final List<RoomRole> ACTIVE_ROLES = List.of(RoomRole.HOST, RoomRole.MEMBER);
 
     @Mock private RoomMemberRepository roomMemberRepository;
     @Mock private RoomPresenceService roomPresenceService;
     @Mock private RoomAuthorizationService roomAuthorizationService;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     private RoomMemberService roomMemberService;
 
     @BeforeEach
     void setUp() {
         roomMemberService = new RoomMemberService(
-                roomMemberRepository, roomPresenceService, roomAuthorizationService);
+                roomMemberRepository, roomPresenceService, roomAuthorizationService, eventPublisher);
     }
 
     @Test
@@ -126,5 +134,108 @@ class RoomMemberServiceTest {
         Room room = Room.create("여행", "부산", null, null, "invite1", USER_ID);
         ReflectionTestUtils.setField(room, "id", ROOM_ID);
         return RoomMember.of(room, user, RoomRole.HOST);
+    }
+
+    @Test
+    @DisplayName("kick 성공 - 멤버 삭제 + 이벤트 발행")
+    void kickDeletesMemberAndPublishesEvent() {
+        User host = User.ofGoogle("g1", "host@test.com", "호스트", "https://img/host.jpg");
+        ReflectionTestUtils.setField(host, "id", HOST_USER_ID);
+        User target = User.ofGoogle("g2", "target@test.com", "타겟", "https://img/target.jpg");
+        ReflectionTestUtils.setField(target, "id", TARGET_USER_ID);
+
+        Room room = Room.create("여행", "부산", null, null, "invite1", HOST_USER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+
+        RoomMember hostMember = RoomMember.of(room, host, RoomRole.HOST);
+        RoomMember targetMember = RoomMember.of(room, target, RoomRole.MEMBER);
+
+        given(roomAuthorizationService.requireHost(ROOM_ID, HOST_USER_ID)).willReturn(hostMember);
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, TARGET_USER_ID))
+                .willReturn(Optional.of(targetMember));
+
+        roomMemberService.kick(ROOM_ID, TARGET_USER_ID, HOST_USER_ID);
+
+        then(roomMemberRepository).should().delete(targetMember);
+        then(eventPublisher).should().publishEvent(any(MemberKickedEvent.class));
+    }
+
+    @Test
+    @DisplayName("kick - HOST를 추방하려 하면 CANNOT_KICK_HOST")
+    void kickThrowsWhenTargetIsHost() {
+        User host = User.ofGoogle("g1", "host@test.com", "호스트", null);
+        ReflectionTestUtils.setField(host, "id", HOST_USER_ID);
+        User anotherHost = User.ofGoogle("g3", "host2@test.com", "호스트2", null);
+        ReflectionTestUtils.setField(anotherHost, "id", TARGET_USER_ID);
+
+        Room room = Room.create("여행", "부산", null, null, "invite1", HOST_USER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+
+        RoomMember hostMember = RoomMember.of(room, host, RoomRole.HOST);
+        RoomMember targetHostMember = RoomMember.of(room, anotherHost, RoomRole.HOST);
+
+        given(roomAuthorizationService.requireHost(ROOM_ID, HOST_USER_ID)).willReturn(hostMember);
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, TARGET_USER_ID))
+                .willReturn(Optional.of(targetHostMember));
+
+        assertThatThrownBy(() -> roomMemberService.kick(ROOM_ID, TARGET_USER_ID, HOST_USER_ID))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.CANNOT_KICK_HOST));
+    }
+
+    @Test
+    @DisplayName("kick - PENDING 멤버 추방 시도 시 KICK_TARGET_NOT_MEMBER")
+    void kickThrowsWhenTargetIsPending() {
+        User host = User.ofGoogle("g1", "host@test.com", "호스트", null);
+        ReflectionTestUtils.setField(host, "id", HOST_USER_ID);
+        User pending = User.ofGoogle("g4", "pending@test.com", "대기자", null);
+        ReflectionTestUtils.setField(pending, "id", TARGET_USER_ID);
+
+        Room room = Room.create("여행", "부산", null, null, "invite1", HOST_USER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+
+        RoomMember hostMember = RoomMember.of(room, host, RoomRole.HOST);
+        RoomMember pendingMember = RoomMember.of(room, pending, RoomRole.PENDING);
+
+        given(roomAuthorizationService.requireHost(ROOM_ID, HOST_USER_ID)).willReturn(hostMember);
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, TARGET_USER_ID))
+                .willReturn(Optional.of(pendingMember));
+
+        assertThatThrownBy(() -> roomMemberService.kick(ROOM_ID, TARGET_USER_ID, HOST_USER_ID))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.KICK_TARGET_NOT_MEMBER));
+    }
+
+    @Test
+    @DisplayName("kick - 존재하지 않는 userId면 404")
+    void kickThrowsWhenTargetNotFound() {
+        User host = User.ofGoogle("g1", "host@test.com", "호스트", null);
+        ReflectionTestUtils.setField(host, "id", HOST_USER_ID);
+
+        Room room = Room.create("여행", "부산", null, null, "invite1", HOST_USER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+
+        RoomMember hostMember = RoomMember.of(room, host, RoomRole.HOST);
+
+        given(roomAuthorizationService.requireHost(ROOM_ID, HOST_USER_ID)).willReturn(hostMember);
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, TARGET_USER_ID))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> roomMemberService.kick(ROOM_ID, TARGET_USER_ID, HOST_USER_ID))
+                .isInstanceOf(CustomException.class);
+    }
+
+    @Test
+    @DisplayName("kick - HOST가 아닌 사용자가 시도하면 NOT_ROOM_HOST")
+    void kickThrowsWhenCallerIsNotHost() {
+        given(roomAuthorizationService.requireHost(ROOM_ID, TARGET_USER_ID))
+                .willThrow(new CustomException(ErrorCode.NOT_ROOM_HOST));
+
+        assertThatThrownBy(() -> roomMemberService.kick(ROOM_ID, HOST_USER_ID, TARGET_USER_ID))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.NOT_ROOM_HOST));
     }
 }

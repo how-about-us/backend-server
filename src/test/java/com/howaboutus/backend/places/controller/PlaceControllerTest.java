@@ -70,7 +70,9 @@ class PlaceControllerTest {
                 "서울 종로구 ...",
                 new PlaceSearchResult.Location(37.57, 126.98),
                 "cafe",
+                "카페",
                 4.5,
+                128,
                 true,
                 "방문객들이 디저트를 좋아해요",
                 "places/ChIJ123/photos/abc"
@@ -81,7 +83,9 @@ class PlaceControllerTest {
                 "서울 종로구 ...",
                 new PlaceDetailResult.Location(37.57, 126.98),
                 "cafe",
+                "카페",
                 4.5,
+                128,
                 "02-123-4567",
                 "https://layered.example",
                 "https://maps.google.com/?cid=123",
@@ -231,6 +235,8 @@ class PlaceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].googlePlaceId").value("ChIJ123"))
                 .andExpect(jsonPath("$[0].name").value("Cafe Layered"))
+                .andExpect(jsonPath("$[0].primaryTypeDisplayName").value("카페"))
+                .andExpect(jsonPath("$[0].userRatingCount").value(128))
                 .andExpect(jsonPath("$[0].openNow").value(true))
                 .andExpect(jsonPath("$[0].reviewSummary").value("방문객들이 디저트를 좋아해요"));
 
@@ -280,7 +286,9 @@ class PlaceControllerTest {
                 "서울 종로구 ...",
                 null,
                 "cafe",
+                null,
                 4.5,
+                null,
                 null,
                 null,
                 "places/ChIJ123/photos/abc"
@@ -329,6 +337,8 @@ class PlaceControllerTest {
                 .cookie(new Cookie("access_token", VALID_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.googlePlaceId").value("ChIJ123"))
+                .andExpect(jsonPath("$.primaryTypeDisplayName").value("카페"))
+                .andExpect(jsonPath("$.userRatingCount").value(128))
                 .andExpect(jsonPath("$.phoneNumber").value("02-123-4567"))
                 .andExpect(jsonPath("$.regularOpeningHours.openNow").value(true))
                 .andExpect(jsonPath("$.regularOpeningHours.secondaryHoursType").value("DRIVE_THROUGH"))

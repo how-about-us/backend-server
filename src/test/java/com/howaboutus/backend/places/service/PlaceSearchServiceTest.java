@@ -27,7 +27,9 @@ class PlaceSearchServiceTest {
                 "서울 종로구 ...",
                 new GoogleTextSearchResponse.Location(37.57, 126.98),
                 "cafe",
+                new GoogleTextSearchResponse.LocalizedText("카페", "ko"),
                 4.5,
+                128,
                 null,
                 null,
                 List.of(new GoogleTextSearchResponse.Photo("places/ChIJ123/photos/abc"))

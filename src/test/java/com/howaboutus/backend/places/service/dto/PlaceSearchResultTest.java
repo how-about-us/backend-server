@@ -18,7 +18,9 @@ class PlaceSearchResultTest {
                 "서울 종로구 ...",
                 new GoogleTextSearchResponse.Location(37.57, 126.98),
                 "cafe",
+                new GoogleTextSearchResponse.LocalizedText("카페", "ko"),
                 4.5,
+                128,
                 new GoogleTextSearchResponse.RegularOpeningHours(true),
                 new GoogleTextSearchResponse.ReviewSummary(
                         new GoogleTextSearchResponse.LocalizedText("방문객들이 디저트를 좋아해요", "ko")
@@ -33,7 +35,9 @@ class PlaceSearchResultTest {
         assertThat(result.formattedAddress()).isEqualTo("서울 종로구 ...");
         assertThat(result.location()).isEqualTo(new PlaceSearchResult.Location(37.57, 126.98));
         assertThat(result.primaryType()).isEqualTo("cafe");
+        assertThat(result.primaryTypeDisplayName()).isEqualTo("카페");
         assertThat(result.rating()).isEqualTo(4.5);
+        assertThat(result.userRatingCount()).isEqualTo(128);
         assertThat(result.openNow()).isTrue();
         assertThat(result.reviewSummary()).isEqualTo("방문객들이 디저트를 좋아해요");
         assertThat(result.photoName()).isEqualTo("places/ChIJ123/photos/abc");
@@ -51,6 +55,8 @@ class PlaceSearchResultTest {
                 null,
                 null,
                 null,
+                null,
+                null,
                 null
         );
 
@@ -59,7 +65,9 @@ class PlaceSearchResultTest {
         assertThat(result.googlePlaceId()).isEqualTo("ChIJ123");
         assertThat(result.name()).isNull();
         assertThat(result.location()).isNull();
+        assertThat(result.primaryTypeDisplayName()).isNull();
         assertThat(result.rating()).isNull();
+        assertThat(result.userRatingCount()).isNull();
         assertThat(result.openNow()).isNull();
         assertThat(result.reviewSummary()).isNull();
         assertThat(result.photoName()).isNull();

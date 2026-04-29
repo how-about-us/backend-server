@@ -18,7 +18,9 @@ class PlaceDetailResultTest {
                 "서울 종로구 ...",
                 new GooglePlaceDetailResponse.Location(37.57, 126.98),
                 "cafe",
+                new GooglePlaceDetailResponse.LocalizedText("카페", "ko"),
                 4.5,
+                128,
                 "02-123-4567",
                 "https://layered.example",
                 "https://maps.google.com/?cid=123",
@@ -65,7 +67,9 @@ class PlaceDetailResultTest {
         assertThat(result.formattedAddress()).isEqualTo("서울 종로구 ...");
         assertThat(result.location()).isEqualTo(new PlaceDetailResult.Location(37.57, 126.98));
         assertThat(result.primaryType()).isEqualTo("cafe");
+        assertThat(result.primaryTypeDisplayName()).isEqualTo("카페");
         assertThat(result.rating()).isEqualTo(4.5);
+        assertThat(result.userRatingCount()).isEqualTo(128);
         assertThat(result.phoneNumber()).isEqualTo("02-123-4567");
         assertThat(result.websiteUri()).isEqualTo("https://layered.example");
         assertThat(result.googleMapsUri()).isEqualTo("https://maps.google.com/?cid=123");
@@ -114,6 +118,8 @@ class PlaceDetailResultTest {
                 null,
                 null,
                 null,
+                null,
+                null,
                 null
         );
 
@@ -123,7 +129,9 @@ class PlaceDetailResultTest {
         assertThat(result.name()).isNull();
         assertThat(result.location()).isNull();
         assertThat(result.primaryType()).isNull();
+        assertThat(result.primaryTypeDisplayName()).isNull();
         assertThat(result.rating()).isNull();
+        assertThat(result.userRatingCount()).isNull();
         assertThat(result.phoneNumber()).isNull();
         assertThat(result.websiteUri()).isNull();
         assertThat(result.googleMapsUri()).isNull();

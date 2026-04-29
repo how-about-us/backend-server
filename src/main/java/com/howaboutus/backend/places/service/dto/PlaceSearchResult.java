@@ -8,7 +8,9 @@ public record PlaceSearchResult(
         String formattedAddress,
         Location location,
         String primaryType,
+        String primaryTypeDisplayName,
         Double rating,
+        Integer userRatingCount,
         Boolean openNow,
         String reviewSummary,
         String photoName
@@ -45,11 +47,20 @@ public record PlaceSearchResult(
                 place.formattedAddress(),
                 location,
                 place.primaryType(),
+                toText(place.primaryTypeDisplayName()),
                 place.rating(),
+                place.userRatingCount(),
                 openNow,
                 reviewSummary,
                 photoName
         );
+    }
+
+    private static String toText(GoogleTextSearchResponse.LocalizedText localizedText) {
+        if (localizedText == null) {
+            return null;
+        }
+        return localizedText.text();
     }
 
     public record Location(Double lat, Double lng) {

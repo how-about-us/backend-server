@@ -10,7 +10,9 @@ public record GoogleTextSearchResponse(List<PlaceItem> places) {
             String formattedAddress,
             Location location,
             String primaryType,
+            LocalizedText primaryTypeDisplayName,
             Double rating,
+            Integer userRatingCount,
             RegularOpeningHours regularOpeningHours,
             ReviewSummary reviewSummary,
             List<Photo> photos

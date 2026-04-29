@@ -33,8 +33,8 @@ class GooglePlaceDetailClientTest {
                 new GooglePlacesProperties(
                         "test-key",
                         "https://places.googleapis.com/",
-                        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.rating,places.photos",
-                        "id,displayName,formattedAddress,location,primaryType,rating,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours,photos.name,reviews,reviewSummary.text"
+                        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.primaryTypeDisplayName,places.rating,places.userRatingCount,places.photos",
+                        "id,displayName,formattedAddress,location,primaryType,primaryTypeDisplayName,rating,userRatingCount,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours,photos.name,reviews,reviewSummary.text"
                 )
         );
     }
@@ -47,13 +47,15 @@ class GooglePlaceDetailClientTest {
                 .andExpect(header("X-Goog-Api-Key", "test-key"))
                 .andExpect(header(
                         "X-Goog-FieldMask",
-                        "id,displayName,formattedAddress,location,primaryType,rating,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours,photos.name,reviews,reviewSummary.text"
+                        "id,displayName,formattedAddress,location,primaryType,primaryTypeDisplayName,rating,userRatingCount,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours,photos.name,reviews,reviewSummary.text"
                 ))
                 .andExpect(hasEmptyRequestBody())
                 .andRespond(withSuccess("""
                         {
                           "id": "places/ChIJ123",
                           "displayName": {"text": "Cafe Layered", "languageCode": "ko"},
+                          "primaryTypeDisplayName": {"text": "카페", "languageCode": "ko"},
+                          "userRatingCount": 128,
                           "regularOpeningHours": {
                             "openNow": true,
                             "secondaryHoursType": "DRIVE_THROUGH",
@@ -90,6 +92,8 @@ class GooglePlaceDetailClientTest {
 
         assertThat(result.id()).isEqualTo("places/ChIJ123");
         assertThat(result.displayName().text()).isEqualTo("Cafe Layered");
+        assertThat(result.primaryTypeDisplayName().text()).isEqualTo("카페");
+        assertThat(result.userRatingCount()).isEqualTo(128);
         assertThat(result.regularOpeningHours().openNow()).isTrue();
         assertThat(result.regularOpeningHours().secondaryHoursType()).isEqualTo("DRIVE_THROUGH");
         assertThat(result.regularOpeningHours().specialDays().getFirst().date().month()).isEqualTo(5);

@@ -8,7 +8,9 @@ public record PlaceSearchResponse(
         String formattedAddress,
         Location location,
         String primaryType,
+        String primaryTypeDisplayName,
         Double rating,
+        Integer userRatingCount,
         Boolean openNow,
         String reviewSummary,
         String photoName
@@ -28,7 +30,9 @@ public record PlaceSearchResponse(
                 result.formattedAddress(),
                 location,
                 result.primaryType(),
+                result.primaryTypeDisplayName(),
                 result.rating(),
+                result.userRatingCount(),
                 result.openNow(),
                 result.reviewSummary(),
                 result.photoName()

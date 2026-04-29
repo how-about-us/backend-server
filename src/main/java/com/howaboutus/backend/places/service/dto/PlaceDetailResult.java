@@ -10,7 +10,9 @@ public record PlaceDetailResult(
         String formattedAddress,
         Location location,
         String primaryType,
+        String primaryTypeDisplayName,
         Double rating,
+        Integer userRatingCount,
         String phoneNumber,
         String websiteUri,
         String googleMapsUri,
@@ -71,7 +73,9 @@ public record PlaceDetailResult(
                 place.formattedAddress(),
                 location,
                 place.primaryType(),
+                toText(place.primaryTypeDisplayName()),
                 place.rating(),
+                place.userRatingCount(),
                 place.nationalPhoneNumber(),
                 place.websiteUri(),
                 place.googleMapsUri(),
@@ -81,6 +85,13 @@ public record PlaceDetailResult(
                 reviewSummary,
                 reviews
         );
+    }
+
+    private static String toText(GooglePlaceDetailResponse.LocalizedText localizedText) {
+        if (localizedText == null) {
+            return null;
+        }
+        return localizedText.text();
     }
 
     private static RegularOpeningHours toRegularOpeningHours(

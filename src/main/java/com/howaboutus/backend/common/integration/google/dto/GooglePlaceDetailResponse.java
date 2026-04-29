@@ -16,7 +16,6 @@ public record GooglePlaceDetailResponse(
         String googleMapsUri,
         RegularOpeningHours regularOpeningHours,
         List<GooglePlacePhoto> photos,
-        GooglePlaceReviewSummary reviewSummary,
         List<Review> reviews
 ) {
 

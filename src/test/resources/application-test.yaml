@@ -14,8 +14,8 @@ google:
   places:
     api-key: test-places-api-key
     base-url: https://places.googleapis.com
-    search-field-mask: places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.primaryTypeDisplayName,places.rating,places.userRatingCount,places.photos,places.regularOpeningHours.openNow,places.reviewSummary.text
-    detail-field-mask: id,displayName,formattedAddress,location,primaryType,primaryTypeDisplayName,rating,userRatingCount,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours,photos.name,reviews,reviewSummary.text
+    search-field-mask: places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.primaryTypeDisplayName,places.rating,places.userRatingCount,places.photos,places.regularOpeningHours.openNow
+    detail-field-mask: id,displayName,formattedAddress,location,primaryType,primaryTypeDisplayName,rating,userRatingCount,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours,photos.name,reviews
 
   oauth:
     client-id: test-client-id

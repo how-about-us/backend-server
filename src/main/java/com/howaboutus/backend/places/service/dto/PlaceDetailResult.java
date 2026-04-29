@@ -20,7 +20,6 @@ public record PlaceDetailResult(
         String googleMapsUri,
         RegularOpeningHours regularOpeningHours,
         List<String> photoNames,
-        String reviewSummary,
         List<Review> reviews
 ) {
     public static PlaceDetailResult from(GooglePlaceDetailResponse place) {
@@ -51,11 +50,6 @@ public record PlaceDetailResult(
                     .toList();
         }
 
-        String reviewSummary = null;
-        if (place.reviewSummary() != null && place.reviewSummary().text() != null) {
-            reviewSummary = place.reviewSummary().text().text();
-        }
-
         List<Review> reviews = List.of();
         if (place.reviews() != null) {
             reviews = place.reviews().stream()
@@ -77,7 +71,6 @@ public record PlaceDetailResult(
                 place.googleMapsUri(),
                 regularOpeningHours,
                 photoNames,
-                reviewSummary,
                 reviews
         );
     }

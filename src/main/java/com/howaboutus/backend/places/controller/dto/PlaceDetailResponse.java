@@ -17,7 +17,6 @@ public record PlaceDetailResponse(
         String googleMapsUri,
         PlaceDetailResult.RegularOpeningHours regularOpeningHours,
         List<String> photoNames,
-        String reviewSummary,
         List<PlaceDetailResult.Review> reviews
 ) {
     public static PlaceDetailResponse from(PlaceDetailResult result) {
@@ -35,7 +34,6 @@ public record PlaceDetailResponse(
                 result.googleMapsUri(),
                 result.regularOpeningHours(),
                 result.photoNames() != null ? result.photoNames() : List.of(),
-                result.reviewSummary(),
                 result.reviews() != null ? result.reviews() : List.of()
         );
     }

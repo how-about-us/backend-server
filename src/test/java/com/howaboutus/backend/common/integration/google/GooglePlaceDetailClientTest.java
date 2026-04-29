@@ -34,7 +34,7 @@ class GooglePlaceDetailClientTest {
                         "test-key",
                         "https://places.googleapis.com/",
                         "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.primaryTypeDisplayName,places.rating,places.userRatingCount,places.photos",
-                        "id,displayName,formattedAddress,location,primaryType,primaryTypeDisplayName,rating,userRatingCount,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours,photos.name,reviews,reviewSummary.text"
+                        "id,displayName,formattedAddress,location,primaryType,primaryTypeDisplayName,rating,userRatingCount,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours,photos.name,reviews"
                 )
         );
     }
@@ -47,7 +47,7 @@ class GooglePlaceDetailClientTest {
                 .andExpect(header("X-Goog-Api-Key", "test-key"))
                 .andExpect(header(
                         "X-Goog-FieldMask",
-                        "id,displayName,formattedAddress,location,primaryType,primaryTypeDisplayName,rating,userRatingCount,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours,photos.name,reviews,reviewSummary.text"
+                        "id,displayName,formattedAddress,location,primaryType,primaryTypeDisplayName,rating,userRatingCount,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours,photos.name,reviews"
                 ))
                 .andExpect(hasEmptyRequestBody())
                 .andRespond(withSuccess("""
@@ -71,9 +71,6 @@ class GooglePlaceDetailClientTest {
                             "weekdayDescriptions": ["월요일: 09:00~18:00"],
                             "nextOpenTime": "2026-04-30T00:00:00Z",
                             "nextCloseTime": "2026-04-29T09:00:00Z"
-                          },
-                          "reviewSummary": {
-                            "text": {"text": "디저트와 분위기가 좋아요", "languageCode": "ko"}
                           },
                           "reviews": [
                             {
@@ -101,7 +98,6 @@ class GooglePlaceDetailClientTest {
         assertThat(result.regularOpeningHours().periods().getFirst().open().truncated()).isFalse();
         assertThat(result.regularOpeningHours().periods().getFirst().close().truncated()).isTrue();
         assertThat(result.regularOpeningHours().weekdayDescriptions()).containsExactly("월요일: 09:00~18:00");
-        assertThat(result.reviewSummary().text().text()).isEqualTo("디저트와 분위기가 좋아요");
         assertThat(result.reviews().getFirst().rating()).isEqualTo(5.0);
         assertThat(result.reviews().getFirst().text().text()).isEqualTo("케이크가 맛있어요");
         assertThat(result.reviews().getFirst().authorAttribution().displayName()).isEqualTo("홍길동");

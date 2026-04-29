@@ -52,7 +52,6 @@ class PlaceDetailServiceTest {
                         null
                 ),
                 List.of(new GooglePlacePhoto("places/ChIJ123/photos/a")),
-                null,
                 null
         );
         given(googlePlaceDetailClient.getDetail("ChIJ123")).willReturn(response);

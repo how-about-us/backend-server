@@ -37,7 +37,7 @@ class GooglePlaceSearchClientTest {
                 new GooglePlacesProperties(
                         "test-key",
                         "https://places.googleapis.com/",
-                        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.primaryTypeDisplayName,places.rating,places.userRatingCount,places.photos,places.regularOpeningHours.openNow,places.reviewSummary.text",
+                        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.primaryTypeDisplayName,places.rating,places.userRatingCount,places.photos,places.regularOpeningHours.openNow",
                         "id,displayName,formattedAddress,location,primaryType,rating,nationalPhoneNumber,websiteUri,googleMapsUri,regularOpeningHours.weekdayDescriptions,photos.name"
                 )
         );
@@ -51,7 +51,7 @@ class GooglePlaceSearchClientTest {
                 .andExpect(header("X-Goog-Api-Key", "test-key"))
                 .andExpect(header(
                         "X-Goog-FieldMask",
-                        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.primaryTypeDisplayName,places.rating,places.userRatingCount,places.photos,places.regularOpeningHours.openNow,places.reviewSummary.text"
+                        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.primaryTypeDisplayName,places.rating,places.userRatingCount,places.photos,places.regularOpeningHours.openNow"
                 ))
                 .andRespond(withSuccess("""
                         {
@@ -66,9 +66,6 @@ class GooglePlaceSearchClientTest {
                               "rating": 4.5,
                               "userRatingCount": 128,
                               "regularOpeningHours": {"openNow": true},
-                              "reviewSummary": {
-                                "text": {"text": "방문객들이 디저트를 좋아해요", "languageCode": "ko"}
-                              },
                               "photos": [{"name": "places/ChIJ123/photos/abc"}]
                             }
                           ]
@@ -82,7 +79,6 @@ class GooglePlaceSearchClientTest {
         assertThat(result.getFirst().primaryTypeDisplayName().text()).isEqualTo("카페");
         assertThat(result.getFirst().userRatingCount()).isEqualTo(128);
         assertThat(result.getFirst().regularOpeningHours().openNow()).isTrue();
-        assertThat(result.getFirst().reviewSummary().text().text()).isEqualTo("방문객들이 디저트를 좋아해요");
         server.verify();
     }
 

@@ -76,7 +76,6 @@ class PlaceDetailCachingTest extends BaseIntegrationTest {
                         null
                 ),
                 List.of(new GooglePlacePhoto("places/ChIJ123/photos/a")),
-                null,
                 null
         );
     }

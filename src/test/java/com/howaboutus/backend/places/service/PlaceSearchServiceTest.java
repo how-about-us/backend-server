@@ -41,7 +41,6 @@ class PlaceSearchServiceTest {
                 4.5,
                 128,
                 null,
-                null,
                 List.of(new GooglePlacePhoto("places/ChIJ123/photos/abc"))
         );
         given(googlePlaceSearchClient.search("seoul cafe", 37.5, 127.0, 5000.0))

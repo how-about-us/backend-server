@@ -4,7 +4,6 @@ import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDisplayNa
 import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocalizedText;
 import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocation;
 import com.howaboutus.backend.common.integration.google.dto.GooglePlacePhoto;
-import com.howaboutus.backend.common.integration.google.dto.GooglePlaceReviewSummary;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -27,9 +26,6 @@ class PlaceSearchResultTest {
                 4.5,
                 128,
                 new GoogleTextSearchResponse.RegularOpeningHours(true),
-                new GooglePlaceReviewSummary(
-                        new GooglePlaceLocalizedText("방문객들이 디저트를 좋아해요", "ko")
-                ),
                 List.of(new GooglePlacePhoto("places/ChIJ123/photos/abc"))
         );
 
@@ -44,7 +40,6 @@ class PlaceSearchResultTest {
         assertThat(result.rating()).isEqualTo(4.5);
         assertThat(result.userRatingCount()).isEqualTo(128);
         assertThat(result.openNow()).isTrue();
-        assertThat(result.reviewSummary()).isEqualTo("방문객들이 디저트를 좋아해요");
         assertThat(result.photoName()).isEqualTo("places/ChIJ123/photos/abc");
     }
 
@@ -61,7 +56,6 @@ class PlaceSearchResultTest {
                 null,
                 null,
                 null,
-                null,
                 null
         );
 
@@ -74,7 +68,6 @@ class PlaceSearchResultTest {
         assertThat(result.rating()).isNull();
         assertThat(result.userRatingCount()).isNull();
         assertThat(result.openNow()).isNull();
-        assertThat(result.reviewSummary()).isNull();
         assertThat(result.photoName()).isNull();
     }
 }

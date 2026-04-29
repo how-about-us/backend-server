@@ -13,7 +13,6 @@ public record PlaceSearchResult(
         Double rating,
         Integer userRatingCount,
         Boolean openNow,
-        String reviewSummary,
         String photoName
 ) {
     public static PlaceSearchResult from(GoogleTextSearchResponse.PlaceItem place) {
@@ -37,11 +36,6 @@ public record PlaceSearchResult(
             openNow = place.regularOpeningHours().openNow();
         }
 
-        String reviewSummary = null;
-        if (place.reviewSummary() != null && place.reviewSummary().text() != null) {
-            reviewSummary = place.reviewSummary().text().text();
-        }
-
         return new PlaceSearchResult(
                 place.id(),
                 name,
@@ -52,7 +46,6 @@ public record PlaceSearchResult(
                 place.rating(),
                 place.userRatingCount(),
                 openNow,
-                reviewSummary,
                 photoName
         );
     }

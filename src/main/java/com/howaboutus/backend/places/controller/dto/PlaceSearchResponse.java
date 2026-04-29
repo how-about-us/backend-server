@@ -12,7 +12,6 @@ public record PlaceSearchResponse(
         Double rating,
         Integer userRatingCount,
         Boolean openNow,
-        String reviewSummary,
         String photoName
 ) {
     public static PlaceSearchResponse from(PlaceSearchResult result) {
@@ -26,7 +25,6 @@ public record PlaceSearchResponse(
                 result.rating(),
                 result.userRatingCount(),
                 result.openNow(),
-                result.reviewSummary(),
                 result.photoName()
         );
     }

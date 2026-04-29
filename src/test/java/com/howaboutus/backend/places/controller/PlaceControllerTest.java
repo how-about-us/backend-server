@@ -74,7 +74,6 @@ class PlaceControllerTest {
                 4.5,
                 128,
                 true,
-                "방문객들이 디저트를 좋아해요",
                 "places/ChIJ123/photos/abc"
         );
         placeDetailResult = new PlaceDetailResult(
@@ -104,7 +103,6 @@ class PlaceControllerTest {
                         "2026-04-29T09:00:00Z"
                 ),
                 List.of("places/ChIJ123/photos/a", "places/ChIJ123/photos/b"),
-                "디저트와 분위기가 좋아요",
                 List.of(new PlaceDetailResult.Review(
                         5.0,
                         "케이크가 맛있어요",
@@ -237,7 +235,7 @@ class PlaceControllerTest {
                 .andExpect(jsonPath("$[0].primaryTypeDisplayName").value("카페"))
                 .andExpect(jsonPath("$[0].userRatingCount").value(128))
                 .andExpect(jsonPath("$[0].openNow").value(true))
-                .andExpect(jsonPath("$[0].reviewSummary").value("방문객들이 디저트를 좋아해요"));
+                .andExpect(jsonPath("$[0].reviewSummary").doesNotExist());
 
         then(placeSearchService).should().search(VALID_QUERY, DEFAULT_LAT, DEFAULT_LNG, 5000.0);
     }
@@ -287,7 +285,6 @@ class PlaceControllerTest {
                 "cafe",
                 null,
                 4.5,
-                null,
                 null,
                 null,
                 "places/ChIJ123/photos/abc"
@@ -347,7 +344,7 @@ class PlaceControllerTest {
                 .andExpect(jsonPath("$.regularOpeningHours.periods[0].close.truncated").value(true))
                 .andExpect(jsonPath("$.regularOpeningHours.weekdayDescriptions[0]").value("월요일: 09:00~18:00"))
                 .andExpect(jsonPath("$.weekdayDescriptions").doesNotExist())
-                .andExpect(jsonPath("$.reviewSummary").value("디저트와 분위기가 좋아요"))
+                .andExpect(jsonPath("$.reviewSummary").doesNotExist())
                 .andExpect(jsonPath("$.reviews[0].rating").value(5.0))
                 .andExpect(jsonPath("$.reviews[0].text").value("케이크가 맛있어요"))
                 .andExpect(jsonPath("$.reviews[0].authorDisplayName").value("홍길동"))

@@ -6,7 +6,6 @@ import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDisplayNa
 import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocalizedText;
 import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocation;
 import com.howaboutus.backend.common.integration.google.dto.GooglePlacePhoto;
-import com.howaboutus.backend.common.integration.google.dto.GooglePlaceReviewSummary;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,9 +46,6 @@ class PlaceDetailResultTest {
                 List.of(
                         new GooglePlacePhoto("places/ChIJ123/photos/a"),
                         new GooglePlacePhoto("places/ChIJ123/photos/b")
-                ),
-                new GooglePlaceReviewSummary(
-                        new GooglePlaceLocalizedText("디저트와 분위기가 좋아요", "ko")
                 ),
                 List.of(new GooglePlaceDetailResponse.Review(
                         "places/ChIJ123/reviews/1",
@@ -98,7 +94,6 @@ class PlaceDetailResultTest {
                 "places/ChIJ123/photos/a",
                 "places/ChIJ123/photos/b"
         );
-        assertThat(result.reviewSummary()).isEqualTo("디저트와 분위기가 좋아요");
         assertThat(result.reviews()).containsExactly(new PlaceDetailResult.Review(
                 5.0,
                 "케이크가 맛있어요",
@@ -115,7 +110,6 @@ class PlaceDetailResultTest {
                 "places/ChIJ999",
                 null,
                 "서울 중구 ...",
-                null,
                 null,
                 null,
                 null,
@@ -143,7 +137,6 @@ class PlaceDetailResultTest {
         assertThat(result.googleMapsUri()).isNull();
         assertThat(result.regularOpeningHours()).isNull();
         assertThat(result.photoNames()).isEmpty();
-        assertThat(result.reviewSummary()).isNull();
         assertThat(result.reviews()).isEmpty();
     }
 }

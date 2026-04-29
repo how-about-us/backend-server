@@ -14,7 +14,6 @@ public record GoogleTextSearchResponse(List<PlaceItem> places) {
             Double rating,
             Integer userRatingCount,
             RegularOpeningHours regularOpeningHours,
-            GooglePlaceReviewSummary reviewSummary,
             List<GooglePlacePhoto> photos
     ) {
     }

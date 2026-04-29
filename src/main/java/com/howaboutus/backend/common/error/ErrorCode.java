@@ -11,6 +11,8 @@ public enum ErrorCode {
     // 400 BAD REQUEST
     INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "시작일이 종료일보다 늦을 수 없습니다"),
     KICK_TARGET_NOT_MEMBER(HttpStatus.BAD_REQUEST, "추방 대상이 멤버가 아닙니다"),
+    DELEGATE_TARGET_NOT_MEMBER(HttpStatus.BAD_REQUEST, "위임 대상이 멤버가 아닙니다"),
+    CANNOT_DELEGATE_TO_SELF(HttpStatus.BAD_REQUEST, "자기 자신에게 방장을 위임할 수 없습니다"),
     INVALID_PAGE_SIZE(HttpStatus.BAD_REQUEST, "size는 1 이상이어야 합니다"),
     MESSAGE_CONTENT_BLANK(HttpStatus.BAD_REQUEST, "메시지는 공백일 수 없습니다"),
     MESSAGE_CONTENT_TOO_LONG(HttpStatus.BAD_REQUEST, "메시지는 1000자 이하여야 합니다"),

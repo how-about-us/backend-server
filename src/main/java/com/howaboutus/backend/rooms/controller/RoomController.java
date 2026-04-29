@@ -170,4 +170,25 @@ public class RoomController {
     ) {
         return RoomMemberListResponse.from(roomMemberService.getMembers(roomId, userId));
     }
+
+    @Operation(summary = "방 나가기", description = "방에서 나갑니다. MEMBER만 가능합니다. HOST는 나갈 수 없습니다.")
+    @DeleteMapping("/{roomId}/members/me")
+    public ResponseEntity<Void> leaveRoom(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable UUID roomId
+    ) {
+        roomMemberService.leave(roomId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "멤버 추방", description = "방에서 멤버를 추방합니다. HOST만 가능합니다.")
+    @DeleteMapping("/{roomId}/members/{userId}")
+    public ResponseEntity<Void> kickMember(
+            @AuthenticationPrincipal Long hostUserId,
+            @PathVariable UUID roomId,
+            @PathVariable Long userId
+    ) {
+        roomMemberService.kick(roomId, userId, hostUserId);
+        return ResponseEntity.noContent().build();
+    }
 }

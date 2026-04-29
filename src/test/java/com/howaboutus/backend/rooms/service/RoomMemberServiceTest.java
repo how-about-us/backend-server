@@ -352,7 +352,7 @@ class RoomMemberServiceTest {
     }
 
     @Test
-    @DisplayName("delegateHost - 대상이 존재하지 않으면 JOIN_REQUEST_NOT_FOUND")
+    @DisplayName("delegateHost - 대상이 존재하지 않으면 ROOM_MEMBER_NOT_FOUND")
     void delegateHostThrowsWhenTargetNotFound() {
         User host = User.ofGoogle("g1", "host@test.com", "호스트", null);
         ReflectionTestUtils.setField(host, "id", HOST_USER_ID);
@@ -369,7 +369,7 @@ class RoomMemberServiceTest {
         assertThatThrownBy(() -> roomMemberService.delegateHost(ROOM_ID, TARGET_USER_ID, HOST_USER_ID))
                 .isInstanceOf(CustomException.class)
                 .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
-                        .isEqualTo(ErrorCode.JOIN_REQUEST_NOT_FOUND));
+                        .isEqualTo(ErrorCode.ROOM_MEMBER_NOT_FOUND));
     }
 
     @Test

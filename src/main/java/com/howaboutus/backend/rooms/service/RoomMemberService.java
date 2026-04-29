@@ -56,7 +56,7 @@ public class RoomMemberService {
         roomAuthorizationService.requireHost(roomId, hostUserId);
 
         RoomMember target = roomMemberRepository.findByRoom_IdAndUser_Id(roomId, targetUserId)
-                .orElseThrow(() -> new CustomException(ErrorCode.JOIN_REQUEST_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOM_MEMBER_NOT_FOUND));
 
         if (target.getRole() == RoomRole.HOST) {
             throw new CustomException(ErrorCode.CANNOT_KICK_HOST);
@@ -100,7 +100,7 @@ public class RoomMemberService {
         RoomMember hostMember = roomAuthorizationService.requireHost(roomId, hostUserId);
 
         RoomMember target = roomMemberRepository.findByRoom_IdAndUser_Id(roomId, targetUserId)
-                .orElseThrow(() -> new CustomException(ErrorCode.JOIN_REQUEST_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOM_MEMBER_NOT_FOUND));
 
         if (target.getRole() != RoomRole.MEMBER) {
             throw new CustomException(ErrorCode.DELEGATE_TARGET_NOT_MEMBER);

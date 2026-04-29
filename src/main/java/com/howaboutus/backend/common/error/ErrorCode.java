@@ -38,6 +38,7 @@ public enum ErrorCode {
 
     // 404 NOT FOUND
     JOIN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 입장 요청입니다"),
+    ROOM_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "방에 존재하지 않는 유저입니다"),
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 방입니다"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다"),
     BOOKMARK_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "북마크 카테고리를 찾을 수 없습니다"),

@@ -26,7 +26,7 @@ Response 200:
       "profileImageUrl": "https://...",
       "role": "HOST",
       "isOnline": true,
-      "joinedAt": "2026-04-20T10:00:00"
+      "joinedAt": "2026-04-20T10:00:00Z"
     },
     {
       "userId": 2,
@@ -34,7 +34,7 @@ Response 200:
       "profileImageUrl": null,
       "role": "MEMBER",
       "isOnline": false,
-      "joinedAt": "2026-04-21T14:30:00"
+      "joinedAt": "2026-04-21T14:30:00Z"
     }
   ]
 }

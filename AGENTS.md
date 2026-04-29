@@ -110,6 +110,7 @@ src/main/resources/
 | 기능 명세서 | `docs/ai/features.md` | 구현할 기능 파악 또는 미결 사항 확인 시 |
 | ERD 명세서 | `docs/ai/erd.md` | 테이블 구조, 컬럼, 관계 파악 시 |
 | 결정 기록 가이드 | `docs/ai/decisions/README.md` | 중요한 설계 선택의 배경, 결정, 영향 범위를 확인하거나 새 결정 기록을 남길 때 |
+| AI 플러그인 가이드라인 | `docs/ai/plugin-guidelines.md` | gstack, superpowers 등 플러그인 스킬의 문서 저장 위치 확인 시 |
 | 협업 규칙 | `CONTRIBUTING.md` | 브랜치 전략, 커밋 컨벤션, PR 규칙, 코드 규칙 확인 시 |
 
 ## Doc Update Rules
@@ -118,11 +119,6 @@ src/main/resources/
 - 테이블, 컬럼, 관계, 제약조건을 변경했으면 `docs/ai/erd.md`를 함께 갱신한다.
 - 중요한 설계 선택이나 구조적 결정이 확정되었으면 `docs/ai/decisions/`에 결정 기록을 남긴다.
 
-## gstack 스킬 규칙
-- 세션 시작 시 `docs/gstack/overview.md`를 먼저 읽고 제품 맥락을 파악한다.
-- 기획 디자인 문서는 `docs/gstack/specs/`에 작성한다.
-- 구현 계획 문서는 `docs/gstack/plans/`에 작성한다.
-- 세션 종료 시 `docs/gstack/overview.md`의 세션 이력 테이블을 갱신한다.
 
 ## Agent Boundaries
 

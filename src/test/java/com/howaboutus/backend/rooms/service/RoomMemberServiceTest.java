@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.then;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.realtime.event.HostDelegatedEvent;
 import com.howaboutus.backend.realtime.event.MemberKickedEvent;
 import com.howaboutus.backend.realtime.event.MemberLeftEvent;
 import com.howaboutus.backend.realtime.service.RoomPresenceService;
@@ -287,6 +288,97 @@ class RoomMemberServiceTest {
                 .willThrow(new CustomException(ErrorCode.NOT_ROOM_HOST));
 
         assertThatThrownBy(() -> roomMemberService.kick(ROOM_ID, HOST_USER_ID, TARGET_USER_ID))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.NOT_ROOM_HOST));
+    }
+
+    @Test
+    @DisplayName("delegateHost 성공 - role swap + 이벤트 발행")
+    void delegateHostSwapsRolesAndPublishesEvent() {
+        User host = User.ofGoogle("g1", "host@test.com", "호스트", "https://img/host.jpg");
+        ReflectionTestUtils.setField(host, "id", HOST_USER_ID);
+        User target = User.ofGoogle("g2", "target@test.com", "타겟", "https://img/target.jpg");
+        ReflectionTestUtils.setField(target, "id", TARGET_USER_ID);
+
+        Room room = Room.create("여행", "부산", null, null, "invite1", HOST_USER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+
+        RoomMember hostMember = RoomMember.of(room, host, RoomRole.HOST);
+        RoomMember targetMember = RoomMember.of(room, target, RoomRole.MEMBER);
+
+        given(roomAuthorizationService.requireHost(ROOM_ID, HOST_USER_ID)).willReturn(hostMember);
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, TARGET_USER_ID))
+                .willReturn(Optional.of(targetMember));
+
+        roomMemberService.delegateHost(ROOM_ID, TARGET_USER_ID, HOST_USER_ID);
+
+        assertThat(hostMember.getRole()).isEqualTo(RoomRole.MEMBER);
+        assertThat(targetMember.getRole()).isEqualTo(RoomRole.HOST);
+        then(eventPublisher).should().publishEvent(any(HostDelegatedEvent.class));
+    }
+
+    @Test
+    @DisplayName("delegateHost - 자기 자신에게 위임 시 CANNOT_DELEGATE_TO_SELF")
+    void delegateHostThrowsWhenSelfDelegation() {
+        assertThatThrownBy(() -> roomMemberService.delegateHost(ROOM_ID, HOST_USER_ID, HOST_USER_ID))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.CANNOT_DELEGATE_TO_SELF));
+    }
+
+    @Test
+    @DisplayName("delegateHost - 대상이 PENDING이면 DELEGATE_TARGET_NOT_MEMBER")
+    void delegateHostThrowsWhenTargetIsPending() {
+        User host = User.ofGoogle("g1", "host@test.com", "호스트", null);
+        ReflectionTestUtils.setField(host, "id", HOST_USER_ID);
+        User pending = User.ofGoogle("g4", "pending@test.com", "대기자", null);
+        ReflectionTestUtils.setField(pending, "id", TARGET_USER_ID);
+
+        Room room = Room.create("여행", "부산", null, null, "invite1", HOST_USER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+
+        RoomMember hostMember = RoomMember.of(room, host, RoomRole.HOST);
+        RoomMember pendingMember = RoomMember.of(room, pending, RoomRole.PENDING);
+
+        given(roomAuthorizationService.requireHost(ROOM_ID, HOST_USER_ID)).willReturn(hostMember);
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, TARGET_USER_ID))
+                .willReturn(Optional.of(pendingMember));
+
+        assertThatThrownBy(() -> roomMemberService.delegateHost(ROOM_ID, TARGET_USER_ID, HOST_USER_ID))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.DELEGATE_TARGET_NOT_MEMBER));
+    }
+
+    @Test
+    @DisplayName("delegateHost - 대상이 존재하지 않으면 JOIN_REQUEST_NOT_FOUND")
+    void delegateHostThrowsWhenTargetNotFound() {
+        User host = User.ofGoogle("g1", "host@test.com", "호스트", null);
+        ReflectionTestUtils.setField(host, "id", HOST_USER_ID);
+
+        Room room = Room.create("여행", "부산", null, null, "invite1", HOST_USER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+
+        RoomMember hostMember = RoomMember.of(room, host, RoomRole.HOST);
+
+        given(roomAuthorizationService.requireHost(ROOM_ID, HOST_USER_ID)).willReturn(hostMember);
+        given(roomMemberRepository.findByRoom_IdAndUser_Id(ROOM_ID, TARGET_USER_ID))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> roomMemberService.delegateHost(ROOM_ID, TARGET_USER_ID, HOST_USER_ID))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.JOIN_REQUEST_NOT_FOUND));
+    }
+
+    @Test
+    @DisplayName("delegateHost - HOST가 아닌 사용자가 시도하면 NOT_ROOM_HOST")
+    void delegateHostThrowsWhenCallerIsNotHost() {
+        given(roomAuthorizationService.requireHost(ROOM_ID, TARGET_USER_ID))
+                .willThrow(new CustomException(ErrorCode.NOT_ROOM_HOST));
+
+        assertThatThrownBy(() -> roomMemberService.delegateHost(ROOM_ID, HOST_USER_ID, TARGET_USER_ID))
                 .isInstanceOf(CustomException.class)
                 .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
                         .isEqualTo(ErrorCode.NOT_ROOM_HOST));

@@ -2,6 +2,7 @@ package com.howaboutus.backend.rooms.service;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.realtime.event.HostDelegatedEvent;
 import com.howaboutus.backend.realtime.event.MemberKickedEvent;
 import com.howaboutus.backend.realtime.event.MemberLeftEvent;
 import com.howaboutus.backend.realtime.service.RoomPresenceService;
@@ -86,6 +87,33 @@ public class RoomMemberService {
                 member.getUser().getId(),
                 member.getUser().getNickname(),
                 member.getUser().getProfileImageUrl()
+        ));
+    }
+
+    @Transactional
+    public void delegateHost(UUID roomId, Long targetUserId, Long hostUserId) {
+        if (hostUserId.equals(targetUserId)) {
+            throw new CustomException(ErrorCode.CANNOT_DELEGATE_TO_SELF);
+        }
+
+        RoomMember hostMember = roomAuthorizationService.requireHost(roomId, hostUserId);
+
+        RoomMember target = roomMemberRepository.findByRoom_IdAndUser_Id(roomId, targetUserId)
+                .orElseThrow(() -> new CustomException(ErrorCode.JOIN_REQUEST_NOT_FOUND));
+
+        if (target.getRole() != RoomRole.MEMBER) {
+            throw new CustomException(ErrorCode.DELEGATE_TARGET_NOT_MEMBER);
+        }
+
+        hostMember.demoteToMember();
+        target.promoteToHost();
+
+        eventPublisher.publishEvent(new HostDelegatedEvent(
+                roomId,
+                hostMember.getUser().getId(),
+                hostMember.getUser().getNickname(),
+                target.getUser().getId(),
+                target.getUser().getNickname()
         ));
     }
 

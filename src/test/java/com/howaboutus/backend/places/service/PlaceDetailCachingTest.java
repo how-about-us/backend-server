@@ -3,6 +3,10 @@ package com.howaboutus.backend.places.service;
 import com.howaboutus.backend.common.config.CachePolicy;
 import com.howaboutus.backend.common.integration.google.GooglePlaceDetailClient;
 import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDetailResponse;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDisplayName;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocalizedText;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocation;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlacePhoto;
 import com.howaboutus.backend.places.service.dto.PlaceDetailResult;
 import com.howaboutus.backend.support.BaseIntegrationTest;
 import java.util.List;
@@ -52,16 +56,28 @@ class PlaceDetailCachingTest extends BaseIntegrationTest {
     private GooglePlaceDetailResponse detailResponse() {
         return new GooglePlaceDetailResponse(
                 "places/ChIJ123",
-                new GooglePlaceDetailResponse.DisplayName("Cafe Layered", "ko"),
+                new GooglePlaceDisplayName("Cafe Layered", "ko"),
                 "서울 종로구 ...",
-                new GooglePlaceDetailResponse.Location(37.57, 126.98),
+                new GooglePlaceLocation(37.57, 126.98),
                 "cafe",
+                new GooglePlaceLocalizedText("카페", "ko"),
                 4.5,
+                128,
                 "02-123-4567",
                 "https://layered.example",
                 "https://maps.google.com/?cid=123",
-                new GooglePlaceDetailResponse.RegularOpeningHours(List.of("월요일: 09:00~18:00")),
-                List.of(new GooglePlaceDetailResponse.Photo("places/ChIJ123/photos/a"))
+                new GooglePlaceDetailResponse.RegularOpeningHours(
+                        null,
+                        null,
+                        null,
+                        null,
+                        List.of("월요일: 09:00~18:00"),
+                        null,
+                        null
+                ),
+                List.of(new GooglePlacePhoto("places/ChIJ123/photos/a")),
+                null,
+                null
         );
     }
 }

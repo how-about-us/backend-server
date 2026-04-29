@@ -1,5 +1,6 @@
 package com.howaboutus.backend.places.service.dto;
 
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocalizedText;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 
 public record PlaceSearchResult(
@@ -8,7 +9,11 @@ public record PlaceSearchResult(
         String formattedAddress,
         Location location,
         String primaryType,
+        String primaryTypeDisplayName,
         Double rating,
+        Integer userRatingCount,
+        Boolean openNow,
+        String reviewSummary,
         String photoName
 ) {
     public static PlaceSearchResult from(GoogleTextSearchResponse.PlaceItem place) {
@@ -27,15 +32,36 @@ public record PlaceSearchResult(
             photoName = place.photos().getFirst().name();
         }
 
+        Boolean openNow = null;
+        if (place.regularOpeningHours() != null) {
+            openNow = place.regularOpeningHours().openNow();
+        }
+
+        String reviewSummary = null;
+        if (place.reviewSummary() != null && place.reviewSummary().text() != null) {
+            reviewSummary = place.reviewSummary().text().text();
+        }
+
         return new PlaceSearchResult(
                 place.id(),
                 name,
                 place.formattedAddress(),
                 location,
                 place.primaryType(),
+                toText(place.primaryTypeDisplayName()),
                 place.rating(),
+                place.userRatingCount(),
+                openNow,
+                reviewSummary,
                 photoName
         );
+    }
+
+    private static String toText(GooglePlaceLocalizedText localizedText) {
+        if (localizedText == null) {
+            return null;
+        }
+        return localizedText.text();
     }
 
     public record Location(Double lat, Double lng) {

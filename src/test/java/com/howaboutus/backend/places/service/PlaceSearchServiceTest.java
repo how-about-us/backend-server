@@ -1,34 +1,48 @@
 package com.howaboutus.backend.places.service;
 
 import com.howaboutus.backend.common.integration.google.GooglePlaceSearchClient;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDisplayName;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocalizedText;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocation;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlacePhoto;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 import com.howaboutus.backend.places.service.dto.PlaceSearchResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
 
+@ExtendWith(MockitoExtension.class)
 class PlaceSearchServiceTest {
 
-    private final GooglePlaceSearchClient googlePlaceSearchClient = mock(GooglePlaceSearchClient.class);
-    private final PlaceSearchService placeSearchService = new PlaceSearchService(googlePlaceSearchClient);
+    @Mock
+    private GooglePlaceSearchClient googlePlaceSearchClient;
+    @InjectMocks
+    private PlaceSearchService placeSearchService;
 
     @Test
     @DisplayName("Google 장소 응답을 검색 결과 목록으로 변환한다")
     void returnsMappedSearchResults() {
         GoogleTextSearchResponse.PlaceItem placeItem = new GoogleTextSearchResponse.PlaceItem(
                 "ChIJ123",
-                new GoogleTextSearchResponse.DisplayName("Cafe Layered", "ko"),
+                new GooglePlaceDisplayName("Cafe Layered", "ko"),
                 "서울 종로구 ...",
-                new GoogleTextSearchResponse.Location(37.57, 126.98),
+                new GooglePlaceLocation(37.57, 126.98),
                 "cafe",
+                new GooglePlaceLocalizedText("카페", "ko"),
                 4.5,
-                List.of(new GoogleTextSearchResponse.Photo("places/ChIJ123/photos/abc"))
+                128,
+                null,
+                null,
+                List.of(new GooglePlacePhoto("places/ChIJ123/photos/abc"))
         );
         given(googlePlaceSearchClient.search("seoul cafe", 37.5, 127.0, 5000.0))
                 .willReturn(List.of(placeItem));

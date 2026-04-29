@@ -6,21 +6,19 @@ public record GoogleTextSearchResponse(List<PlaceItem> places) {
 
     public record PlaceItem(
             String id,
-            DisplayName displayName,
+            GooglePlaceDisplayName displayName,
             String formattedAddress,
-            Location location,
+            GooglePlaceLocation location,
             String primaryType,
+            GooglePlaceLocalizedText primaryTypeDisplayName,
             Double rating,
-            List<Photo> photos
+            Integer userRatingCount,
+            RegularOpeningHours regularOpeningHours,
+            GooglePlaceReviewSummary reviewSummary,
+            List<GooglePlacePhoto> photos
     ) {
     }
 
-    public record DisplayName(String text, String languageCode) {
-    }
-
-    public record Location(Double latitude, Double longitude) {
-    }
-
-    public record Photo(String name) {
+    public record RegularOpeningHours(Boolean openNow) {
     }
 }

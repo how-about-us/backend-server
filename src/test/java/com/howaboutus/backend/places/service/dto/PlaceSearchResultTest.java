@@ -1,5 +1,10 @@
 package com.howaboutus.backend.places.service.dto;
 
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDisplayName;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocalizedText;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocation;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlacePhoto;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceReviewSummary;
 import com.howaboutus.backend.common.integration.google.dto.GoogleTextSearchResponse;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -14,12 +19,18 @@ class PlaceSearchResultTest {
     void createsSearchResultFromPlaceItem() {
         GoogleTextSearchResponse.PlaceItem placeItem = new GoogleTextSearchResponse.PlaceItem(
                 "ChIJ123",
-                new GoogleTextSearchResponse.DisplayName("Cafe Layered", "ko"),
+                new GooglePlaceDisplayName("Cafe Layered", "ko"),
                 "서울 종로구 ...",
-                new GoogleTextSearchResponse.Location(37.57, 126.98),
+                new GooglePlaceLocation(37.57, 126.98),
                 "cafe",
+                new GooglePlaceLocalizedText("카페", "ko"),
                 4.5,
-                List.of(new GoogleTextSearchResponse.Photo("places/ChIJ123/photos/abc"))
+                128,
+                new GoogleTextSearchResponse.RegularOpeningHours(true),
+                new GooglePlaceReviewSummary(
+                        new GooglePlaceLocalizedText("방문객들이 디저트를 좋아해요", "ko")
+                ),
+                List.of(new GooglePlacePhoto("places/ChIJ123/photos/abc"))
         );
 
         PlaceSearchResult result = PlaceSearchResult.from(placeItem);
@@ -29,7 +40,11 @@ class PlaceSearchResultTest {
         assertThat(result.formattedAddress()).isEqualTo("서울 종로구 ...");
         assertThat(result.location()).isEqualTo(new PlaceSearchResult.Location(37.57, 126.98));
         assertThat(result.primaryType()).isEqualTo("cafe");
+        assertThat(result.primaryTypeDisplayName()).isEqualTo("카페");
         assertThat(result.rating()).isEqualTo(4.5);
+        assertThat(result.userRatingCount()).isEqualTo(128);
+        assertThat(result.openNow()).isTrue();
+        assertThat(result.reviewSummary()).isEqualTo("방문객들이 디저트를 좋아해요");
         assertThat(result.photoName()).isEqualTo("places/ChIJ123/photos/abc");
     }
 
@@ -43,6 +58,10 @@ class PlaceSearchResultTest {
                 null,
                 "cafe",
                 null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 
@@ -51,7 +70,11 @@ class PlaceSearchResultTest {
         assertThat(result.googlePlaceId()).isEqualTo("ChIJ123");
         assertThat(result.name()).isNull();
         assertThat(result.location()).isNull();
+        assertThat(result.primaryTypeDisplayName()).isNull();
         assertThat(result.rating()).isNull();
+        assertThat(result.userRatingCount()).isNull();
+        assertThat(result.openNow()).isNull();
+        assertThat(result.reviewSummary()).isNull();
         assertThat(result.photoName()).isNull();
     }
 }

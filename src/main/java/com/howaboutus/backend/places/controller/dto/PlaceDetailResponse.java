@@ -1,43 +1,44 @@
 package com.howaboutus.backend.places.controller.dto;
 
 import com.howaboutus.backend.places.service.dto.PlaceDetailResult;
-
 import java.util.List;
 
 public record PlaceDetailResponse(
         String googlePlaceId,
         String name,
         String formattedAddress,
-        Location location,
+        PlaceDetailResult.Location location,
         String primaryType,
+        String primaryTypeDisplayName,
         Double rating,
+        Integer userRatingCount,
         String phoneNumber,
         String websiteUri,
         String googleMapsUri,
+        PlaceDetailResult.RegularOpeningHours regularOpeningHours,
         List<String> weekdayDescriptions,
-        List<String> photoNames
+        List<String> photoNames,
+        String reviewSummary,
+        List<PlaceDetailResult.Review> reviews
 ) {
     public static PlaceDetailResponse from(PlaceDetailResult result) {
-        Location location = null;
-        if (result.location() != null) {
-            location = new Location(result.location().lat(), result.location().lng());
-        }
-
         return new PlaceDetailResponse(
                 result.googlePlaceId(),
                 result.name(),
                 result.formattedAddress(),
-                location,
+                result.location(),
                 result.primaryType(),
+                result.primaryTypeDisplayName(),
                 result.rating(),
+                result.userRatingCount(),
                 result.phoneNumber(),
                 result.websiteUri(),
                 result.googleMapsUri(),
-                result.weekdayDescriptions(),
-                result.photoNames()
+                result.regularOpeningHours(),
+                result.weekdayDescriptions() != null ? result.weekdayDescriptions() : List.of(),
+                result.photoNames() != null ? result.photoNames() : List.of(),
+                result.reviewSummary(),
+                result.reviews() != null ? result.reviews() : List.of()
         );
-    }
-
-    public record Location(Double lat, Double lng) {
     }
 }

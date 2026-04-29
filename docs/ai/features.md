@@ -55,8 +55,8 @@
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
 | `[x]` | 방 멤버 목록 조회 | 방 참여자 목록 + 역할(HOST/MEMBER) + 접속 상태 | room_members |
-| `[ ]` | 멤버 추방 | HOST가 특정 멤버 추방 (HOST는 추방 불가) | room_members |
-| `[ ]` | 방 나가기 | 본인이 방에서 탈퇴 | room_members |
+| `[x]` | 멤버 추방 | HOST가 특정 멤버 추방 (HOST는 추방 불가) | room_members |
+| `[x]` | 방 나가기 | 본인이 방에서 탈퇴 | room_members |
 | `[x]` | 실시간 방 접속 상태 추적 | 유효한 access_token 쿠키가 있는 사용자만 WebSocket handshake를 허용한다. SockJS + STOMP 방 topic 구독 성공 시 Redis에 접속 유저를 기록하고 접속 이벤트를 브로드캐스트한다. 새로 온라인이 된 유저의 접속 이벤트에는 `userId`, `nickname`, `profileImageUrl`을 포함해 클라이언트가 방 멤버 프로필 맵을 갱신할 수 있게 한다. 세션 종료 시 제거와 해제 이벤트를 브로드캐스트한다 | Redis (connected_users) |
 | `[x]` | 현재 접속 중인 유저 조회 | 멤버 목록 API(`GET /rooms/{roomId}/members`)의 `isOnline` 필드로 접속 상태 포함 | Redis (connected_users) |
 | `[-]` | 방장 위임 | 권한 이전 | room_members |

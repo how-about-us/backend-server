@@ -65,4 +65,18 @@ public class RoomMember extends BaseTimeEntity {
         }
         this.role = RoomRole.MEMBER;
     }
+
+    public void promoteToHost() {
+        if (this.role != RoomRole.MEMBER) {
+            throw new IllegalStateException("MEMBER 상태의 멤버만 HOST로 승격할 수 있습니다. 현재 상태: " + this.role);
+        }
+        this.role = RoomRole.HOST;
+    }
+
+    public void demoteToMember() {
+        if (this.role != RoomRole.HOST) {
+            throw new IllegalStateException("HOST 상태의 멤버만 MEMBER로 강등할 수 있습니다. 현재 상태: " + this.role);
+        }
+        this.role = RoomRole.MEMBER;
+    }
 }

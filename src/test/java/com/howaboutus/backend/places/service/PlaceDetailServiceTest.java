@@ -2,6 +2,10 @@ package com.howaboutus.backend.places.service;
 
 import com.howaboutus.backend.common.integration.google.GooglePlaceDetailClient;
 import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDetailResponse;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDisplayName;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocalizedText;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocation;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlacePhoto;
 import com.howaboutus.backend.places.service.dto.PlaceDetailResult;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -28,11 +32,11 @@ class PlaceDetailServiceTest {
     void returnsMappedPlaceDetail() {
         GooglePlaceDetailResponse response = new GooglePlaceDetailResponse(
                 "places/ChIJ123",
-                new GooglePlaceDetailResponse.DisplayName("Cafe Layered", "ko"),
+                new GooglePlaceDisplayName("Cafe Layered", "ko"),
                 "서울 종로구 ...",
-                new GooglePlaceDetailResponse.Location(37.57, 126.98),
+                new GooglePlaceLocation(37.57, 126.98),
                 "cafe",
-                new GooglePlaceDetailResponse.LocalizedText("카페", "ko"),
+                new GooglePlaceLocalizedText("카페", "ko"),
                 4.5,
                 128,
                 "02-123-4567",
@@ -47,7 +51,7 @@ class PlaceDetailServiceTest {
                         null,
                         null
                 ),
-                List.of(new GooglePlaceDetailResponse.Photo("places/ChIJ123/photos/a")),
+                List.of(new GooglePlacePhoto("places/ChIJ123/photos/a")),
                 null,
                 null
         );

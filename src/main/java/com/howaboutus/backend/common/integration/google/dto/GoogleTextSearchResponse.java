@@ -6,16 +6,16 @@ public record GoogleTextSearchResponse(List<PlaceItem> places) {
 
     public record PlaceItem(
             String id,
-            GooglePlaceDetailResponse.DisplayName displayName,
+            GooglePlaceDisplayName displayName,
             String formattedAddress,
-            GooglePlaceDetailResponse.Location location,
+            GooglePlaceLocation location,
             String primaryType,
-            GooglePlaceDetailResponse.LocalizedText primaryTypeDisplayName,
+            GooglePlaceLocalizedText primaryTypeDisplayName,
             Double rating,
             Integer userRatingCount,
             RegularOpeningHours regularOpeningHours,
-            GooglePlaceDetailResponse.ReviewSummary reviewSummary,
-            List<GooglePlaceDetailResponse.Photo> photos
+            GooglePlaceReviewSummary reviewSummary,
+            List<GooglePlacePhoto> photos
     ) {
     }
 

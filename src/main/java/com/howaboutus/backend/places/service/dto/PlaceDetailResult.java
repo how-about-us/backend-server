@@ -1,6 +1,8 @@
 package com.howaboutus.backend.places.service.dto;
 
 import com.howaboutus.backend.common.integration.google.dto.GooglePlaceDetailResponse;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlaceLocalizedText;
+import com.howaboutus.backend.common.integration.google.dto.GooglePlacePhoto;
 
 import java.util.List;
 
@@ -51,7 +53,7 @@ public record PlaceDetailResult(
         List<String> photoNames = List.of();
         if (place.photos() != null) {
             photoNames = place.photos().stream()
-                    .map(GooglePlaceDetailResponse.Photo::name)
+                    .map(GooglePlacePhoto::name)
                     .toList();
         }
 
@@ -87,7 +89,7 @@ public record PlaceDetailResult(
         );
     }
 
-    private static String toText(GooglePlaceDetailResponse.LocalizedText localizedText) {
+    private static String toText(GooglePlaceLocalizedText localizedText) {
         if (localizedText == null) {
             return null;
         }

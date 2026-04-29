@@ -4,27 +4,21 @@ import java.util.List;
 
 public record GooglePlaceDetailResponse(
         String id,
-        DisplayName displayName,
+        GooglePlaceDisplayName displayName,
         String formattedAddress,
-        Location location,
+        GooglePlaceLocation location,
         String primaryType,
-        LocalizedText primaryTypeDisplayName,
+        GooglePlaceLocalizedText primaryTypeDisplayName,
         Double rating,
         Integer userRatingCount,
         String nationalPhoneNumber,
         String websiteUri,
         String googleMapsUri,
         RegularOpeningHours regularOpeningHours,
-        List<Photo> photos,
-        ReviewSummary reviewSummary,
+        List<GooglePlacePhoto> photos,
+        GooglePlaceReviewSummary reviewSummary,
         List<Review> reviews
 ) {
-
-    public record DisplayName(String text, String languageCode) {
-    }
-
-    public record Location(Double latitude, Double longitude) {
-    }
 
     public record RegularOpeningHours(
             Boolean openNow,
@@ -49,26 +43,14 @@ public record GooglePlaceDetailResponse(
     public record Date(Integer year, Integer month, Integer day) {
     }
 
-    public record Photo(String name) {
-    }
-
-    public record ReviewSummary(LocalizedText text) {
-    }
-
     public record Review(
             String name,
             String relativePublishTimeDescription,
             Double rating,
-            LocalizedText text,
-            LocalizedText originalText,
-            AuthorAttribution authorAttribution,
+            GooglePlaceLocalizedText text,
+            GooglePlaceLocalizedText originalText,
+            GooglePlaceAuthorAttribution authorAttribution,
             String publishTime
     ) {
-    }
-
-    public record LocalizedText(String text, String languageCode) {
-    }
-
-    public record AuthorAttribution(String displayName, String uri, String photoUri) {
     }
 }

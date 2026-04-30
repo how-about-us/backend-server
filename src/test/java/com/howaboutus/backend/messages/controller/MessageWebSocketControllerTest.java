@@ -9,11 +9,14 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.howaboutus.backend.common.error.CustomException;
 import com.howaboutus.backend.common.error.ErrorCode;
+import com.howaboutus.backend.ai.service.AiConversationService;
 import com.howaboutus.backend.messages.controller.dto.SendChatMessageRequest;
+import com.howaboutus.backend.messages.controller.dto.SendAiMessageRequest;
 import com.howaboutus.backend.messages.controller.dto.SendPlaceMessageRequest;
 import com.howaboutus.backend.messages.document.MessageType;
 import com.howaboutus.backend.messages.service.MessageService;
 import com.howaboutus.backend.messages.service.dto.MessageResult;
+import com.howaboutus.backend.messages.service.dto.SendAiMessageCommand;
 import com.howaboutus.backend.messages.service.dto.SendChatMessageCommand;
 import com.howaboutus.backend.messages.service.dto.SendPlaceMessageCommand;
 import com.howaboutus.backend.realtime.event.MessageSendFailedEvent;
@@ -41,11 +44,14 @@ class MessageWebSocketControllerTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private AiConversationService aiConversationService;
+
     private MessageWebSocketController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new MessageWebSocketController(messageService, eventPublisher);
+        controller = new MessageWebSocketController(messageService, eventPublisher, aiConversationService);
     }
 
     @Test
@@ -76,6 +82,21 @@ class MessageWebSocketControllerTest {
         MessageMapping messageMapping = send.getAnnotation(MessageMapping.class);
 
         assertThat(messageMapping.value()).containsExactly("/rooms/{roomId}/messages/place");
+    }
+
+    @Test
+    @DisplayName("AI 요청 메시지 전송은 ai 전용 STOMP destination을 사용한다")
+    void requestAiUsesAiMessageDestination() throws NoSuchMethodException {
+        Method send = MessageWebSocketController.class.getDeclaredMethod(
+                "requestAi",
+                UUID.class,
+                SendAiMessageRequest.class,
+                SimpMessageHeaderAccessor.class
+        );
+
+        MessageMapping messageMapping = send.getAnnotation(MessageMapping.class);
+
+        assertThat(messageMapping.value()).containsExactly("/rooms/{roomId}/messages/ai");
     }
 
     @Test
@@ -139,6 +160,22 @@ class MessageWebSocketControllerTest {
                 4.6,
                 "places/google-place-1/photos/photo-1"
         )), eq(42L));
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    @DisplayName("AI 요청 성공 시 AI 서비스에 위임하고 컨트롤러에서는 이벤트를 발행하지 않는다")
+    void requestAiDelegatesToAiServiceWithoutPublishingControllerEvent() {
+        UUID roomId = UUID.randomUUID();
+        SendAiMessageRequest request = new SendAiMessageRequest("client-ai-1", "애월 카페 추천해줘");
+
+        controller.requestAi(roomId, request, accessorWithUserId(42L));
+
+        verify(aiConversationService).requestPlan(
+                eq(roomId),
+                eq(new SendAiMessageCommand("client-ai-1", "애월 카페 추천해줘")),
+                eq(42L)
+        );
         verifyNoInteractions(eventPublisher);
     }
 

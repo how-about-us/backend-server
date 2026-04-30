@@ -32,12 +32,7 @@ public class MessageWebSocketController {
                      @Payload SendChatMessageRequest request,
                      SimpMessageHeaderAccessor accessor) {
         long userId = extractUserId(accessor);
-        String clientMessageId;
-        if (request == null) {
-            clientMessageId = null;
-        } else {
-            clientMessageId = request.clientMessageId();
-        }
+        String clientMessageId = request.clientMessageId();
         try {
             messageService.send(roomId, SendChatMessageRequest.toCommand(request), userId);
         } catch (CustomException e) {
@@ -55,12 +50,7 @@ public class MessageWebSocketController {
                            @Payload SendPlaceMessageRequest request,
                            SimpMessageHeaderAccessor accessor) {
         long userId = extractUserId(accessor);
-        String clientMessageId;
-        if (request == null) {
-            clientMessageId = null;
-        } else {
-            clientMessageId = request.clientMessageId();
-        }
+        String clientMessageId = request.clientMessageId();
         try {
             messageService.sharePlace(roomId, SendPlaceMessageRequest.toCommand(request), userId);
         } catch (CustomException e) {
@@ -78,12 +68,7 @@ public class MessageWebSocketController {
                           @Payload SendAiMessageRequest request,
                           SimpMessageHeaderAccessor accessor) {
         long userId = extractUserId(accessor);
-        String clientMessageId;
-        if (request == null) {
-            clientMessageId = null;
-        } else {
-            clientMessageId = request.clientMessageId();
-        }
+        String clientMessageId = request.clientMessageId();
         try {
             aiConversationService.requestPlan(roomId, SendAiMessageRequest.toCommand(request), userId);
         } catch (CustomException e) {

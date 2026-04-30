@@ -52,6 +52,14 @@ public class ChatMessage {
         return new ChatMessage(roomId, senderId, MessageType.CHAT, content, Map.of(), Instant.now());
     }
 
+    public static ChatMessage aiRequest(UUID roomId, Long senderId, String content, Map<String, Object> metadata) {
+        return new ChatMessage(roomId, senderId, MessageType.AI_REQUEST, content, metadata, Instant.now());
+    }
+
+    public static ChatMessage aiResponse(UUID roomId, String content, Map<String, Object> metadata) {
+        return new ChatMessage(roomId, null, MessageType.AI_RESPONSE, content, metadata, Instant.now());
+    }
+
     public static ChatMessage placeShare(UUID roomId, Long senderId, String content, Map<String, Object> metadata) {
         return new ChatMessage(roomId, senderId, MessageType.PLACE_SHARE, content, metadata, Instant.now());
     }

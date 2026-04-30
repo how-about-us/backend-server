@@ -5,6 +5,8 @@ import com.howaboutus.backend.common.error.ErrorCode;
 import com.howaboutus.backend.messages.document.ChatMessage;
 import com.howaboutus.backend.messages.repository.ChatMessageRepository;
 import com.howaboutus.backend.messages.service.dto.MessageResult;
+import com.howaboutus.backend.messages.service.dto.SendAiMessageCommand;
+import com.howaboutus.backend.messages.service.dto.SendAiResponseCommand;
 import com.howaboutus.backend.messages.service.dto.SendChatMessageCommand;
 import com.howaboutus.backend.messages.service.dto.SendPlaceMessageCommand;
 import com.howaboutus.backend.realtime.event.MessageSentEvent;
@@ -73,6 +75,36 @@ public class MessageService {
         return result;
     }
 
+    public MessageResult sendAiRequest(UUID roomId, SendAiMessageCommand command, long userId) {
+        roomAuthorizationService.requireActiveMember(roomId, userId);
+        String content = normalizeContent(command.content());
+
+        Map<String, Object> metadata = nonNullMetadata(metadataEntries(
+                "clientMessageId", command.clientMessageId()
+        ));
+
+        ChatMessage message = ChatMessage.aiRequest(roomId, userId, content, metadata);
+        ChatMessage savedMessage = chatMessageRepository.save(message);
+        MessageResult result = MessageResult.from(savedMessage, command.clientMessageId());
+        publishMessageSent(result);
+        return result;
+    }
+
+    public MessageResult sendAiResponse(UUID roomId, SendAiResponseCommand command) {
+        String content = normalizeContent(command.content());
+        Map<String, Object> metadata = nonNullMetadata(metadataEntries(
+                "requestMessageId", command.requestMessageId(),
+                "intent", command.intent(),
+                "recommendedPlaces", command.recommendedPlaces()
+        ));
+
+        ChatMessage message = ChatMessage.aiResponse(roomId, content, metadata);
+        ChatMessage savedMessage = chatMessageRepository.save(message);
+        MessageResult result = MessageResult.from(savedMessage);
+        publishMessageSent(result);
+        return result;
+    }
+
     public MessageResult sendMemberJoinedSystemMessage(UUID roomId,
                                                        long joinedUserId,
                                                        String nickname,
@@ -88,11 +120,7 @@ public class MessageService {
         ChatMessage message = ChatMessage.system(roomId, normalizedNickname + "님이 방에 참여했습니다", metadata);
         ChatMessage savedMessage = chatMessageRepository.save(message);
         MessageResult result = MessageResult.from(savedMessage);
-        try {
-            eventPublisher.publishEvent(MessageSentEvent.from(result));
-        } catch (Exception e) {
-            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
-        }
+        publishMessageSent(result);
         return result;
     }
 
@@ -111,11 +139,7 @@ public class MessageService {
         ChatMessage message = ChatMessage.system(roomId, normalizedNickname + "님이 방에서 내보내졌습니다", metadata);
         ChatMessage savedMessage = chatMessageRepository.save(message);
         MessageResult result = MessageResult.from(savedMessage);
-        try {
-            eventPublisher.publishEvent(MessageSentEvent.from(result));
-        } catch (Exception e) {
-            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
-        }
+        publishMessageSent(result);
         return result;
     }
 
@@ -134,11 +158,7 @@ public class MessageService {
         ChatMessage message = ChatMessage.system(roomId, normalizedNickname + "님이 방을 나갔습니다", metadata);
         ChatMessage savedMessage = chatMessageRepository.save(message);
         MessageResult result = MessageResult.from(savedMessage);
-        try {
-            eventPublisher.publishEvent(MessageSentEvent.from(result));
-        } catch (Exception e) {
-            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
-        }
+        publishMessageSent(result);
         return result;
     }
 
@@ -163,11 +183,7 @@ public class MessageService {
                 metadata);
         ChatMessage savedMessage = chatMessageRepository.save(message);
         MessageResult result = MessageResult.from(savedMessage);
-        try {
-            eventPublisher.publishEvent(MessageSentEvent.from(result));
-        } catch (Exception e) {
-            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
-        }
+        publishMessageSent(result);
         return result;
     }
 
@@ -233,6 +249,14 @@ public class MessageService {
             metadata.put((String) entries[i], entries[i + 1]);
         }
         return metadata;
+    }
+
+    private void publishMessageSent(MessageResult result) {
+        try {
+            eventPublisher.publishEvent(MessageSentEvent.from(result));
+        } catch (Exception e) {
+            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
+        }
     }
 
     private void validatePageSize(int size) {

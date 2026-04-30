@@ -41,11 +41,7 @@ public class MessageService {
         ChatMessage message = ChatMessage.chat(roomId, userId, content);
         ChatMessage savedMessage = chatMessageRepository.save(message);
         MessageResult result = MessageResult.from(savedMessage, command.clientMessageId());
-        try {
-            eventPublisher.publishEvent(MessageSentEvent.from(result));
-        } catch (Exception e) {
-            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
-        }
+        publishMessageSent(result);
         return result;
     }
 
@@ -67,11 +63,7 @@ public class MessageService {
         ChatMessage message = ChatMessage.placeShare(roomId, userId, name, metadata);
         ChatMessage savedMessage = chatMessageRepository.save(message);
         MessageResult result = MessageResult.from(savedMessage, command.clientMessageId());
-        try {
-            eventPublisher.publishEvent(MessageSentEvent.from(result));
-        } catch (Exception e) {
-            log.warn("브로드캐스트 실패, 메시지 저장은 완료: messageId={}", result.id(), e);
-        }
+        publishMessageSent(result);
         return result;
     }
 

@@ -65,6 +65,7 @@ class TravelAiClientTest {
                             "message_id": "msg-3",
                             "sender_id": "user-1",
                             "sender_name": "민수",
+                            "sent_at": "2026-04-30T01:00:00Z",
                             "text": "카페 추천해줘"
                           },
                           "room_context": {
@@ -72,6 +73,33 @@ class TravelAiClientTest {
                             "participants_count": 3,
                             "bookmarked_places": [],
                             "candidate_places": []
+                          },
+                          "chat_context": {
+                            "summary": {
+                              "summary_text": "이전 요약",
+                              "agreed_points": [],
+                              "open_questions": [],
+                              "preferences": [],
+                              "constraints": [],
+                              "mentioned_places": [],
+                              "last_message_id": "msg-2"
+                            },
+                            "messages_since_last_summary": [
+                              {
+                                "message_id": "msg-3",
+                                "sender_id": "user-1",
+                                "sender_name": "민수",
+                                "text": "카페 추천해줘"
+                              }
+                            ],
+                            "recent_messages": [
+                              {
+                                "message_id": "msg-3",
+                                "sender_id": "user-1",
+                                "sender_name": "민수",
+                                "text": "카페 추천해줘"
+                              }
+                            ]
                           }
                         }
                         """))

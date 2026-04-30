@@ -4,6 +4,7 @@ import com.howaboutus.backend.common.integration.ai.dto.AiStructuredSummary;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "ai_context_summaries")
@@ -16,7 +17,9 @@ public record AiContextSummary(
         String summarizingFromMessageId,
         String summarizingUntilMessageId,
         Instant summaryStartedAt,
-        Instant updatedAt
+        Instant updatedAt,
+        @Version
+        Long version
 ) {
 
     public static AiContextSummary init(UUID roomId) {
@@ -32,7 +35,8 @@ public record AiContextSummary(
                 null,
                 null,
                 null,
-                Instant.now()
+                Instant.now(),
+                null
         );
     }
 
@@ -45,7 +49,22 @@ public record AiContextSummary(
                 fromMessageId,
                 untilMessageId,
                 Instant.now(),
-                updatedAt
+                Instant.now(),
+                version
+        );
+    }
+
+    public AiContextSummary complete(AiStructuredSummary newSummary, String newLastMessageId) {
+        return new AiContextSummary(
+                roomId,
+                newSummary,
+                newLastMessageId,
+                AiSummaryStatus.IDLE,
+                null,
+                null,
+                null,
+                Instant.now(),
+                version
         );
     }
 }

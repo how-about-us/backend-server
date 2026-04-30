@@ -24,9 +24,13 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AiSummaryService {
@@ -54,7 +58,8 @@ public class AiSummaryService {
         if (lastMessageId == null || lastMessageId.isBlank()) {
             lastMessageId = fallbackLastMessageId;
         }
-        summaryRepository.save(AiContextSummary.idle(roomId, summary, lastMessageId));
+        AiContextSummary current = getOrCreate(roomId);
+        summaryRepository.save(current.complete(summary, lastMessageId));
     }
 
     public void triggerAutoSummary(UUID roomId) {
@@ -70,7 +75,13 @@ public class AiSummaryService {
             }
 
             String untilMessageId = messages.getLast().getId();
-            summaryRepository.save(current.running(messages.getFirst().getId(), untilMessageId));
+            AiContextSummary runningState;
+            try {
+                runningState = summaryRepository.save(current.running(messages.getFirst().getId(), untilMessageId));
+            } catch (OptimisticLockingFailureException | DuplicateKeyException e) {
+                log.warn("요약 동시성 충돌 감지, 스킵. roomId={}", roomId);
+                return;
+            }
             try {
                 AiSummaryUpdateResponse response = travelAiClient.updateSummary(new AiSummaryUpdateRequest(
                         roomId.toString(),
@@ -80,7 +91,7 @@ public class AiSummaryService {
                 ));
                 completeSummary(roomId, response.summary(), untilMessageId);
             } catch (RuntimeException exception) {
-                summaryRepository.save(AiContextSummary.idle(roomId, current.summary(), current.lastMessageId()));
+                summaryRepository.save(runningState.complete(current.summary(), current.lastMessageId()));
                 throw exception;
             }
         }

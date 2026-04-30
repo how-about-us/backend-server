@@ -18,11 +18,15 @@ public class TravelAiClient {
 
     public AiChatPlanResponse chatPlan(AiChatPlanRequest request) {
         try {
-            return travelAiRestClient.post()
+            AiChatPlanResponse response = travelAiRestClient.post()
                     .uri("/v1/ai/chat/plan")
                     .body(request)
                     .retrieve()
                     .body(AiChatPlanResponse.class);
+            if (response == null) {
+                throw new ExternalApiException(new IllegalStateException("AI 서버 응답 바디가 비어 있습니다: /v1/ai/chat/plan"));
+            }
+            return response;
         } catch (RestClientException exception) {
             throw new ExternalApiException(exception);
         }
@@ -30,11 +34,15 @@ public class TravelAiClient {
 
     public AiSummaryUpdateResponse updateSummary(AiSummaryUpdateRequest request) {
         try {
-            return travelAiRestClient.post()
+            AiSummaryUpdateResponse response = travelAiRestClient.post()
                     .uri("/v1/ai/context/summaries")
                     .body(request)
                     .retrieve()
                     .body(AiSummaryUpdateResponse.class);
+            if (response == null) {
+                throw new ExternalApiException(new IllegalStateException("AI 서버 응답 바디가 비어 있습니다: /v1/ai/context/summaries"));
+            }
+            return response;
         } catch (RestClientException exception) {
             throw new ExternalApiException(exception);
         }

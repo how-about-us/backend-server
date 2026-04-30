@@ -68,8 +68,9 @@ public class MessageWebSocketController {
                           @Payload SendAiMessageRequest request,
                           SimpMessageHeaderAccessor accessor) {
         long userId = extractUserId(accessor);
-        String clientMessageId = request.clientMessageId();
+        String clientMessageId = null;
         try {
+            clientMessageId = request.clientMessageId();
             aiConversationService.requestPlan(roomId, SendAiMessageRequest.toCommand(request), userId);
         } catch (CustomException e) {
             eventPublisher.publishEvent(

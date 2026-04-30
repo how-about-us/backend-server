@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AiPlanAsyncService {
 
-    private static final int RECENT_MESSAGE_LIMIT = 20;
+    private static final int RECENT_MESSAGE_LIMIT = 3;
     private static final String FAILURE_MESSAGE = "AI 응답을 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.";
 
     private final TravelAiClient travelAiClient;

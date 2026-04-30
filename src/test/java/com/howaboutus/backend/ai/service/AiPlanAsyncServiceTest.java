@@ -82,7 +82,7 @@ class AiPlanAsyncServiceTest {
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room(roomId)));
         given(roomMemberRepository.countByRoom_IdAndRoleIn(any(), any())).willReturn(3L);
         given(aiSummaryService.findMessagesSinceLastSummary(roomId, 30)).willReturn(List.of());
-        given(aiSummaryService.findRecentMessages(roomId, 20)).willReturn(List.of());
+        given(aiSummaryService.findRecentMessages(roomId, 3)).willReturn(List.of());
         given(aiSummaryService.toAiMessages(List.of())).willReturn(List.of());
         given(aiSummaryService.getOrCreate(roomId)).willReturn(AiContextSummary.completed(roomId, null, null));
         given(travelAiClient.chatPlan(any(AiChatPlanRequest.class)))
@@ -115,7 +115,7 @@ class AiPlanAsyncServiceTest {
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room(roomId)));
         given(roomMemberRepository.countByRoom_IdAndRoleIn(any(), any())).willReturn(3L);
         given(aiSummaryService.findMessagesSinceLastSummary(roomId, 30)).willReturn(List.of());
-        given(aiSummaryService.findRecentMessages(roomId, 20)).willReturn(List.of());
+        given(aiSummaryService.findRecentMessages(roomId, 3)).willReturn(List.of());
         given(aiSummaryService.toAiMessages(List.of())).willReturn(List.of());
         given(aiSummaryService.getOrCreate(roomId)).willReturn(AiContextSummary.completed(roomId, null, null));
         given(travelAiClient.chatPlan(any(AiChatPlanRequest.class)))

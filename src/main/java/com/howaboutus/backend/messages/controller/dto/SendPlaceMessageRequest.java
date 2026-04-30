@@ -14,9 +14,6 @@ public record SendPlaceMessageRequest(
 ) {
 
     public static SendPlaceMessageCommand toCommand(SendPlaceMessageRequest request) {
-        if (request == null) {
-            return new SendPlaceMessageCommand(null, null, null, null, null, null, null, null);
-        }
         return new SendPlaceMessageCommand(
                 request.clientMessageId,
                 request.googlePlaceId,

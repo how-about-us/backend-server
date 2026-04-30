@@ -13,6 +13,8 @@ import com.howaboutus.backend.messages.document.ChatMessage;
 import com.howaboutus.backend.messages.document.MessageType;
 import com.howaboutus.backend.messages.repository.ChatMessageRepository;
 import com.howaboutus.backend.messages.service.dto.MessageResult;
+import com.howaboutus.backend.messages.service.dto.SendAiMessageCommand;
+import com.howaboutus.backend.messages.service.dto.SendAiResponseCommand;
 import com.howaboutus.backend.messages.service.dto.SendChatMessageCommand;
 import com.howaboutus.backend.messages.service.dto.SendPlaceMessageCommand;
 import com.howaboutus.backend.realtime.event.MessageSentEvent;
@@ -125,6 +127,67 @@ class MessageServiceTest {
         ArgumentCaptor<ChatMessage> messageCaptor = ArgumentCaptor.forClass(ChatMessage.class);
         verify(chatMessageRepository).save(messageCaptor.capture());
         assertThat(messageCaptor.getValue().getMessageType()).isEqualTo(MessageType.PLACE_SHARE);
+        verify(eventPublisher).publishEvent(MessageSentEvent.from(result));
+    }
+
+    @Test
+    @DisplayName("활성 방 멤버는 AI 요청 메시지를 MongoDB에 저장할 수 있다")
+    void sendAiRequestStoresAiRequestMessage() {
+        UUID roomId = UUID.randomUUID();
+        SendAiMessageCommand command = new SendAiMessageCommand("client-ai-1", " 애월 카페 추천해줘 ");
+
+        given(chatMessageRepository.save(any(ChatMessage.class))).willAnswer(invocation -> {
+            ChatMessage message = invocation.getArgument(0);
+            ReflectionTestUtils.setField(message, "id", "6628f5f4c49a9f7b3772c444");
+            return message;
+        });
+
+        MessageResult result = messageService.sendAiRequest(roomId, command, 42L);
+
+        assertThat(result.id()).isEqualTo("6628f5f4c49a9f7b3772c444");
+        assertThat(result.senderId()).isEqualTo(42L);
+        assertThat(result.messageType()).isEqualTo(MessageType.AI_REQUEST);
+        assertThat(result.content()).isEqualTo("애월 카페 추천해줘");
+        assertThat(result.clientMessageId()).isEqualTo("client-ai-1");
+        assertThat(result.metadata()).containsEntry("clientMessageId", "client-ai-1");
+
+        verify(roomAuthorizationService).requireActiveMember(roomId, 42L);
+        ArgumentCaptor<ChatMessage> messageCaptor = ArgumentCaptor.forClass(ChatMessage.class);
+        verify(chatMessageRepository).save(messageCaptor.capture());
+        assertThat(messageCaptor.getValue().getMessageType()).isEqualTo(MessageType.AI_REQUEST);
+        verify(eventPublisher).publishEvent(MessageSentEvent.from(result));
+    }
+
+    @Test
+    @DisplayName("AI 응답 메시지는 senderId 없이 요청 메시지와 연결해 저장할 수 있다")
+    void sendAiResponseStoresAiResponseMessage() {
+        UUID roomId = UUID.randomUUID();
+        SendAiResponseCommand command = new SendAiResponseCommand(
+                "ai-request-1",
+                "애월에서는 조용한 오션뷰 카페를 추천해요.",
+                "place_recommendation",
+                java.util.List.of(Map.of("name", "카페 봄날", "reason", "바다 전망"))
+        );
+
+        given(chatMessageRepository.save(any(ChatMessage.class))).willAnswer(invocation -> {
+            ChatMessage message = invocation.getArgument(0);
+            ReflectionTestUtils.setField(message, "id", "6628f5f4c49a9f7b3772c555");
+            return message;
+        });
+
+        MessageResult result = messageService.sendAiResponse(roomId, command);
+
+        assertThat(result.senderId()).isNull();
+        assertThat(result.messageType()).isEqualTo(MessageType.AI_RESPONSE);
+        assertThat(result.content()).isEqualTo("애월에서는 조용한 오션뷰 카페를 추천해요.");
+        assertThat(result.metadata())
+                .containsEntry("requestMessageId", "ai-request-1")
+                .containsEntry("intent", "place_recommendation")
+                .containsKey("recommendedPlaces");
+
+        ArgumentCaptor<ChatMessage> messageCaptor = ArgumentCaptor.forClass(ChatMessage.class);
+        verify(chatMessageRepository).save(messageCaptor.capture());
+        assertThat(messageCaptor.getValue().getMessageType()).isEqualTo(MessageType.AI_RESPONSE);
         verify(eventPublisher).publishEvent(MessageSentEvent.from(result));
     }
 

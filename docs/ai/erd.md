@@ -69,14 +69,14 @@ Google OAuth 기반 사용자 정보
 
 ## 4. messages (MongoDB 채팅 메시지 컬렉션)
 
-실시간 채팅 메시지. 메시지별 metadata 구조가 달라질 수 있어 MongoDB 컬렉션으로 저장한다. 일반 채팅 요청은 클라이언트 metadata를 받지 않고 `metadata={}`로 저장하며, PLACE_SHARE / AI_RESPONSE / SYSTEM 같은 타입별 확장 데이터는 서버가 정형 요청 또는 내부 이벤트에서 구성한다. PLACE_SHARE metadata는 장소 카드 표시용 스냅샷(`googlePlaceId`, `name`, `formattedAddress`, `latitude`, `longitude`, `rating`, `photoName`)을 담고, SYSTEM metadata는 이벤트 식별자와 대상 사용자 정보를 담는다. MongoDB `_id` 문자열을 클라이언트에 `id`로 노출하고 재접속 동기화 cursor로 사용한다.
+실시간 채팅 메시지. 메시지별 metadata 구조가 달라질 수 있어 MongoDB 컬렉션으로 저장한다. 일반 채팅 요청은 클라이언트 metadata를 받지 않고 `metadata={}`로 저장하며, AI_REQUEST / AI_RESPONSE / PLACE_SHARE / SYSTEM 같은 타입별 확장 데이터는 서버가 정형 요청 또는 내부 이벤트에서 구성한다. AI_REQUEST는 사용자가 AI에게 보낸 질문이고, AI_RESPONSE는 `senderId=NULL`인 AI 답변이다. PLACE_SHARE metadata는 장소 카드 표시용 스냅샷(`googlePlaceId`, `name`, `formattedAddress`, `latitude`, `longitude`, `rating`, `photoName`)을 담고, SYSTEM metadata는 이벤트 식별자와 대상 사용자 정보를 담는다. MongoDB `_id` 문자열을 클라이언트에 `id`로 노출하고 재접속 동기화 cursor로 사용한다.
 
 | 필드 | 타입 | 제약조건 | 설명 |
 |------|------|----------|------|
 | _id | ObjectId | PK | 클라이언트 응답에서는 문자열 `id` |
 | roomId | UUID | NOT NULL | PostgreSQL rooms.id 논리 참조 |
 | senderId | BIGINT | NULLABLE | PostgreSQL users.id 논리 참조, NULL = 시스템/AI 메시지 |
-| messageType | STRING | NOT NULL, DEFAULT 'CHAT' | CHAT / AI_RESPONSE / PLACE_SHARE / SYSTEM |
+| messageType | STRING | NOT NULL, DEFAULT 'CHAT' | CHAT / AI_REQUEST / AI_RESPONSE / PLACE_SHARE / SYSTEM |
 | content | STRING | NOT NULL | 메시지 내용 |
 | metadata | DOCUMENT | NOT NULL, DEFAULT `{}` | 장소 공유, AI 응답 등 메시지 타입별 확장 데이터 |
 | createdAt | DATE | NOT NULL | 생성일시 |
@@ -85,11 +85,30 @@ Google OAuth 기반 사용자 정보
 
 > 재접속 시 클라이언트가 마지막으로 수신한 MongoDB message `_id`를 `afterId`로 보내면, 서버는 해당 ID 이후의 메시지만 전달합니다.
 
-**미결:** AI 응답 이력을 이 컬렉션의 `messageType=AI_RESPONSE`로 관리할지, 별도 컬렉션으로 분리할지 결정 필요.
+AI_RESPONSE metadata는 `requestMessageId`, `intent`, `recommendedPlaces`를 담는다. AI 서버 호출 실패 시에도 실패 안내를 AI_RESPONSE로 저장한다.
 
 ---
 
-## 5. bookmark_categories (북마크 카테고리)
+## 5. ai_context_summaries (MongoDB AI 요약 컨텍스트 컬렉션)
+
+방별 AI 호출 컨텍스트를 저장한다. 채팅 타임라인에 항상 필요한 데이터가 아니라 AI 호출과 자동 요약에 필요한 내부 상태이므로 messages와 분리한다. 방당 1개 문서를 유지한다.
+
+| 필드 | 타입 | 제약조건 | 설명 |
+|------|------|----------|------|
+| _id | UUID | PK | rooms.id와 동일한 방 ID |
+| summary | DOCUMENT | NULLABLE | AI 서버 `StructuredSummary` 응답 |
+| lastMessageId | VARCHAR(24) | NULLABLE | 마지막으로 요약된 MongoDB messages `_id` |
+| summaryStatus | STRING | NOT NULL | IDLE / RUNNING |
+| summarizingFromMessageId | VARCHAR(24) | NULLABLE | 현재 요약 작업 시작 메시지 ID |
+| summarizingUntilMessageId | VARCHAR(24) | NULLABLE | 현재 요약 작업 종료 메시지 ID |
+| summaryStartedAt | DATE | NULLABLE | 현재 요약 작업 시작 시각 |
+| updatedAt | DATE | NOT NULL | 마지막 갱신 시각 |
+
+**자동 요약 정책:** 마지막 요약 이후 `CHAT`, `AI_REQUEST`, `AI_RESPONSE`, `PLACE_SHARE` 메시지를 `_id` 오름차순으로 최대 30개 조회하고, 30개에 도달하면 AI 서버 `/v1/ai/context/summaries`를 호출한다. `SYSTEM` 메시지는 제외한다. AI 호출(`/v1/ai/chat/plan`) 응답의 `updated_summary`도 이 컬렉션에 반영한다. AI 서버 timeout은 30초다.
+
+---
+
+## 6. bookmark_categories (북마크 카테고리)
 
 방별 사용자 정의 북마크 카테고리. 북마크는 반드시 하나의 카테고리에 속합니다.
 
@@ -111,7 +130,7 @@ Google OAuth 기반 사용자 정보
 
 ---
 
-## 6. bookmarks (장소 보관함 / 후보지)
+## 7. bookmarks (장소 보관함 / 후보지)
 
 방 내 공유 후보지 목록. 팀원이 후보로 등록한 장소.
 
@@ -131,7 +150,7 @@ Google OAuth 기반 사용자 정보
 
 ---
 
-## 7. schedules (일자별 일정)
+## 8. schedules (일자별 일정)
 
 여행 일정의 일자 단위 그룹
 
@@ -148,7 +167,7 @@ Google OAuth 기반 사용자 정보
 
 ---
 
-## 8. schedule_items (일정 항목)
+## 9. schedule_items (일정 항목)
 
 일자별 방문 장소 및 시간 배치. Drag and Drop 정렬 지원.
 
@@ -182,6 +201,7 @@ Google OAuth 기반 사용자 정보
 | users ↔ messages | 1:N | 한 유저가 여러 메시지 입력 가능 (MongoDB `senderId` 논리 참조) |
 | rooms ↔ room_members | 1:N | 한 방에 여러 멤버 |
 | rooms ↔ messages | 1:N | 한 방에 여러 메시지 (MongoDB `roomId` 논리 참조) |
+| rooms ↔ ai_context_summaries | 1:1 | 한 방에 하나의 AI 요약 컨텍스트 (MongoDB `_id` 논리 참조) |
 | rooms ↔ bookmark_categories | 1:N | 한 방에 여러 북마크 카테고리 |
 | rooms ↔ bookmarks | 1:N | 한 방에 여러 후보지 |
 | bookmark_categories ↔ bookmarks | 1:N | 한 카테고리에 여러 후보지 |
@@ -219,7 +239,8 @@ Google OAuth 기반 사용자 정보
 
 ## TODO / 논의 필요 사항
 
-- [ ] AI 응답 이력을 별도 컬렉션으로 분리할지, messages.messageType으로 관리할지
+- [x] AI 응답 이력은 messages.messageType으로 관리하고, AI 요약 컨텍스트는 ai_context_summaries 컬렉션으로 분리
+- [ ] AI 추천 장소를 Google Place ID 기준으로 재검증할지 여부
 - [ ] 예산 정리 기능을 위한 expenses 테이블 추가 여부
 - [ ] 숙소/항공권 예약 연동 시 external_bookings 테이블 필요 여부
 - [ ] bookmark 투표 기능 추가 시 bookmark_votes 테이블 필요

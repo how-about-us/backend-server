@@ -8,9 +8,6 @@ public record SendChatMessageRequest(
 ) {
 
     public static SendChatMessageCommand toCommand(SendChatMessageRequest request) {
-        if (request == null) {
-            return new SendChatMessageCommand(null, null);
-        }
         return new SendChatMessageCommand(request.clientMessageId, request.content);
     }
 }

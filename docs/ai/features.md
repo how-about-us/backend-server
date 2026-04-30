@@ -138,12 +138,13 @@
 
 ## 8. AI 기능
 
-> **미결:** AI 응답 이력을 MongoDB `messages` 컬렉션의 `messageType=AI_RESPONSE`으로 관리할지 별도 컬렉션으로 분리할지, 어떤 컨텍스트(방 일정, 보관함, 위치 등)를 전달할지 결정 필요.
+> AI 서버는 stateless FastAPI 서버로 두고, 백엔드가 방/멤버 권한과 MongoDB 채팅/요약 컨텍스트의 source of truth를 유지한다. AI 서버 호출 timeout은 30초다.
 
 | 상태 | 기능 | 설명 | ERD 연관 |
 |------|------|------|----------|
-| `[ ]` | AI 호출 (룰 기반 트리거) | 채팅창에서 AI 호출 버튼으로 질의 | MongoDB messages (messageType: AI_RESPONSE) |
-| `[ ]` | AI 응답 채팅에 표시 | AI 응답을 senderId=NULL 메시지로 채팅에 노출 | MongoDB messages |
+| `[x]` | AI 호출 (룰 기반 트리거) | 클라이언트가 `/app/rooms/{roomId}/messages/ai`로 `clientMessageId`, `content`를 전송하면 `AI_REQUEST` 메시지를 저장/브로드캐스트하고, 백그라운드에서 AI 서버 `/v1/ai/chat/plan`을 호출한다. AI 서버의 `team_id`는 `roomId` 문자열을 사용한다 | MongoDB messages, ai_context_summaries |
+| `[x]` | AI 응답 채팅에 표시 | AI 응답을 `senderId=NULL`, `messageType=AI_RESPONSE` 메시지로 채팅에 노출한다. 실패해도 “AI 응답을 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.” 안내 메시지를 `AI_RESPONSE`로 남긴다 | MongoDB messages |
+| `[x]` | AI 대화 요약 자동 갱신 | 마지막 요약 이후 요약 대상 메시지(`CHAT`, `AI_REQUEST`, `AI_RESPONSE`, `PLACE_SHARE`)를 `_id` 오름차순으로 최대 30개 조회하고, 30개에 도달하면 백그라운드에서 AI 서버 `/v1/ai/context/summaries`를 호출한다. `SYSTEM` 메시지는 요약 대상에서 제외한다 | MongoDB messages, ai_context_summaries |
 
 ---
 
@@ -151,10 +152,11 @@
 
 | # | 항목 | 선택지 | 현황 |
 |---|------|--------|------|
-| 1 | AI 응답 저장 방식 | MongoDB messages.messageType vs ai_responses 별도 컬렉션 | 미결 |
+| 1 | AI 응답 저장 방식 | MongoDB messages.messageType 사용 | 결정 |
 | 2 | schedules 기준값 | day_number, date 두 컬럼 모두 저장 | 결정 |
 | 3 | schedule_items order_index 중복 방지 | UNIQUE 제약 vs gap 전략 | 미결 |
 | 4 | room_members 직접 참조 정합성 | sender_id, added_by → users 직접 vs room_members 참조 | 미결 |
 | 5 | 방장 위임 기능 | 구현 완료 (PATCH /rooms/{roomId}/host) | 확정 |
 | 6 | 방 삭제 정책 | hard delete 전환 완료 (DB ON DELETE CASCADE) | 확정 |
 | 7 | 초대 링크 만료/횟수 제한 | room_invitations 테이블 분리 시점 기준 | 미결 |
+| 8 | AI 장소 추천 정합성 | AI recommended_places를 Google Place ID와 재검증할지 여부 | 미결 |

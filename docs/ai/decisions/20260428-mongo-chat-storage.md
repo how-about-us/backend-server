@@ -6,7 +6,7 @@
 
 ## Context
 
-- 채팅 메시지는 `CHAT`, `PLACE_SHARE`, `AI_RESPONSE`, `SYSTEM` 등 타입별 metadata 구조가 달라질 수 있다.
+- 채팅 메시지는 `CHAT`, `AI_REQUEST`, `AI_RESPONSE`, `PLACE_SHARE`, `SYSTEM` 등 타입별 metadata 구조가 달라질 수 있다.
 - PostgreSQL 고정 스키마 또는 JSONB를 사용할 수도 있지만, 이 프로젝트에서는 MongoDB 학습 목적도 함께 고려한다.
 - 방, 유저, 멤버 권한은 기존 PostgreSQL 도메인을 계속 기준으로 삼는다.
 

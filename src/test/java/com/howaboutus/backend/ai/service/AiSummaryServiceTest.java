@@ -1,9 +1,13 @@
 package com.howaboutus.backend.ai.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.howaboutus.backend.ai.document.AiContextSummary;
@@ -20,6 +24,7 @@ import com.howaboutus.backend.user.entity.User;
 import com.howaboutus.backend.user.repository.UserRepository;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -107,14 +112,14 @@ class AiSummaryServiceTest {
 
         ArgumentCaptor<AiSummaryUpdateRequest> requestCaptor = ArgumentCaptor.forClass(AiSummaryUpdateRequest.class);
         verify(travelAiClient).updateSummary(requestCaptor.capture());
-        org.assertj.core.api.Assertions.assertThat(requestCaptor.getValue().messagesSinceLastSummary()).hasSize(30);
+        assertThat(requestCaptor.getValue().messagesSinceLastSummary()).hasSize(30);
         ArgumentCaptor<AiContextSummary> summaryCaptor = ArgumentCaptor.forClass(AiContextSummary.class);
-        verify(summaryRepository, org.mockito.Mockito.atLeastOnce()).save(summaryCaptor.capture());
-        org.assertj.core.api.Assertions.assertThat(summaryCaptor.getAllValues())
+        verify(summaryRepository, atLeastOnce()).save(summaryCaptor.capture());
+        assertThat(summaryCaptor.getAllValues())
                 .anySatisfy(summary -> {
-                    org.assertj.core.api.Assertions.assertThat(summary.roomId()).isEqualTo(roomId);
-                    org.assertj.core.api.Assertions.assertThat(summary.summary()).isEqualTo(updatedSummary);
-                    org.assertj.core.api.Assertions.assertThat(summary.lastMessageId()).isEqualTo("msg-30");
+                    assertThat(summary.roomId()).isEqualTo(roomId);
+                    assertThat(summary.summary()).isEqualTo(updatedSummary);
+                    assertThat(summary.lastMessageId()).isEqualTo("msg-30");
                 });
     }
 
@@ -162,19 +167,19 @@ class AiSummaryServiceTest {
             );
         });
 
-        org.assertj.core.api.Assertions.assertThatCode(() -> aiSummaryService.triggerAutoSummary(roomId))
+        assertThatCode(() -> aiSummaryService.triggerAutoSummary(roomId))
                 .doesNotThrowAnyException();
 
-        verify(travelAiClient, org.mockito.Mockito.times(messageCount)).updateSummary(any(AiSummaryUpdateRequest.class));
-        org.assertj.core.api.Assertions.assertThat(persistedSummary.get().lastMessageId()).isEqualTo("msg-" + messageCount);
+        verify(travelAiClient, times(messageCount)).updateSummary(any(AiSummaryUpdateRequest.class));
+        assertThat(persistedSummary.get().lastMessageId()).isEqualTo("msg-" + messageCount);
     }
 
     private ChatMessage message(UUID roomId, String id, Long senderId, MessageType messageType, String content) {
         ChatMessage message = switch (messageType) {
-            case AI_REQUEST -> ChatMessage.aiRequest(roomId, senderId, content, java.util.Map.of());
-            case AI_RESPONSE -> ChatMessage.aiResponse(roomId, content, java.util.Map.of());
-            case PLACE_SHARE -> ChatMessage.placeShare(roomId, senderId, content, java.util.Map.of());
-            case SYSTEM -> ChatMessage.system(roomId, content, java.util.Map.of());
+            case AI_REQUEST -> ChatMessage.aiRequest(roomId, senderId, content, Map.of());
+            case AI_RESPONSE -> ChatMessage.aiResponse(roomId, content, Map.of());
+            case PLACE_SHARE -> ChatMessage.placeShare(roomId, senderId, content, Map.of());
+            case SYSTEM -> ChatMessage.system(roomId, content, Map.of());
             case CHAT -> ChatMessage.chat(roomId, senderId, content);
         };
         ReflectionTestUtils.setField(message, "id", id);

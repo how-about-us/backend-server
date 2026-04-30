@@ -105,7 +105,7 @@ class AiPlanAsyncServiceTest {
         verify(travelAiClient).chatPlan(requestCaptor.capture());
         assertThat(requestCaptor.getValue().teamId()).isEqualTo(roomId.toString());
         assertThat(requestCaptor.getValue().roomContext().destination()).isEqualTo("제주 애월");
-        verify(messageService).sendAiResponse(org.mockito.Mockito.eq(roomId), argThat(command ->
+        verify(messageService).sendAiResponse(eq(roomId), argThat(command ->
                 command.requestMessageId().equals("request-1")
                         && command.intent().equals("place_recommendation")
                         && command.recommendedPlaces().size() == 1
@@ -129,7 +129,7 @@ class AiPlanAsyncServiceTest {
 
         aiPlanAsyncService.generatePlan(roomId, aiRequest);
 
-        verify(messageService).sendAiResponse(org.mockito.Mockito.eq(roomId), argThat(command ->
+        verify(messageService).sendAiResponse(eq(roomId), argThat(command ->
                 command.requestMessageId().equals("request-1")
                         && command.intent().equals("unsupported")
                         && command.content().contains("AI 응답을 생성하지 못했습니다")

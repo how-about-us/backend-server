@@ -28,6 +28,11 @@ google:
     redirect-uri: ${GOOGLE_REDIRECT_URI}
     token-uri: https://oauth2.googleapis.com/token
 
+ai:
+  base-url: ${AI_BASE_URL:http://localhost:8000}
+  timeout: 30s
+  summary-batch-size: 30
+
 springdoc:
   api-docs:
     enabled: true

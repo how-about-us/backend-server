@@ -22,6 +22,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -80,7 +82,7 @@ class AiSummaryServiceTest {
     @DisplayName("마지막 요약 이후 메시지가 30개면 AI 서버에 자동 요약을 요청하고 결과를 저장한다")
     void updatesSummaryWhenBatchSizeIsReached() {
         UUID roomId = UUID.randomUUID();
-        List<ChatMessage> messages = java.util.stream.IntStream.rangeClosed(1, 30)
+        List<ChatMessage> messages = IntStream.rangeClosed(1, 30)
                 .mapToObj(index -> message(roomId, "msg-" + index, 1L, MessageType.CHAT, "메시지 " + index))
                 .toList();
         AiStructuredSummary updatedSummary = new AiStructuredSummary(
@@ -114,6 +116,57 @@ class AiSummaryServiceTest {
                     org.assertj.core.api.Assertions.assertThat(summary.summary()).isEqualTo(updatedSummary);
                     org.assertj.core.api.Assertions.assertThat(summary.lastMessageId()).isEqualTo("msg-30");
                 });
+    }
+
+    @Test
+    @DisplayName("밀린 요약 배치가 많아도 스택을 늘리지 않고 모두 처리한다")
+    void processesLargeBacklogWithoutGrowingCallStack() {
+        UUID roomId = UUID.randomUUID();
+        int messageCount = 5_000;
+        aiSummaryService = new AiSummaryService(
+                summaryRepository,
+                chatMessageRepository,
+                userRepository,
+                travelAiClient,
+                new TravelAiProperties("http://localhost:8000", Duration.ofSeconds(30), 1)
+        );
+        AtomicReference<AiContextSummary> persistedSummary = new AtomicReference<>(AiContextSummary.init(roomId));
+
+        given(summaryRepository.findById(roomId)).willAnswer(invocation -> Optional.of(persistedSummary.get()));
+        given(summaryRepository.save(any(AiContextSummary.class))).willAnswer(invocation -> {
+            AiContextSummary saved = invocation.getArgument(0);
+            persistedSummary.set(saved);
+            return saved;
+        });
+        given(chatMessageRepository.findByRoomIdAndMessageTypeInOrderByIdAsc(eq(roomId), any(), any(Pageable.class)))
+                .willReturn(List.of(message(roomId, "msg-1", null, MessageType.CHAT, "메시지 1")));
+        given(chatMessageRepository.findByRoomIdAndIdGreaterThanAndMessageTypeInOrderByIdAsc(
+                eq(roomId),
+                any(),
+                any(),
+                any(Pageable.class)
+        )).willAnswer(invocation -> {
+            String lastMessageId = invocation.getArgument(1);
+            int nextIndex = Integer.parseInt(lastMessageId.substring("msg-".length())) + 1;
+            if (nextIndex > messageCount) {
+                return List.of();
+            }
+            return List.of(message(roomId, "msg-" + nextIndex, null, MessageType.CHAT, "메시지 " + nextIndex));
+        });
+        given(travelAiClient.updateSummary(any(AiSummaryUpdateRequest.class))).willAnswer(invocation -> {
+            AiSummaryUpdateRequest request = invocation.getArgument(0);
+            String lastMessageId = request.messagesSinceLastSummary().getLast().messageId();
+            return new AiSummaryUpdateResponse(
+                    roomId.toString(),
+                    new AiStructuredSummary("요약됨", List.of(), List.of(), List.of(), List.of(), List.of(), lastMessageId)
+            );
+        });
+
+        org.assertj.core.api.Assertions.assertThatCode(() -> aiSummaryService.triggerAutoSummary(roomId))
+                .doesNotThrowAnyException();
+
+        verify(travelAiClient, org.mockito.Mockito.times(messageCount)).updateSummary(any(AiSummaryUpdateRequest.class));
+        org.assertj.core.api.Assertions.assertThat(persistedSummary.get().lastMessageId()).isEqualTo("msg-" + messageCount);
     }
 
     private ChatMessage message(UUID roomId, String id, Long senderId, MessageType messageType, String content) {

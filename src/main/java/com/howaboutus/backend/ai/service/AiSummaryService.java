@@ -58,32 +58,32 @@ public class AiSummaryService {
     }
 
     public void triggerAutoSummary(UUID roomId) {
-        AiContextSummary current = getOrCreate(roomId);
-        if (current.summaryStatus() == AiSummaryStatus.RUNNING && !isStale(current)) {
-            return;
-        }
+        while (true) {
+            AiContextSummary current = getOrCreate(roomId);
+            if (current.summaryStatus() == AiSummaryStatus.RUNNING && !isStale(current)) {
+                return;
+            }
 
-        List<ChatMessage> messages = findNextSummarizableMessages(roomId, current.lastMessageId(), properties.summaryBatchSize());
-        if (messages.size() < properties.summaryBatchSize()) {
-            return;
-        }
+            List<ChatMessage> messages = findNextSummarizableMessages(roomId, current.lastMessageId(), properties.summaryBatchSize());
+            if (messages.size() < properties.summaryBatchSize()) {
+                return;
+            }
 
-        String untilMessageId = messages.getLast().getId();
-        summaryRepository.save(current.running(messages.getFirst().getId(), untilMessageId));
-        try {
-            AiSummaryUpdateResponse response = travelAiClient.updateSummary(new AiSummaryUpdateRequest(
-                    roomId.toString(),
-                    roomId.toString(),
-                    toAiMessages(messages),
-                    current.summary()
-            ));
-            completeSummary(roomId, response.summary(), untilMessageId);
-        } catch (RuntimeException exception) {
-            summaryRepository.save(AiContextSummary.idle(roomId, current.summary(), current.lastMessageId()));
-            throw exception;
+            String untilMessageId = messages.getLast().getId();
+            summaryRepository.save(current.running(messages.getFirst().getId(), untilMessageId));
+            try {
+                AiSummaryUpdateResponse response = travelAiClient.updateSummary(new AiSummaryUpdateRequest(
+                        roomId.toString(),
+                        roomId.toString(),
+                        toAiMessages(messages),
+                        current.summary()
+                ));
+                completeSummary(roomId, response.summary(), untilMessageId);
+            } catch (RuntimeException exception) {
+                summaryRepository.save(AiContextSummary.idle(roomId, current.summary(), current.lastMessageId()));
+                throw exception;
+            }
         }
-
-        triggerAutoSummary(roomId);
     }
 
     public List<ChatMessage> findMessagesSinceLastSummary(UUID roomId, int limit) {

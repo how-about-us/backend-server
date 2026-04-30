@@ -18,15 +18,12 @@ public record AiContextSummary(
         Instant summaryStartedAt,
         Instant updatedAt
 ) {
-    public static AiContextSummary idle(UUID roomId, AiStructuredSummary summary) {
-        String lastMessageId = null;
-        if (summary != null) {
-            lastMessageId = summary.lastMessageId();
-        }
-        return completed(roomId, summary, lastMessageId);
+
+    public static AiContextSummary init(UUID roomId) {
+        return idle(roomId, null, null);
     }
 
-    public static AiContextSummary completed(UUID roomId, AiStructuredSummary summary, String lastMessageId) {
+    public static AiContextSummary idle(UUID roomId, AiStructuredSummary summary, String lastMessageId) {
         return new AiContextSummary(
                 roomId,
                 summary,

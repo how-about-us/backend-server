@@ -1,13 +1,8 @@
 package com.howaboutus.backend.ai.service;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import com.howaboutus.backend.common.error.ExternalApiException;
 import com.howaboutus.backend.ai.document.AiContextSummary;
+import com.howaboutus.backend.common.config.properties.TravelAiProperties;
+import com.howaboutus.backend.common.error.ExternalApiException;
 import com.howaboutus.backend.common.integration.ai.TravelAiClient;
 import com.howaboutus.backend.common.integration.ai.dto.AiChatPlanRequest;
 import com.howaboutus.backend.common.integration.ai.dto.AiChatPlanResponse;
@@ -19,12 +14,6 @@ import com.howaboutus.backend.messages.service.dto.MessageResult;
 import com.howaboutus.backend.rooms.entity.Room;
 import com.howaboutus.backend.rooms.repository.RoomMemberRepository;
 import com.howaboutus.backend.rooms.repository.RoomRepository;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +22,19 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class AiPlanAsyncServiceTest {
@@ -52,6 +54,9 @@ class AiPlanAsyncServiceTest {
     @Mock
     private RoomMemberRepository roomMemberRepository;
 
+    @Mock
+    private TravelAiProperties properties;
+
     private AiPlanAsyncService aiPlanAsyncService;
 
     @BeforeEach
@@ -61,7 +66,8 @@ class AiPlanAsyncServiceTest {
                 messageService,
                 aiSummaryService,
                 roomRepository,
-                roomMemberRepository
+                roomMemberRepository,
+                properties
         );
     }
 
@@ -81,10 +87,10 @@ class AiPlanAsyncServiceTest {
         );
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room(roomId)));
         given(roomMemberRepository.countByRoom_IdAndRoleIn(any(), any())).willReturn(3L);
-        given(aiSummaryService.findMessagesSinceLastSummary(roomId, 30)).willReturn(List.of());
-        given(aiSummaryService.findRecentMessages(roomId, 3)).willReturn(List.of());
+        given(aiSummaryService.findMessagesSinceLastSummary(eq(roomId), anyInt())).willReturn(List.of());
+        given(aiSummaryService.findRecentMessages(eq(roomId), anyInt())).willReturn(List.of());
         given(aiSummaryService.toAiMessages(List.of())).willReturn(List.of());
-        given(aiSummaryService.getOrCreate(roomId)).willReturn(AiContextSummary.completed(roomId, null, null));
+        given(aiSummaryService.getOrCreate(roomId)).willReturn(AiContextSummary.init(roomId));
         given(travelAiClient.chatPlan(any(AiChatPlanRequest.class)))
                 .willReturn(new AiChatPlanResponse(
                         "place_recommendation",
@@ -97,8 +103,8 @@ class AiPlanAsyncServiceTest {
 
         ArgumentCaptor<AiChatPlanRequest> requestCaptor = ArgumentCaptor.forClass(AiChatPlanRequest.class);
         verify(travelAiClient).chatPlan(requestCaptor.capture());
-        org.assertj.core.api.Assertions.assertThat(requestCaptor.getValue().teamId()).isEqualTo(roomId.toString());
-        org.assertj.core.api.Assertions.assertThat(requestCaptor.getValue().roomContext().destination()).isEqualTo("제주 애월");
+        assertThat(requestCaptor.getValue().teamId()).isEqualTo(roomId.toString());
+        assertThat(requestCaptor.getValue().roomContext().destination()).isEqualTo("제주 애월");
         verify(messageService).sendAiResponse(org.mockito.Mockito.eq(roomId), argThat(command ->
                 command.requestMessageId().equals("request-1")
                         && command.intent().equals("place_recommendation")
@@ -114,10 +120,10 @@ class AiPlanAsyncServiceTest {
         MessageResult aiRequest = aiRequest(roomId);
         given(roomRepository.findById(roomId)).willReturn(Optional.of(room(roomId)));
         given(roomMemberRepository.countByRoom_IdAndRoleIn(any(), any())).willReturn(3L);
-        given(aiSummaryService.findMessagesSinceLastSummary(roomId, 30)).willReturn(List.of());
-        given(aiSummaryService.findRecentMessages(roomId, 3)).willReturn(List.of());
+        given(aiSummaryService.findMessagesSinceLastSummary(eq(roomId), anyInt())).willReturn(List.of());
+        given(aiSummaryService.findRecentMessages(eq(roomId), anyInt())).willReturn(List.of());
         given(aiSummaryService.toAiMessages(List.of())).willReturn(List.of());
-        given(aiSummaryService.getOrCreate(roomId)).willReturn(AiContextSummary.completed(roomId, null, null));
+        given(aiSummaryService.getOrCreate(roomId)).willReturn(AiContextSummary.idle(roomId, null, null));
         given(travelAiClient.chatPlan(any(AiChatPlanRequest.class)))
                 .willThrow(new ExternalApiException(new RuntimeException("timeout")));
 

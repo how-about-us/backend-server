@@ -46,7 +46,7 @@ public class AiSummaryService {
 
     public AiContextSummary getOrCreate(UUID roomId) {
         return summaryRepository.findById(roomId)
-                .orElseGet(() -> AiContextSummary.completed(roomId, null, null));
+                .orElseGet(() -> AiContextSummary.init(roomId));
     }
 
     public void completeSummary(UUID roomId, AiStructuredSummary summary, String fallbackLastMessageId) {
@@ -54,7 +54,7 @@ public class AiSummaryService {
         if (lastMessageId == null || lastMessageId.isBlank()) {
             lastMessageId = fallbackLastMessageId;
         }
-        summaryRepository.save(AiContextSummary.completed(roomId, summary, lastMessageId));
+        summaryRepository.save(AiContextSummary.idle(roomId, summary, lastMessageId));
     }
 
     public void triggerAutoSummary(UUID roomId) {
@@ -79,7 +79,7 @@ public class AiSummaryService {
             ));
             completeSummary(roomId, response.summary(), untilMessageId);
         } catch (RuntimeException exception) {
-            summaryRepository.save(AiContextSummary.completed(roomId, current.summary(), current.lastMessageId()));
+            summaryRepository.save(AiContextSummary.idle(roomId, current.summary(), current.lastMessageId()));
             throw exception;
         }
 

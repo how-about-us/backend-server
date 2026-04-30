@@ -1,5 +1,6 @@
 package com.howaboutus.backend.ai.service;
 
+import com.howaboutus.backend.common.config.properties.TravelAiProperties;
 import com.howaboutus.backend.common.integration.ai.TravelAiClient;
 import com.howaboutus.backend.common.integration.ai.dto.AiChatContext;
 import com.howaboutus.backend.common.integration.ai.dto.AiChatMessage;
@@ -37,6 +38,7 @@ public class AiPlanAsyncService {
     private final AiSummaryService aiSummaryService;
     private final RoomRepository roomRepository;
     private final RoomMemberRepository roomMemberRepository;
+    private final TravelAiProperties properties;
 
     @Async
     public void generatePlan(UUID roomId, MessageResult aiRequestMessage) {
@@ -63,7 +65,7 @@ public class AiPlanAsyncService {
     private AiChatPlanRequest buildRequest(UUID roomId, MessageResult aiRequestMessage) {
         Room room = roomRepository.findById(roomId).orElse(null);
         List<AiChatMessage> messagesSinceLastSummary =
-                aiSummaryService.toAiMessages(aiSummaryService.findMessagesSinceLastSummary(roomId, 30));
+                aiSummaryService.toAiMessages(aiSummaryService.findMessagesSinceLastSummary(roomId, properties.summaryBatchSize()));
         List<AiChatMessage> recentMessages =
                 aiSummaryService.toAiMessages(aiSummaryService.findRecentMessages(roomId, RECENT_MESSAGE_LIMIT));
         AiChatMessage requestMessage = new AiChatMessage(

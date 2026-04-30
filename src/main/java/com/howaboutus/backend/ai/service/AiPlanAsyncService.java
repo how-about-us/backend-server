@@ -50,7 +50,11 @@ public class AiPlanAsyncService {
                     response.intent(),
                     toRecommendedPlaceMetadata(response.recommendedPlaces())
             ));
-            aiSummaryService.completeSummary(roomId, response.updatedSummary(), aiRequestMessage.id());
+            try {
+                aiSummaryService.completeSummary(roomId, response.updatedSummary(), aiRequestMessage.id());
+            } catch (RuntimeException e) {
+                log.warn("요약 완료 처리 실패 (AI 응답은 정상 전달됨): roomId={}", roomId, e);
+            }
         } catch (RuntimeException exception) {
             log.warn("AI 응답 생성 실패: roomId={}, requestMessageId={}", roomId, aiRequestMessage.id(), exception);
             messageService.sendAiResponse(roomId, new SendAiResponseCommand(
@@ -108,6 +112,9 @@ public class AiPlanAsyncService {
     }
 
     private List<Map<String, Object>> toRecommendedPlaceMetadata(List<AiRecommendedPlace> recommendedPlaces) {
+        if (recommendedPlaces == null) {
+            return List.of();
+        }
         return recommendedPlaces.stream()
                 .map(this::toRecommendedPlaceMetadata)
                 .toList();
